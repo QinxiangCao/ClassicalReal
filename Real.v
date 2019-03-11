@@ -139,6 +139,15 @@ Proof.
   intros. apply H0.
 Qed.
 
+Theorem Reqb_refl: forall x : Real, x == x.
+Proof.
+  intros.
+  unfold Reqb.
+  split.
+  apply Rle_refl.
+  apply Rle_refl.
+Qed.
+
 Theorem Rlt_le_weak: forall x y : Real, x < y -> x <= y.
 Proof.
   intros.
@@ -173,39 +182,96 @@ Proof.
     exists x. split. apply H0. apply H6. apply H6.
 Qed.
 
-Theorem Rnot_le_lt: forall x y : Real, ~ x <= y -> y < x.
-Proof.
-Admitted.
-Theorem Rnot_lt_le: forall x y : Real, ~ x < y -> y <= x.
+Theorem Rle_not_lt: forall x y : Real, x <= y -> ~ y < x.
 Proof.
   intros.
   destruct x.
   destruct y.
-  unfold not in *.
-  unfold Rlt in *.
-  unfold Rle.
-  
-Admitted.
-Theorem Rle_not_lt: forall x y : Real, x <= y -> ~ y < x.
-Proof.
-Admitted.
+  unfold not.
+  unfold Rle in *.
+  unfold Rlt.
+  simpl.
+  intros.
+  destruct H2.
+  inversion H3.
+  destruct H4.
+  apply H in H4.
+  apply H5. apply H4.
+Qed.
+
 Theorem Rlt_not_le: forall x y : Real, x < y -> ~ y <= x.
 Proof.
-Admitted.
+  intros.
+  destruct x.
+  destruct y.
+  unfold not.
+  unfold Rle.
+  unfold Rlt in *.
+  simpl.
+  intros.
+  destruct H.
+  inversion H3.
+  destruct H4.
+  apply H2 in H4.
+  apply H5. apply H4.
+Qed.
+
 Theorem Rle_antisym: forall x y : Real, x <= y -> y <= x -> x == y.
 Proof.
   intros.
   unfold Reqb.
   split. apply H. apply H0.
 Qed.
+
 Theorem Rle_lt_trans: forall x y z : Real, x <= y -> y < z -> x < z.
 Proof.
-Admitted.
+  intros.
+  destruct x.
+  destruct y.
+  destruct z.
+  unfold Rle in *.
+  unfold Rlt in *.
+  split.
+  - intros. apply H0. apply H. apply H4.
+  - destruct H0.
+    destruct H4.
+    exists x.
+    split.
+    + apply H4.
+    + unfold not in *.
+      intros.
+      apply H4. apply H. apply H5.
+Qed.
+
 Theorem Rlt_le_trans: forall x y z : Real, x < y -> y <= z -> x < z.
+Proof.
+  intros.
+  destruct x.
+  destruct y.
+  destruct z.
+  unfold Rle in *.
+  unfold Rlt in *.
+  split.
+  - intros. apply H0. apply H. apply H4.
+  - destruct H.
+    destruct H4.
+    exists x.
+    split.
+    + apply H0. apply H4.
+    + unfold not in *.
+      intros.
+      apply H4. apply H5.
+Qed.
+
+Theorem Rnot_le_lt: forall x y : Real, ~ x <= y -> y < x.
 Proof.
 Admitted.
 
-(** Second , we will difine the plus operation of Set and Real and proof some theorem about it. *)
+Theorem Rnot_lt_le: forall x y : Real, ~ x < y -> y <= x.
+Proof.
+Admitted.
+
+(** Second , we will define the plus operation of Set and Real and proof some theorem about it. *)
 
 Definition Cut_plus_Cut (A : Q -> Prop) (B : Q -> Prop) : Q -> Prop :=
   (fun x => exists x0 x1 : Q, A x0 /\ B x1 /\ (Qeq (x0 + x1) x))
@@ -309,21 +375,106 @@ Fixpoint Rplus(a b : Real) : Real :=
 
 Notation "A + B" := (Rplus A B).
 
-Theorem Rplus_O : forall a : Real, a + Rzero == a.
+Theorem Rplus_O_r : forall a : Real, a + Rzero == a.
 Proof.
-Admitted.
+  intros.
+  destruct a.
+  unfold Rplus.
+  simpl.
+  unfold Reqb.
+  unfold Rle.
+  destruct H.
+  split.
+  - intros.
+    destruct H.
+    destruct H.
+    apply Dedekind_properties6 with x0.
+    split.
+    + apply H.
+    + destruct H. destruct H0.
+      rewrite <- Qplus_0_r with (x := x0).
+      rewrite <- H1.
+      apply Qplus_le_r.
+      apply Qlt_le_weak. apply H0.
+  - intros.
+    unfold Cut_plus_Cut.
+    apply Dedekind_properties7 in H.
+    destruct H.
+    exists x0,(Qplus x (-x0)).
+    split.
+    + apply H.
+    + split.
+      * apply Qplus_lt_l with (z := x0).
+        rewrite Qplus_0_l.
+        rewrite <- Qplus_assoc.
+        rewrite Qplus_comm with (y := x0).
+        rewrite Qplus_opp_r.
+        rewrite Qplus_0_r. apply H.
+      * rewrite Qplus_comm.
+        rewrite <- Qplus_assoc.
+        rewrite Qplus_comm with (y := x0).
+        rewrite Qplus_opp_r.
+        apply Qplus_0_r.
+Qed. 
 
 Theorem Rplus_comm : forall a b : Real, a + b == b + a.
 Proof.
-Admitted.
+  intros.
+  destruct a.
+  destruct b.
+  unfold Reqb.
+  unfold Rplus.
+  simpl.
+  unfold Cut_plus_Cut.
+  split; intros; repeat destruct H1; destruct H2; exists x1,x0.
+  - split.  apply H2. split. apply H1. rewrite <- H3. apply Qplus_comm.
+  - split.  apply H2. split. apply H1. rewrite <- H3. apply Qplus_comm.
+Qed. 
 
 Theorem Rplus_assoc : forall a b c : Real, a + b + c == a + (b + c).
 Proof.
-Admitted.
+  intros.
+  destruct a.
+  destruct b.
+  destruct c.
+  unfold Reqb.
+  unfold Rplus.
+  simpl.
+  unfold Cut_plus_Cut.
+  split; intros; repeat destruct H2; repeat destruct H3.
+  - exists x2 , (Qplus x (-x2)).
+    split. apply H2.
+    split.
+    + exists x3 , x1.
+      split. apply H4.
+      split. apply H3.
+      rewrite <- H5. destruct H4. rewrite <- H6.
+      remember (Qplus x3 x1) as xp.
+      rewrite <- Qplus_comm. rewrite <- Qplus_assoc. rewrite <- Heqxp.
+      rewrite Qplus_comm with (y := xp).
+      rewrite Qplus_comm. rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+      symmetry. apply Qplus_0_r.
+    + rewrite Qplus_comm with (x := x).
+      rewrite Qplus_assoc. rewrite Qplus_opp_r. apply Qplus_0_l.
+  - exists (Qplus x (-x3)) , x3.
+    split.
+    + exists x0,x2.
+      split. apply H2.
+      split. apply H3.
+      rewrite <- H4. destruct H5. rewrite <- H6.
+      rewrite <- Qplus_assoc.
+      rewrite <- Qplus_assoc.
+      rewrite Qplus_opp_r. rewrite Qplus_0_r. reflexivity.
+    + split. apply H5.
+      rewrite <- Qplus_assoc.
+      rewrite Qplus_comm with (y:=x3).
+      rewrite Qplus_opp_r.
+      apply Qplus_0_r.
+Qed.
 
 Theorem Rplus_compat_l :
   forall a b c : Real, a + b == a + c -> b == c.
-Proof.
+Proof. 
 Admitted.
 
 Definition Cut_opp (A : Q -> Prop) : Q -> Prop :=
@@ -345,7 +496,7 @@ Theorem Rplus_opp :
   forall a : Real, a + - a == Rzero.
 Proof.
 Admitted.
-
+(** Third , we will define the plus operation of Set and Real and proof some theorem about it. *)
 Theorem Rmult_O : forall a : Real, a * Rzero == Rzero.
 Proof.
 Admitted.
