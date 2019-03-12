@@ -2,6 +2,7 @@
 
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Bool.Bool.
+From Coq Require Import Logic.Classical.
 From Coq Require Import Init.Nat.
 From Coq Require Import Arith.Arith.
 From Coq Require Import Arith.EqNat.
@@ -263,13 +264,96 @@ Proof.
       apply H4. apply H5.
 Qed.
 
+Theorem not_exists_not_dist :
+  forall (X:Type) (P : X -> Prop),
+    ~ (exists x, ~ P x) <-> (forall x, P x).
+Proof.
+  split.
+  - apply not_ex_not_all.
+  - unfold not. intros. destruct H0. apply H0. apply H.
+Qed.
+
+Theorem not_exists_dist :
+  forall (X:Type) (P : X -> Prop),
+    ~ (exists x, P x) <-> (forall x, ~ P x).
+Proof.
+  split.
+  - apply not_ex_all_not.
+  - unfold not. intros. destruct H0. apply H in H0. apply H0.
+Qed.
+
 Theorem Rnot_le_lt: forall x y : Real, ~ x <= y -> y < x.
 Proof.
-Admitted.
+  intros.
+  destruct x.
+  destruct y.
+  unfold Rle in *.
+  unfold Rlt in *.
+  destruct H0, H1.
+  split.
+  - apply not_all_ex_not in H.
+    rewrite <- not_exists_not_dist.
+    unfold not in *. intros.
+    destruct H, H0.
+    assert(H': Qle x x0 \/ Qle x0 x).
+    { assert(H'':Qle x x0 \/ ~ Qle x x0). apply classic.
+      destruct H''.
+      - left. apply H1.
+      - right. apply Qnot_le_lt in H1. apply Qlt_le_weak. apply H1. }
+    destruct H'.
+    + apply H0. intros. exfalso. apply H. intros.
+      apply (Dedekind_properties10 x0 x ).
+      split.
+      apply H2. apply H1.
+    + apply H. intros. exfalso. apply H0. intros.
+      apply (Dedekind_properties6 x x0 ).
+      split.
+      apply H2. apply H1.
+  - apply not_all_ex_not in H.
+    destruct H.
+    exists x.
+    split.
+    + apply not_imply_elim in H. apply H.
+    + apply not_imply_elim2 in H. apply H.
+Qed.
 
 Theorem Rnot_lt_le: forall x y : Real, ~ x < y -> y <= x.
 Proof.
-Admitted.
+  intros.
+  destruct x.
+  destruct y.
+  unfold Rle in *.
+  unfold Rlt in *.
+  destruct H0, H1.
+  apply not_and_or in H.
+  destruct H.
+  - apply not_all_ex_not in H.
+    rewrite <- not_exists_not_dist.
+    unfold not in *. intros.
+    destruct H, H0.
+    assert(H': Qle x x0 \/ Qle x0 x).
+    { assert(H'':Qle x x0 \/ ~ Qle x x0). apply classic.
+      destruct H''.
+      - left. apply H1.
+      - right. apply Qnot_le_lt in H1. apply Qlt_le_weak. apply H1. }
+    destruct H'.
+    + apply H0. intros. exfalso. apply H. intros.
+      apply (Dedekind_properties10 x0 x ).
+      split.
+      apply H2. apply H1.
+    + apply H. intros. exfalso. apply H0. intros.
+      apply (Dedekind_properties6 x x0 ).
+      split.
+      apply H2. apply H1.
+  - rewrite not_exists_dist in H.
+    intros.
+    assert(H': ~(A0 x /\ ~ A x)).
+    { apply H. }
+    apply not_and_or in H'.
+    destruct H'.
+    + exfalso. apply H1. apply H0.
+    + apply NNPP in H1. apply H1.
+Qed.
 
 (** Second , we will define the plus operation of Set and Real and proof some theorem about it. *)
 
@@ -472,17 +556,36 @@ Proof.
       apply Qplus_0_r.
 Qed.
 
-Theorem Rplus_compat_l :
-  forall a b c : Real, a + b == a + c -> b == c.
-Proof. 
-Admitted.
-
 Definition Cut_opp (A : Q -> Prop) : Q -> Prop :=
-  (fun x => exists r : Q, r > 0 -> ~(A (Qplus (-x) (-r))))
+  (fun x => exists r : Q, (r > 0 -> ~(A (Qplus (-x) (-r)))))
 .
 
 Theorem Dedekind_opp : forall A : Q -> Prop , Dedekind A -> Dedekind (Cut_opp A).
 Proof.
+  intros.
+  destruct H.
+  unfold Cut_opp.
+  split.
+  - destruct Dedekind_properties5. split.
+    + destruct H0.
+      exists (Qplus (- x) (-1 # 1) ), 1.
+      remember (Qplus (- x) (-1 # 1) ) as x0.
+      unfold not in *.  intros.   apply H0.
+      apply Dedekind_properties8 with (p := Qplus (- x0)  (- (1))).
+      * apply Qplus_inj_l with (z := x0).
+        rewrite Qplus_assoc.  rewrite Qplus_opp_r.
+        rewrite Qplus_0_l. rewrite Qplus_comm.
+        rewrite Heqx0.
+        rewrite Qplus_assoc. rewrite Qplus_opp_r.
+        reflexivity.
+      * apply H2.
+   + destruct H.
+     exists (-x).
+     apply not_exists_dist.
+     intros.
+     unfold not.
+     intros.
+     assert (H' : (Qlt 0 x0)\/ ~(Qlt 0 x0)).
 Admitted.
 
 Definition Ropp (a : Real) : Real :=
@@ -496,6 +599,33 @@ Theorem Rplus_opp :
   forall a : Real, a + - a == Rzero.
 Proof.
 Admitted.
+
+Theorem Rplus_l_compat :
+  forall a b c : Real, b == c -> a + b == a + c.
+Proof. 
+  unfold Reqb, Rle. destruct a, b, c. simpl. unfold Cut_plus_Cut.
+  intros.
+  destruct H2.
+  split.
+  - intros.
+    destruct H4, H4, H4, H5.
+    exists x0, x1.
+    split. apply H4.
+    split. apply H2, H5.
+    apply H6.
+  - intros.
+    destruct H4, H4, H4, H5.
+    exists x0, x1.
+    split. apply H4.
+    split. apply H3, H5.
+    apply H6.
+Qed.
+
+Theorem Rplus_compat_l :
+  forall a b c : Real, a + b == a + c -> b == c.
+Proof. 
+Admitted.
+
 (** Third , we will define the plus operation of Set and Real and proof some theorem about it. *)
 Theorem Rmult_O : forall a : Real, a * Rzero == Rzero.
 Proof.
