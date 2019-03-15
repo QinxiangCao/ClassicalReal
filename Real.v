@@ -557,7 +557,7 @@ Proof.
 Qed.
 
 Definition Cut_opp (A : Q -> Prop) : Q -> Prop :=
-  (fun x => exists r : Q, (r > 0 -> ~(A (Qplus (-x) (-r)))))
+  (fun x => exists r : Q, (r > 0 /\ ~(A (Qplus (-x) (-r)))))
 .
 
 Theorem Dedekind_opp : forall A : Q -> Prop , Dedekind A -> Dedekind (Cut_opp A).
@@ -570,7 +570,7 @@ Proof.
     + destruct H0.
       exists (Qplus (- x) (-1 # 1) ), 1.
       remember (Qplus (- x) (-1 # 1) ) as x0.
-      unfold not in *.  intros.   apply H0.
+      unfold not in *. split. reflexivity. intros.   apply H0.
       apply Dedekind_properties8 with (p := Qplus (- x0)  (- (1))).
       * apply Qplus_inj_l with (z := x0).
         rewrite Qplus_assoc.  rewrite Qplus_opp_r.
@@ -578,27 +578,144 @@ Proof.
         rewrite Heqx0.
         rewrite Qplus_assoc. rewrite Qplus_opp_r.
         reflexivity.
+      * apply H1.
+    + destruct H.
+      exists (-x).
+      apply not_exists_dist.
+      intros.
+      unfold not.
+      intros.
+      assert (H' : (Qlt 0 x0) -> A (Qplus (Qopp(Qopp(x))) (Qopp x0))).
+      { intros.
+        assert(H':Qeq (Qopp(Qopp(x))) x).
+        { apply Qopp_involutive. }
+        { apply (Dedekind_properties6 x).
+          split.
+          * apply H.
+          * rewrite <- (Qplus_0_r x).
+            apply Qplus_le_compat. rewrite Qplus_0_r. rewrite H'. apply Qle_refl.
+            apply (Qopp_le_compat 0 x0).
+            apply Qlt_le_weak. apply H2. } }
+      destruct H1. apply H2. apply H'. apply H1.
+  - intros. destruct H. destruct H. destruct H. 
+    exists x. split.
+    + apply H.
+    + unfold not. intros. apply H1. apply (Dedekind_properties6 (Qplus (Qopp q) (Qopp x))).
+      split.
       * apply H2.
-   + destruct H.
-     exists (-x).
-     apply not_exists_dist.
-     intros.
-     unfold not.
-     intros.
-     assert (H' : (Qlt 0 x0)\/ ~(Qlt 0 x0)).
-Admitted.
+      * apply Qplus_le_compat. apply Qopp_le_compat. apply H0. apply Qle_refl.
+  - intros.
+    inversion H.
+    exists (Qplus p (x * / (2 # 1))).
+    split.
+    exists (x * / (2 # 1)).
+    split.
+    + assert (H' : Qeq 0 (0 * / (2 # 1))).
+      { reflexivity. }
+      rewrite H'.
+      apply Qmult_lt_compat_r.
+      reflexivity.
+      apply H0.
+    + unfold not in *.
+      intros. apply H0.
+      apply Dedekind_properties8 with (p := Qplus (- (Qplus p  (x * / (2 # 1)))) (-(x * / (2 # 1)))).
+      assert (H' : Qeq x (Qplus (x * / (2 # 1)) (x * / (2 # 1)))).
+      { rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_1_r.
+        rewrite <- Qmult_assoc.
+        rewrite Qmult_inj_l with (z := x).
+        reflexivity.
+        apply Qnot_eq_sym. apply Qlt_not_eq. apply H0.
+      }
+      apply Qplus_inj_l with (z := Qplus p (x * / (2 # 1))).
+      rewrite Qplus_assoc. rewrite Qplus_opp_r.
+      rewrite Qplus_0_l.  rewrite Qplus_assoc.  rewrite Qplus_comm.
+      rewrite Qplus_comm with (x := p).
+      rewrite <- Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_r.
+      rewrite Qplus_comm.
+      apply Qplus_inj_l with (z := (x * / (2 # 1))).
+      rewrite Qplus_opp_r. rewrite Qplus_assoc.
+      rewrite <- H'. symmetry.
+      apply Qplus_opp_r.
+      apply H1.
+    + rewrite <- Qplus_0_r.
+      rewrite <- Qplus_assoc.
+      rewrite Qplus_lt_r with (z := p).
+      rewrite Qplus_0_l.
+      apply Qlt_shift_div_l ; try (reflexivity).
+      assert (H' : Qeq 0 (0 * (2 # 1))).
+      { reflexivity. }
+      rewrite <- H'. apply H0.
+  - intros.
+    inversion H0.
+    exists x.
+    split. apply H1.
+    unfold not in *.
+    intros.
+    apply H1.
+    apply Dedekind_properties8 with (p := Qplus (-q) (-x)).
+    apply Qplus_inj_r.
+    apply Qplus_inj_l with (z := Qplus p q).
+    rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+    rewrite Qplus_0_r.
+    rewrite <- Qplus_assoc. rewrite Qplus_comm with (x := q). 
+    rewrite Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_l.
+    apply H. apply H2.
+Qed.
 
 Definition Ropp (a : Real) : Real :=
   match a with
     | Real_cons A HA => Real_cons (Cut_opp A) (Dedekind_opp A HA)
   end.
 
-Notation " - a" := (Ropp a).
-
 Theorem Rplus_opp :
-  forall a : Real, a + - a == Rzero.
+  forall a : Real, a + (Ropp a) == Rzero.
 Proof.
-Admitted.
+  intros.
+  destruct a.
+  unfold Reqb.
+  simpl. split.
+  - intros.
+    repeat destruct H0.
+    destruct H1.
+    destruct H1.
+    destruct H1.
+    rewrite <- H2.
+    apply Qplus_lt_l with (z := (-x1)).
+    rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+    rewrite Qplus_0_r. rewrite Qplus_0_l.
+    apply Qlt_trans with (y := Qplus (-x1) (-x2)).
+    apply Dedekind_le with A ; auto.
+    apply Qplus_lt_r with (z := Qplus x2 x1).
+    rewrite <- Qplus_assoc. rewrite <- Qplus_assoc.
+    rewrite <- Qplus_comm. rewrite Qplus_assoc. 
+    rewrite Qplus_opp_r. rewrite Qplus_0_l. rewrite Qplus_comm.
+    rewrite Qplus_opp_r. rewrite Qplus_0_r. apply H1.
+  - intros.
+    unfold Cut_plus_Cut.
+    inversion H.
+    destruct Dedekind_properties5.
+    destruct H1.
+    exists x0, (Qplus (-x0) x).
+    split. apply H1.
+    split. unfold Cut_opp.
+    destruct H2.
+    exists (Qplus (-x1) (Qplus (-x0) (-x))).
+    split. 
+    apply Qplus_lt_l with (z := Qplus x0 x).
+    rewrite Qplus_0_l. rewrite <- Qplus_assoc.
+    assert (H' : Qeq (Qplus (Qplus (-x0) (-x)) (Qplus x0 x)) 0).
+    {
+      rewrite Qplus_assoc.
+      rewrite Qplus_comm.
+      rewrite <- Qplus_assoc.
+      rewrite Qplus_comm with (y := Qplus (-x) x0).
+      rewrite <- Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_r.
+      apply Qplus_opp_r.
+    }
+    rewrite H'. 
+    apply Qplus_lt_le_compat.
+    apply Dedekind_le with A ; auto.
+Abort.
 
 Theorem Rplus_l_compat :
   forall a b c : Real, b == c -> a + b == a + c.
@@ -626,7 +743,7 @@ Theorem Rplus_compat_l :
 Proof. 
 Admitted.
 
-(** Third , we will define the plus operation of Set and Real and proof some theorem about it. *)
+(** Third , we will define the plus operation of Set and Real and proof some theorem about it. 
 Theorem Rmult_O : forall a : Real, a * Rzero == Rzero.
 Proof.
 Admitted.
@@ -652,7 +769,7 @@ Theorem Rmult_inv :
   forall a : Real, (a <> Rzero) -> exists b, a * b == Rone.
 Proof.
 Admitted.
-
+*)
 End Definition_1.
 
-(* Sat 2019.3.2 16:37 Wu Xiwei , Hu Zhixuan *)
+(* Fri 2019.3.15 12:44 Wu Xiwei , Hu Zhixuan *)
