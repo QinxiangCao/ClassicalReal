@@ -192,7 +192,7 @@ Proof.
   destruct y.
   unfold Rle in *.
   unfold Rlt in *.
-  destruct H0, H1.
+  rename H0 into DA, H1 into DA0.
   split.
   - apply not_all_ex_not in H.
     rewrite <- not_exists_not_dist.
@@ -205,11 +205,11 @@ Proof.
       - right. apply Qnot_le_lt in H1. apply Qlt_le_weak. apply H1. }
     destruct H'.
     + apply H0. intros. exfalso. apply H. intros.
-      apply (Dedekind_properties10 x0 x ).
+      apply (Dedekind_properties2 _ DA0 x0 x ).
       split.
       apply H2. apply H1.
     + apply H. intros. exfalso. apply H0. intros.
-      apply (Dedekind_properties6 x x0 ).
+      apply (Dedekind_properties2 _ DA x x0 ).
       split.
       apply H2. apply H1.
   - apply not_all_ex_not in H.
@@ -227,7 +227,7 @@ Proof.
   destruct y.
   unfold Rle in *.
   unfold Rlt in *.
-  destruct H0, H1.
+  rename H0 into DA, H1 into DA0.
   apply not_and_or in H.
   destruct H.
   - apply not_all_ex_not in H.
@@ -241,11 +241,11 @@ Proof.
       - right. apply Qnot_le_lt in H1. apply Qlt_le_weak. apply H1. }
     destruct H'.
     + apply H0. intros. exfalso. apply H. intros.
-      apply (Dedekind_properties10 x0 x ).
+      apply (Dedekind_properties2 _ DA0 x0 x ).
       split.
       apply H2. apply H1.
     + apply H. intros. exfalso. apply H0. intros.
-      apply (Dedekind_properties6 x x0 ).
+      apply (Dedekind_properties2 _ DA x x0 ).
       split.
       apply H2. apply H1.
   - rewrite not_exists_dist in H.

@@ -43,7 +43,6 @@ Theorem Dedekind_Q : forall x1 : Q , Dedekind (fun x=> x < x1).
 Proof.
   split.
   - split.
-    Search Qlt.
     exists (x1 - 1).
     + intros. unfold Qlt.
       simpl.
@@ -61,7 +60,6 @@ Proof.
     apply Qle_lt_trans with (y := p). apply H1.
     apply H0.
   - intros.
-    Search Qmake.
     exists ((p + x1) * / (2 # 1) ).
     split.
     + apply Qlt_shift_div_r. 
@@ -110,15 +108,15 @@ Definition Rone : Real := Real_cons (fun x => x < 1) (Dedekind_Q 1).
 Lemma Dedekind_le : forall A x x1, Dedekind A -> (~ A x) -> A x1 -> x > x1.
 Proof.
   intros.
-  destruct H.
   apply Qnot_le_lt.
   unfold not.
   intros. 
   apply H0. 
-  apply Dedekind_properties6 with x1.
+  apply (Dedekind_properties2 _ H) with x1.
   split.
   apply H1.
-  apply H.
+  apply H2.
 Qed.
 
 (* Fri 2019.3.15 12:44 Wu Xiwei , Hu Zhixuan *)
+
