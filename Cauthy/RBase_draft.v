@@ -11,29 +11,29 @@ From Coq Require Import QArith.QArith_base.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
 From Coq Require Import Logic.Classical.
+From Coq Require Import Classes.Equivalence.
 
+Print Equivalence.
 
-
-
-Import ListNotations.
-
+Print Reflexive.
 
 Definition Cauchy (CSeq :nat -> Q) : Prop :=
   forall (eps:Q), eps > 0 -> (exists (n:nat),
      forall (m1 m2:nat), (m1 > n)%nat /\ (m2 > n)%nat
          -> Qabs ((CSeq m1) + (- CSeq m2)) < eps).
+(** why not (CSeq m1 - CSeq m2)? -- Qinxiang *)
 
 Inductive Real : Type :=
 | Real_intro (x : nat -> Q) (H:Cauchy x).
 
 Definition Real_equiv (x1 x2 : Real) : Prop :=
-  match x1 with
-  | Real_intro CSeq1 H1 =>
-    match x2 with
-    | Real_intro CSeq2 H2 =>
+  match x1, x2 with
+  | Real_intro CSeq1 H1,
+    Real_intro CSeq2 H2 =>
       forall (eps:Q), eps>0 -> (exists (n:nat),
         forall (m:nat), (m > n)%nat ->
-         Qabs (CSeq1 m + - CSeq2 m) < eps) end end.
+         Qabs (CSeq1 m + - CSeq2 m) < eps)
+  end.
 
 (*Some basic definition & properties of relations*)
 
@@ -70,11 +70,8 @@ Qed.
 Lemma Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
    Qabs (a - b) + Qabs (b - c).
 Proof. intros.
-    assert (Heq: a - c == (a - b) + (b - c)). 
-      {  rewrite <- (Qplus_assoc a (-b) (b - c)).
-         rewrite (Qplus_assoc (-b) b (-c)).
-         rewrite (Qplus_comm (- b)). rewrite (Qplus_opp_r).
-         rewrite Qplus_0_l. reflexivity.  }
+    assert (Heq: a - c == (a - b) + (b - c)) by ring.
+    (** Take a look at this ring tactic --- Qinxiang *)
     rewrite Heq.
     apply Qabs_triangle.
 Qed.
@@ -142,8 +139,8 @@ Notation "a == b" := (Real_equiv a b) :Real_scope.
 
 Bind Scope Real_scope with Real.
 
-Delimit Scope Real_Scope with R.
-
+Delimit Scope Real_scope with R.
+(** Make sure that your scope name is spelled correctly. -- Qinxiang *)
 (*Next, define the plus operation *)
 Definition CauchySeqPlus (A B: nat -> Q): (nat->Q) :=
   fun (n:nat) => (A n + B n).
