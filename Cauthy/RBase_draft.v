@@ -67,7 +67,7 @@ Proof. unfold symmetric. unfold Real_equiv.
   rewrite (Qabs_Qminus (Seqb m) (Seqa m)). apply H0. apply H1.
 Qed.
 (*A helping lemma in Qabs-related proofs.*)
-Theorem Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
+Lemma Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
    Qabs (a - b) + Qabs (b - c).
 Proof. intros.
     assert (Heq: a - c == (a - b) + (b - c)). 
@@ -78,22 +78,25 @@ Proof. intros.
     rewrite Heq.
     apply Qabs_triangle.
 Qed.
+Lemma eps_divide_2_positive: forall (eps:Q), 0 < eps -> eps * (1 # 2) > 0.
+Proof. intros. unfold Qmult. unfold Qlt. simpl.
+    rewrite <- Zmult_assoc. simpl. apply H.
+Qed.
+Lemma eps_over_2_plus : forall (eps:Q),  eps == eps *(1#2) + eps *(1#2).
+Proof. intros. rewrite <- Qmult_plus_distr_r. unfold Qplus.
+  simpl. assert (His1:(4 # 4) == 1) by reflexivity.
+  rewrite His1. rewrite Qmult_1_r. reflexivity.
+Qed.
 
 Theorem Real_def_trans: transitive Real_equiv.
 Proof. unfold transitive. unfold Real_equiv.
   intros a b c Hab Hbc. destruct a as [Seqa Ha].
   destruct b as [Seqb Hb]. destruct c as [Seqc Hc]. intros.
-  assert (H'1: 0 < eps* (1#2)). { unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H. }
-  assert (H'2: 0 < eps* (1#2)). { unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H. }
-  apply Hab in H'1. apply Hbc in H'2.
-  destruct H'1 as [n1 H1]. destruct H'2 as [n2 H2].
+  destruct (Hab _ (eps_divide_2_positive eps H)) as [n1 H1].
+  destruct (Hbc _ (eps_divide_2_positive eps H)) as [n2 H2].
 
-assert (H7: eps == eps *(1#2) + eps *(1#2)).
-{ rewrite <- Qmult_plus_distr_r. unfold Qplus.
-  simpl. assert (His1:(4 # 4) == 1) by reflexivity.
-  rewrite His1. rewrite Qmult_1_r. reflexivity. }
+assert (H7: eps == eps *(1#2) + eps *(1#2)) by (apply eps_over_2_plus).
+
 
 assert (H0: le n1 n2 \/ ~ (le n1 n2)). { apply classic. } destruct H0.
   * exists n2. intros. assert (H4: (m > n1)%nat). { omega. }
@@ -150,17 +153,11 @@ Theorem Cauchy_Plus_Cauchy: forall A B, Cauchy A -> Cauchy B
 
 Proof. intros. unfold Cauchy in *. intros.
 
-assert (H'1: 0 < eps* (1#2)). { unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H1. }
-assert (H'2: 0 < eps* (1#2)). { unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H1. }
-  apply H in H'1. apply H0 in H'2.
-  destruct H'1 as [n1 H3]. destruct H'2 as [n2 H4].
+  destruct (H _ (eps_divide_2_positive eps H1)) as [n1 H3].
+  destruct (H0 _ (eps_divide_2_positive eps H1)) as [n2 H4].
 
-assert (H2: eps == eps *(1#2) + eps *(1#2)).
-  { rewrite <- Qmult_plus_distr_r. unfold Qplus.
-    simpl. assert (His1:(4 # 4) == 1) by reflexivity.
-    rewrite His1. rewrite Qmult_1_r. reflexivity. }
+assert (H2: eps == eps *(1#2) + eps *(1#2)) by (apply eps_over_2_plus).
+
 
 
 assert (Hn: le n1 n2 \/ ~ (le n1 n2)). { apply classic. } destruct Hn.
@@ -209,15 +206,10 @@ Proof. intros A1 A2 B1 B2 Heqa Heqb. unfold Real_equiv.
   destruct A1, A2, B1, B2.
   unfold Rplus. intros eps Heps.
   unfold Real_equiv in *.
+  destruct (Heqa _ (eps_divide_2_positive eps Heps)) as [na Ha].
+  destruct (Heqb _ (eps_divide_2_positive eps Heps)) as [nb Hb].
+  assert (H6: eps == eps *(1#2) + eps *(1#2)) by (apply eps_over_2_plus).
 
-  assert (H'1: 0 < eps* (1#2)). { unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply Heps. }
-  assert (H'2: 0 < eps* (1#2)). { unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply Heps. }
-
-  apply Heqa in H'1. apply Heqb in H'2.
-  clear Heqa. clear Heqb.
-  destruct H'1 as [na Ha]. destruct H'2 as [nb Hb].
 
 assert (Hn: le na nb \/ ~ (le na nb)). { apply classic. } destruct Hn.
   * exists nb. intros. assert (H5: (m > na)%nat). { omega. }
@@ -227,10 +219,6 @@ assert (Hn: le na nb \/ ~ (le na nb)). { apply classic. } destruct Hn.
     rewrite <- (Qplus_assoc (x m)).
       rewrite (Qplus_comm (x1 m)). rewrite <- Qplus_assoc. rewrite <- (Qplus_assoc (-x0 m)).
       rewrite (Qplus_assoc (x m)). reflexivity. }
-  assert (H6: eps == eps *(1#2) + eps *(1#2)).
-  { rewrite <- Qmult_plus_distr_r. unfold Qplus.
-    simpl. assert (His1:(4 # 4) == 1) by reflexivity.
-    rewrite His1. rewrite Qmult_1_r. reflexivity. }
   rewrite H'.
   apply (Qle_lt_trans _ _ _ (Qabs_triangle (x m + -x0 m) (x1 m + - x2 m))).
   rewrite H6. 
@@ -242,17 +230,11 @@ assert (Hn: le na nb \/ ~ (le na nb)). { apply classic. } destruct Hn.
   * apply not_le in H3. exists na. intros.
     assert (H5: (m > nb)%nat). { omega. }
     unfold CauchySeqPlus. apply Ha in H4. apply Hb in H5.
-
   assert (H': x m + x1 m + -(x0 m + x2 m) == (x m + - x0 m) + (x1 m + - x2 m)).
   { rewrite -> Qopp_plus. rewrite Qplus_assoc.
     rewrite <- (Qplus_assoc (x m)). rewrite (Qplus_comm (x1 m)).
     rewrite <- Qplus_assoc. rewrite <- (Qplus_assoc (-x0 m)).
     rewrite (Qplus_assoc (x m)). reflexivity. }
-
-  assert (H6: eps == eps *(1#2) + eps *(1#2)).
-  { rewrite <- Qmult_plus_distr_r. unfold Qplus.
-    simpl. assert (His1:(4 # 4) == 1) by reflexivity.
-    rewrite His1. rewrite Qmult_1_r. reflexivity. }
   rewrite H'.
   apply (Qle_lt_trans _ _ _ (Qabs_triangle (x m + -x0 m) (x1 m + - x2 m))).
   rewrite H6. 
@@ -262,10 +244,7 @@ assert (Hn: le na nb \/ ~ (le na nb)). { apply classic. } destruct Hn.
 Qed.
 
 
-Lemma eps_divide_2_positive: forall (eps:Q), eps > 0 -> eps * (1 # 2) > 0.
-Proof. intros. unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H.
-Qed.
+
 
 Theorem Rplus_comm : forall (A B: Real),
   Real_equiv (A + B) (B + A).
