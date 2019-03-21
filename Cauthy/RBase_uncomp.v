@@ -205,19 +205,94 @@ Definition Rzero:Real :=
 Theorem Cauthy_Plus_equiv: forall (A1 A2 B1 B2: Real),
   (A1 == A2)%R -> (B1 == B2)%R ->
   ((Rplus A1 B1) == (Rplus A2 B2))%R. 
-Proof. Admitted.
+Proof. intros A1 A2 B1 B2 HeqA HeqB. unfold Real_equiv in *.
+  destruct A1 as [a1 Ha1], B1 as [b1 Hb1].
+  destruct A2 as [a2 Ha2], B2 as [b2 Hb2].
+  unfold Rplus. intros eps Heps.
+  destruct (HeqA _ (eps_divide_2_positive _ Heps)) as [n1 Heqa].
+  destruct (HeqB _ (eps_divide_2_positive _ Heps)) as [n2 Heqb].
+  clear HeqA. clear HeqB.
+  assert (Heps': eps == eps *(1#2) + eps *(1#2)) by ring.
+assert (Hn: le n1 n2 \/ ~ (le n1 n2)). { apply classic. } destruct Hn as [Hn |Hn].
+  * exists n2. intros m Hn2. assert (Hn1: (m > n1)%nat) by omega.
+    unfold CauchySeqPlus. intros q1 q2 [H1 H2].
+    inversion Ha1 as [Ca1exists _ _ _]. destruct (Ca1exists m) as [qa1 Hqa1].
+    inversion Ha2 as [Ca2exists _ _ _]. destruct (Ca2exists m) as [qa2 Hqa2].
+    inversion Hb1 as [Cb1exists _ _ _]. destruct (Cb1exists m) as [qb1 Hqb1].
+    inversion Hb2 as [Cb2exists _ _ _]. destruct (Cb2exists m) as [qb2 Hqb2].
+    assert (E1: a1 m qa1 /\ b1 m qb1) by auto.
+    assert (E2: a2 m qa2 /\ b2 m qb2) by auto.
+    apply H1 in E1. apply H2 in E2.
+    rewrite E1,E2. assert (H': qa1 + qb1 - (qa2 + qb2) == qa1 - qa2 + (qb1 - qb2)) by ring.
+    rewrite H'. rewrite Heps'.
+    assert (E3: a1 m qa1 /\ a2 m qa2) by auto.
+    assert (E4: b1 m qb1 /\ b2 m qb2) by auto.
+    apply (Heqa m Hn1) in E3. apply (Heqb m Hn2) in E4. apply Qlt_le_weak in E4.
+    apply (Qle_lt_trans _ _ _ (Qabs_triangle (qa1 - qa2) (qb1 - qb2))).
+    apply (Qplus_lt_le_compat _ _ _ _ E3 E4).
+  * exists n1. intros m Hn1. assert (Hn2: (m > n2)%nat) by omega.
+    unfold CauchySeqPlus. intros q1 q2 [H1 H2].
+    inversion Ha1 as [Ca1exists _ _ _]. destruct (Ca1exists m) as [qa1 Hqa1].
+    inversion Ha2 as [Ca2exists _ _ _]. destruct (Ca2exists m) as [qa2 Hqa2].
+    inversion Hb1 as [Cb1exists _ _ _]. destruct (Cb1exists m) as [qb1 Hqb1].
+    inversion Hb2 as [Cb2exists _ _ _]. destruct (Cb2exists m) as [qb2 Hqb2].
+    assert (E1: a1 m qa1 /\ b1 m qb1) by auto.
+    assert (E2: a2 m qa2 /\ b2 m qb2) by auto.
+    apply H1 in E1. apply H2 in E2.
+    rewrite E1,E2. assert (H': qa1 + qb1 - (qa2 + qb2) == qa1 - qa2 + (qb1 - qb2)) by ring.
+    rewrite H'. rewrite Heps'.
+    assert (E3: a1 m qa1 /\ a2 m qa2) by auto.
+    assert (E4: b1 m qb1 /\ b2 m qb2) by auto.
+    apply (Heqa m Hn1) in E3. apply (Heqb m Hn2) in E4. apply Qlt_le_weak in E4.
+    apply (Qle_lt_trans _ _ _ (Qabs_triangle (qa1 - qa2) (qb1 - qb2))).
+    apply (Qplus_lt_le_compat _ _ _ _ E3 E4).
+Qed.
+
 
 Theorem Rplus_comm : forall (A B: Real),
   (A + B == B + A)%R.
-Proof. Admitted.
+Proof. intros. unfold Real_equiv. destruct A as [A HA], B as [B HB].
+  unfold Rplus. intros eps Heps. exists O. intros m Hm q1 q2 [H1 H2].
+  unfold CauchySeqPlus in *.
+  inversion HA as [CA1 CA2 CA3 CA4]. inversion HB as [CB1 CB2 CB3 CB4].
+  destruct (CA1 m) as [qa Hqa]. destruct (CB1 m) as [qb Hqb].
+  assert (E1: q1 == qa + qb). { apply H1. split. apply Hqa. apply Hqb. }
+  assert (E2: q2 == qb + qa). { apply H2. split. apply Hqb. apply Hqa. }
+  rewrite E1. rewrite E2. assert (E:qa + qb - (qb + qa) == 0) by ring.
+  rewrite E. apply Heps.
+Qed.
 
 Theorem Rplus_assoc: forall (A B C: Real),
   (A + B + C == A + (B + C))%R.
-Proof. Admitted.
+Proof. intros. unfold Real_equiv. destruct A as [A HA], B as [B HB], C as [C HC].
+  unfold Rplus. intros eps Heps. exists O. intros m Hm q1 q2 [H1 H2].
+  unfold CauchySeqPlus in *.
+  inversion HA as [CA1 CA2 CA3 CA4]. inversion HB as [CB1 CB2 CB3 CB4].
+  inversion HC as [CC1 CC2 CC3 CC4]. destruct (CA1 m) as [qa Hqa].
+  destruct (CB1 m) as [qb Hqb]. destruct (CC1 m) as [qc Hqc].
+  assert (E1: q1 == qa + qb + qc). {
+    apply (H1 (qa+qb)%Q qc). split. intros qa' qb' [Hqa' Hqb'].
+      assert (Ea':qa' == qa). { apply (CA2 m). split. apply Hqa'. apply Hqa. }
+      assert (Eb':qb' == qb). { apply (CB2 m). split. apply Hqb'. apply Hqb. }
+    rewrite Ea',Eb'. reflexivity. apply Hqc. }
+  assert (E2: q2 == qa + (qb + qc)). {
+    apply (H2 qa (qb+qc)%Q). split. apply Hqa. intros qb' qc' [Hqb' Hqc'].
+      assert (Ec':qc' == qc). { apply (CC2 m). split. apply Hqc'. apply Hqc. }
+      assert (Eb':qb' == qb). { apply (CB2 m). split. apply Hqb'. apply Hqb. }
+    rewrite Ec',Eb'. reflexivity. }
+  rewrite E1,E2. rewrite Qplus_assoc. unfold Qminus. rewrite Qplus_opp_r.
+  apply Heps.
+Qed.
 
 Theorem Rplus_Zero: forall (A : Real),
   (A + Rzero == A)%R.
-Proof. Admitted.
+Proof. intros. destruct A as [A Ha]. unfold Rzero. unfold Rplus.
+  unfold Real_equiv. intros eps Heps. unfold CauchySeqPlus.
+  exists O. intros m Hm q1 q2 [H1 H2].
+  assert (E:A m q2 /\ 0 == 0). split. apply H2. reflexivity.
+  apply H1 in E. rewrite E. rewrite Qplus_0_r. unfold Qminus.
+  rewrite Qplus_opp_r. apply Heps.
+Qed.
 
 
 Definition Cauchy_opp (A : nat -> Q -> Prop): (nat -> Q -> Prop) :=
@@ -254,6 +329,12 @@ Fixpoint Ropp(a : Real) : Real :=
   end.
 
 Theorem Rplus_opp_r : forall (A:Real), Real_equiv (A + (Ropp A))  Rzero.
-Proof. Admitted.
-
-
+Proof. intros. destruct A as [A Ha]. unfold Rzero. unfold Rplus.
+  unfold Real_equiv. intros eps Heps. exists O. unfold Cauchy_opp. unfold CauchySeqPlus.
+  intros m Hm q1 q2 [H1 H2]. inversion Ha.
+  destruct (Cauchy_exists0 m) as [qa Hqa].
+  assert (q1 == qa + (- qa)). { apply H1. split. apply Hqa. intros.
+    assert (E: qa == q0). { apply (Cauchy_unique0 m). auto. }
+    rewrite E. reflexivity. }
+  rewrite H. rewrite Qplus_opp_r. rewrite H2. apply Heps.
+Qed. 
