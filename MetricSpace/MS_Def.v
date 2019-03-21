@@ -21,9 +21,18 @@ Class Metric (A : Type) :={
     dist : A -> A -> X;
     HM_F : Field X;
     HM_OF : OrderField X;
-    HM1 : forall (p1 p2 : A), lt (dist p1 p2) x0;
+    HM1 : forall (p1 p2 : A), (lt x0 (dist p1 p2)) \/ (dist p1 p2) = x0;
     HM2 : forall (p1 p2 : A), dist p1 p2 = dist p2 p1;
     HM3 : forall (p : A), dist p p = x0;
-    HM4 : forall (p1 p2 p3 : A), lt (dist p1 p3) (plus (dist p1 p2) (dist p2 p2));
+    HM4 : forall (p1 p2 p3 : A), (lt (dist p1 p3) (plus (dist p1 p2) (dist p2 p2))) \/ (dist p1 p3) = (plus (dist p1 p2) (dist p2 p2));
 }.
 
+Class CauchySeq (A : Type) :={
+    HC_M : Metric A;
+    HC_MF : Field X;
+    HC_MOF : OrderField X;
+    Cseq : nat -> A;
+    HCA : forall (eps : X), lt x0 eps
+      -> (exists (N : X -> nat), forall (m n:nat), (m > (N eps))%nat /\ (n > (N eps))%nat
+         -> lt (dist (Cseq m) (Cseq n)) eps);
+}.
