@@ -99,9 +99,10 @@ Fixpoint Rplus(a b : Real) : Real :=
                           end
   end.
 
-Notation "A + B" := (Rplus A B).
+Notation "A + B" := (Rplus A B) (at level 50, left associativity)
+                       : R_scope.
 
-Theorem Rplus_O_r : forall a : Real, a + Rzero == a.
+Theorem Rplus_O_r : forall a : Real, (a + Rzero)%R == a.
 Proof.
   intros.
   destruct a.
@@ -143,7 +144,7 @@ Proof.
         apply Qplus_0_r.
 Qed. 
 
-Theorem Rplus_comm : forall a b : Real, a + b == b + a.
+Theorem Rplus_comm : forall a b : Real, (a + b)%R == (b + a)%R.
 Proof.
   intros.
   destruct a.
@@ -157,7 +158,7 @@ Proof.
   - split.  apply H2. split. apply H1. rewrite <- H3. apply Qplus_comm.
 Qed.
 
-Theorem Rplus_assoc : forall a b c : Real, a + b + c == a + (b + c).
+Theorem Rplus_assoc : forall a b c : Real, (a + b + c)%R == (a + (b + c))%R.
 Proof.
   intros.
   destruct a.
@@ -168,21 +169,21 @@ Proof.
   simpl.
   unfold Cut_plus_Cut.
   split; intros; repeat destruct H2; repeat destruct H3.
-  - exists x2 , (Qplus x (-x2)).
+  - exists x2 , (x + -x2).
     split. apply H2.
     split.
     + exists x3 , x1.
       split. apply H4.
       split. apply H3.
       rewrite <- H5. destruct H4. rewrite <- H6.
-      remember (Qplus x3 x1) as xp.
+      remember (x3 + x1) as xp.
       rewrite <- Qplus_comm. rewrite <- Qplus_assoc. rewrite <- Heqxp.
       rewrite Qplus_comm with (y := xp).
       rewrite Qplus_comm. rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
       symmetry. apply Qplus_0_r.
     + rewrite Qplus_comm with (x := x).
       rewrite Qplus_assoc. rewrite Qplus_opp_r. apply Qplus_0_l.
-  - exists (Qplus x (-x3)) , x3.
+  - exists (x + - x3) , x3.
     split.
     + exists x0,x2.
       split. apply H2.
@@ -199,7 +200,7 @@ Proof.
 Qed.
 
 Definition Cut_opp (A : Q -> Prop) : Q -> Prop :=
-  (fun x => exists r : Q, (r > 0 /\ ~(A (Qplus (-x) (-r)))))
+  (fun x => exists r : Q, (r > 0 /\ ~(A (-x + -r))))
 .
 
 Theorem Dedekind_opp : forall A : Q -> Prop , Dedekind A -> Dedekind (Cut_opp A).
@@ -210,10 +211,10 @@ Proof.
   split.
   - destruct (Dedekind_properties1 _ DA). split.
     + destruct H0.
-      exists (Qplus (- x) (-1 # 1) ), 1.
-      remember (Qplus (- x) (-1 # 1) ) as x0.
+      exists (- x +  (-1 # 1) ), 1.
+      remember ((- x) + (-1 # 1) ) as x0.
       unfold not in *. split. reflexivity. intros.   apply H0.
-      apply (Dedekind_properties4 _ DA) with (p := Qplus (- x0)  (- (1))).
+      apply (Dedekind_properties4 _ DA) with (p := (- x0) + (- (1))).
       * apply Qplus_inj_l with (z := x0).
         rewrite Qplus_assoc.  rewrite Qplus_opp_r.
         rewrite Qplus_0_l. rewrite Qplus_comm.
@@ -227,9 +228,9 @@ Proof.
       intros.
       unfold not.
       intros.
-      assert (H' : (Qlt 0 x0) -> A (Qplus (Qopp(Qopp(x))) (Qopp x0))).
+      assert (H' : (Qlt 0 x0) -> A (- - x + - x0)).
       { intros.
-        assert(H':Qeq (Qopp(Qopp(x))) x).
+        assert(H': (--x == x)%Q).
         { apply Qopp_involutive. }
         { apply (Dedekind_properties2 _ DA x).
           split.
@@ -248,11 +249,11 @@ Proof.
       * apply Qplus_le_compat. apply Qopp_le_compat. apply H0. apply Qle_refl.
   - intros.
     inversion H.
-    exists (Qplus p (x * / (2 # 1))).
+    exists (p + (x * / (2 # 1))).
     split.
     exists (x * / (2 # 1)).
     split.
-    + assert (H' : Qeq 0 (0 * / (2 # 1))).
+    + assert (H' : (0 == (0 * / (2 # 1)))%Q).
       { reflexivity. }
       rewrite H'.
       apply Qmult_lt_compat_r.
@@ -260,15 +261,15 @@ Proof.
       apply H0.
     + unfold not in *.
       intros. apply H0.
-      apply (Dedekind_properties4 _ DA) with (p := Qplus (- (Qplus p  (x * / (2 # 1)))) (-(x * / (2 # 1)))).
-      assert (H' : Qeq x (Qplus (x * / (2 # 1)) (x * / (2 # 1)))).
+      apply (Dedekind_properties4 _ DA) with (p := (- ( p + (x * / (2 # 1)))) + (-(x * / (2 # 1)))).
+      assert (H' : (x == ((x * / (2 # 1)) + (x * / (2 # 1))))%Q).
       { rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_1_r.
         rewrite <- Qmult_assoc.
         rewrite Qmult_inj_l with (z := x).
         reflexivity.
         apply Qnot_eq_sym. apply Qlt_not_eq. apply H0.
       }
-      apply Qplus_inj_l with (z := Qplus p (x * / (2 # 1))).
+      apply Qplus_inj_l with (z := p + (x * / (2 # 1))).
       rewrite Qplus_assoc. rewrite Qplus_opp_r.
       rewrite Qplus_0_l.  rewrite Qplus_assoc.  rewrite Qplus_comm.
       rewrite Qplus_comm with (x := p).
@@ -284,7 +285,7 @@ Proof.
       rewrite Qplus_lt_r with (z := p).
       rewrite Qplus_0_l.
       apply Qlt_shift_div_l ; try (reflexivity).
-      assert (H' : Qeq 0 (0 * (2 # 1))).
+      assert (H' : (0 == (0 * (2 # 1)))%Q).
       { reflexivity. }
       rewrite <- H'. apply H0.
   - intros.
@@ -296,7 +297,7 @@ Proof.
     apply H1.
     apply (Dedekind_properties4 _ DA) with (p := Qplus (-q) (-x)).
     apply Qplus_inj_r.
-    apply Qplus_inj_l with (z := Qplus p q).
+    apply Qplus_inj_l with (z := p + q).
     rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
     rewrite Qplus_0_r.
     rewrite <- Qplus_assoc. rewrite Qplus_comm with (x := q). 
@@ -309,8 +310,68 @@ Definition Ropp (a : Real) : Real :=
     | Real_cons A HA => Real_cons (Cut_opp A) (Dedekind_opp A HA)
   end.
 
+Notation " - a" := (Ropp a) : R_scope.
+
+Lemma PPNN : forall P :Prop, P -> ~ ~ P.
+Proof.
+  intros. unfold not. intros. apply H0, H.
+Qed.
+
+Lemma inverse_not: forall P Q : Prop,  (P -> Q) <-> (~ Q -> ~ P).
+Proof.
+  split.
+  intros. apply imply_to_or in H. destruct H. apply H. exfalso. apply H0, H.
+  intros. apply imply_to_or in H. destruct H. apply NNPP, H. exfalso. apply H, H0.
+Qed.
+
+Theorem exists_dist :
+  forall (X:Type) (P : X -> Prop),
+    (exists x, P x) <-> ~ (forall x, ~ P x).
+Proof.
+  intros. split.
+  - apply inverse_not. intros. rewrite not_exists_dist. apply NNPP, H.
+  - apply inverse_not. intros. rewrite <- not_exists_dist. apply PPNN, H.
+Qed.
+
+Lemma Qarchimedean : forall p q :Q, p > 0 -> q > 0 -> exists n : Q, n*p>q.
+Proof.
+  intros. exists ((q*/p)+1)%Q. rewrite Qmult_plus_distr_l.
+  assert(H':(~p==0)%Q).
+  { apply Qlt_not_eq in H.
+    unfold not.
+    intros.
+    apply H. rewrite H1. reflexivity.
+  }
+  rewrite Qmult_comm.
+  apply (Qmult_div_r q) in H'.
+  rewrite H'.
+  rewrite Qmult_1_l.
+  apply Qplus_lt_l with (z:=0).
+  rewrite <- Qplus_assoc.
+  rewrite Qplus_lt_r with (z:=q).
+  rewrite Qplus_0_r. apply H.
+Qed.
+
+Lemma mylemma1 : forall (A : Q -> Prop),
+ Dedekind A -> ~ (forall x : Q, A x -> A (x + 1)).
+Proof.
+  intros.
+  destruct (Dedekind_properties1 _ H ).
+  destruct H0, H1.
+  unfold not.
+  intros.
+Admitted.
+
+Lemma Rarchimedean : forall (A : Q -> Prop),
+ Dedekind A -> (exists n:Q, A n /\ ~ A(n + 1)).
+Proof.
+  intros. destruct (Dedekind_properties1 _ H ).
+  destruct H0, H1.
+  rewrite exists_dist. unfold not. intros.
+Admitted.
+
 Theorem Rplus_opp :
-  forall a : Real, a + (Ropp a) == Rzero.
+  forall a : Real, (a + (Ropp a))%R == Rzero.
 Proof.
   intros.
   destruct a.
@@ -336,8 +397,20 @@ Proof.
     unfold Cut_plus_Cut.
     rename H into DA.
     destruct (Dedekind_properties1 _ DA).
-    destruct H.
-    exists x0, (Qplus (-x0) x).
+    destruct H. destruct H1.
+    assert(H': (exists x2 : Q, A x2 /\ Cut_opp A (x - x2))
+     -> exists x2 x3 : Q, A x2 /\ Cut_opp A x3 /\ (x2 + x3 == x)%Q).
+    { intros.
+      destruct H2.
+      exists x2, (Qplus x (-x2)).
+      split. apply H2.
+      split. apply H2.
+      rewrite Qplus_assoc. rewrite <- Qplus_comm. rewrite Qplus_assoc.
+      rewrite <- (Qplus_comm x2). rewrite Qplus_opp_r. rewrite Qplus_0_l. reflexivity.
+    }
+    apply H'.
+    
+(*     exists x0, (Qplus (-x0) x).
     split; [apply H |].
     split.
     * unfold Cut_opp.
@@ -357,11 +430,11 @@ Proof.
         }
         rewrite H'. 
         apply Qplus_lt_le_compat.
-        apply Dedekind_le with A ; auto.
+        apply Dedekind_le with A ; auto. *)
 Abort.
 
 Theorem Rplus_l_compat :
-  forall a b c : Real, b == c -> a + b == a + c.
+  forall a b c : Real, b == c -> (a + b == a + c)%R.
 Proof. 
   unfold Reqb, Rle. destruct a, b, c. simpl. unfold Cut_plus_Cut.
   intros.
@@ -382,10 +455,43 @@ Proof.
 Qed.
 
 Theorem Rplus_compat_l :
-  forall a b c : Real, a + b == a + c -> b == c.
+  forall a b c : Real, (a + b == a + c)%R -> b == c.
 Proof. 
 Admitted.
 
+Definition Cut_multPP (A B : Q -> Prop) : Q -> Prop :=
+ (fun x => exists x0 x1 : Q, x0>0 /\ x1>0 /\ A x0 /\ B x1 /\ (Qeq (x0*x1) x))
+.
+
+Theorem Dedekind_mult (A B : Q -> Prop) : Dedekind A -> Dedekind B -> Dedekind (Cut_multPP A B).
+Proof.
+Admitted.
+
+Definition RmultPP (a b :Real) (H: (Rzero < a)%R /\ (Rzero < b)%R) : Real :=
+  match a with
+  | Real_cons A HA => match b with
+                      | Real_cons B HB =>
+                        Real_cons (Cut_multPP A B) (Dedekind_mult A B HA HB)
+                      end
+  end.
+
+(* Definition Cut_le (A B : Q -> Prop) : Prop :=
+  forall x , A x -> B x.
+
+Definition Cut_lt (A B : Q -> Prop) : Prop :=
+  (forall x , A x -> B x) /\ (exists x, B x /\ ~ A x).
+
+Definition Cut_0 : Q -> Prop :=
+  (fun x => x < 0).
+
+Inductive Cut_mult (A B : Q -> Prop) : Q -> Prop :=
+| PP(H:(Cut_lt Cut_0 A) /\ (Cut_lt Cut_0 B)) :(fun x => (Cut_multPP A B). 
+
+Record Rmult (a b :Real) : Real :={
+ PP(H:(Rzero<a)%R /\ (Rzero<b)%R) : (RmultPP a b)
+ PN(H:(a<Rzero)%R /\ (Rzero<b)%R) : Rmult ((- a)%R b)
+}
+. *)
 (** Third , we will define the plus operation of Set and Real and proof some theorem about it. 
 Theorem Rmult_O : forall a : Real, a * Rzero == Rzero.
 Proof.
