@@ -7,12 +7,15 @@ COQC=$(COQBIN)coqc
 COQDEP=$(COQBIN)coqdep
 
 DIRS = \
-  Dedekind Cauchy Iso Uncomputable MetricSpace
+  QArith_ext Dedekind Cauchy Iso Uncomputable MetricSpace
 
 INCLUDE_DEMO = $(foreach d, $(DIRS), -Q $(CURRENT_DIR)/$(d) CReal.$(d))
 COQ_FLAG = $(INCLUDE_DEMO)
 DEP_DEMO = -Q $(CURRENT_DIR) CReal
 DEP_FLAG = $(DEP_DEMO)
+
+QArith_ext_FILES = \
+  QArith_base_ext.v
 
 Dedekind_FILES = \
   RBase.v ROrder.v RArith.v
@@ -30,6 +33,7 @@ Uncomputable_FILES = \
   ComRealBase.v
 
 FILES = \
+  $(QArith_ext_FILES:%.v=QArith_ext/%.v) \
   $(Dedekind_FILES:%.v=Dedekind/%.v) \
   $(Cauchy_FILES:%.v=Cauchy/%.v) \
   $(Iso_FILES:%.v=Iso/%.v) \

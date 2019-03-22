@@ -8,7 +8,7 @@ From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
 From Coq Require Import Logic.Classical.
 From Coq Require Import Classes.Equivalence.
-
+From CReal Require Import QArith_ext.QArith_base_ext.
 
 Record Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
   Cauchy_exists : forall (n:nat), exists (q:Q), (CSeq n q);
@@ -49,18 +49,6 @@ Proof. unfold symmetric. intros. unfold Real_equiv in *.
   intros. apply H in H0. destruct H0. exists x0. intros.
   apply and_comm in H2. rewrite Qabs_Qminus. apply (H0 m).
   apply H1. apply H2. 
-Qed.
-
-Lemma Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
-   Qabs (a - b) + Qabs (b - c).
-Proof. intros.
-    assert (Heq: a - c == (a - b) + (b - c)) by ring.
-    rewrite Heq.
-    apply Qabs_triangle.
-Qed.
-Lemma eps_divide_2_positive: forall (eps:Q), 0 < eps -> eps * (1 # 2) > 0.
-Proof. intros. unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H.
 Qed.
 
 Theorem Real_def_trans: transitive Real Real_equiv.
