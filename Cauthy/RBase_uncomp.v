@@ -21,7 +21,7 @@ Record Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
      -> forall (q1 q2:Q), (CSeq m1 q1) /\ (CSeq m2 q2) ->
           Qabs (q1 - q2) < eps);
 }.
-
+(**  Use P -> Q -> R instead of P /\ Q -> R -- Qinxiang *)
 Inductive Real : Type :=
 | Real_intro (CSeq : nat -> Q -> Prop) (H: Cauchy CSeq).
 
@@ -35,16 +35,14 @@ Definition Real_equiv (x1 x2 : Real) : Prop :=
           Qabs (q1 - q2) < eps)
   end.
 
-
-
 Theorem Real_def_refl: reflexive Real Real_equiv.
 Proof. unfold reflexive. intros. unfold Real_equiv.
-  destruct x as [x H1]. inversion H1. intros.
-  exists O. intros. apply Cauchy_unique0 in H2.
+  destruct x as [x H1]. intros.
+  exists O. intros. apply (Cauchy_unique _ H1) in H2.
   assert (H': q1 - q2 == 0). { rewrite H2. ring. }
   rewrite H'. apply H.
 Qed.
-
+(** use Record in this elegant way. -- Qinxiang *)
 Theorem Real_def_symm: symmetric Real Real_equiv.
 Proof. unfold symmetric. intros. unfold Real_equiv in *.
   destruct x as [x Hx], y as [y Hy]. inversion Hx. inversion Hy.
@@ -98,7 +96,7 @@ Proof. unfold transitive. intros. unfold Real_equiv in *.
 Qed.
 
 
-Theorem Real_equiv_holds: Equivalence Real_equiv.
+Instance Real_equiv_holds: Equivalence Real_equiv.
 Proof. split.
 - apply Real_def_refl.
 - apply Real_def_symm.
