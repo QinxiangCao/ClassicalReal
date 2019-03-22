@@ -367,6 +367,15 @@ Lemma Rarchimedean : forall (A : Q -> Prop),
 Proof.
   intros. destruct (Dedekind_properties1 _ H ).
   destruct H0, H1.
+  (* exists m:Z, m > 0 /\ x0 - m < x.
+     exists m:Z, m = 0 /\ x0 - m > x. *)
+  (* Define: P (u: nat) := x0 - u > x.
+     P 0, ~ P m, -> exists n, P n /\ ~ P (n + 1). *)
+  Check Z.of_nat.
+  Check Z.to_nat.
+  SearchAbout Z Q.
+  Check inject_Z.
+(** Check these functions and proof approached. -- Qinxiang  *)
   rewrite exists_dist. unfold not. intros.
 Admitted.
 
@@ -463,6 +472,20 @@ Definition Cut_multPP (A B : Q -> Prop) : Q -> Prop :=
  (fun x => exists x0 x1 : Q, x0>0 /\ x1>0 /\ A x0 /\ B x1 /\ (Qeq (x0*x1) x))
 .
 
+Parameter Cut_multPN: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop).
+
+Parameter Cut_multNP: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop).
+
+Parameter Cut_multNN: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop).
+
+(** Write definition like this:
+Definition Cut_mult: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop) :=
+  fun A B x =>
+    (A 0 /\ B 0 /\ Cut_multPP A B x) \/
+    ..
+    
+    
+    -- Qinxiang *)
 Theorem Dedekind_mult (A B : Q -> Prop) : Dedekind A -> Dedekind B -> Dedekind (Cut_multPP A B).
 Proof.
 Admitted.
