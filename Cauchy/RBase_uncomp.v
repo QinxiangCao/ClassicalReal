@@ -625,32 +625,43 @@ Proof. intros [A1 HA1] [A2 HA2] [B1 HB1] [B2 HB2] HAeq HBeq.
 Qed.
 
 
+Definition Cauchy_inv (A : nat -> Q -> Prop): (nat -> Q -> Prop) :=
+    fun (n:nat) (q:Q) =>
+     forall (q1:Q), (A n q1) -> q == /q1.
+
+Lemma Cauchy_nonzero: forall A (eps:Q), Cauchy A -> eps > 0 ->
+  (exists (N:nat), forall (n:nat)(q:Q), (n > N)%nat
+     -> A n q -> Qabs q < eps) -> exists (eps0:Q), 
+  eps0 > 0 /\ (forall (n:nat)(q:Q), A n q -> Qabs q >= eps0).
+Proof. intros A eps HA H [N1 Hlim].
+  apply (Cauchy_def _ HA) in H. destruct H as [N2 HN].
+Admitted.
+  
 
 
-Proof. intros. unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H.
-Qed.
+Theorem Cauchy_inv_Cauchy: forall A, Cauchy A 
+  -> Cauchy (Cauchy_inv A).
+Proof. intros. unfold Cauchy_inv. split.
+  - intros. destruct (Cauchy_exists _ H n) as [q Hq]. exists (/ q).
+    intros. rewrite (Cauchy_unique _ H n q q1 Hq H0). reflexivity.
+  - intros n q1 q2 H1 H2. destruct (Cauchy_exists _ H n) as [q Hq].
+    assert (E1: q1 == / q) by (apply (H1 q Hq)).
+    assert (E2: q2 == / q) by (apply (H2 q Hq)).
+    rewrite E1,E2. reflexivity.
+  - intros. split.
+    + intros. rewrite <- H0. apply H1. apply H2.
+    + intros. rewrite H0. apply H1. apply H2.
+  - intros. apply (Cauchy_def _ H) in H0. destruct H0 as [n H0].
+    exists n. intros. 
+    destruct (Cauchy_exists _ H m1) as [qa Hqa], (Cauchy_exists _ H m2) as [qb Hqb].
+    rewrite (H3 qa Hqa). rewrite (H4 qb Hqb).
 
-  destruct (Cauchy_def _ HA2 (eps * (1#2) *(/ MA2))) as [NA2 HNA2].
-   { apply (Qmult_lt_r _ _ _ MA2p). rewrite Qmult_0_l.
-     rewrite <- (Qmult_assoc (eps * (1 # 2))). rewrite (Qmult_comm _ MA2). rewrite Qmult_inv_r.
-     rewrite Qmult_1_r. apply eps_divide_2_positive. apply Heps. intros contra. rewrite contra in MAp.
-     discriminate MAp. }
-  destruct (Cauchy_def _ HB (eps * (1#2) *(/ MA))) as [NB HNB].
-   { apply (Qmult_lt_r _ _ _ MAp). rewrite Qmult_0_l.
-     rewrite <- (Qmult_assoc (eps * (1 # 2))). rewrite (Qmult_comm _ MA). rewrite Qmult_inv_r.
-     rewrite Qmult_1_r. apply eps_divide_2_positive. apply Heps. intros contra. rewrite contra in MAp.
-     discriminate MAp. }
-  assert (E: eps == MA * (eps * (1 # 2) * / MA) + MA * (eps * (1 # 2) * / MA)).
-   { rewrite <- Qmult_comm.
-     rewrite <- (Qmult_assoc (eps * (1 # 2))).
-     rewrite <- (Qmult_comm MA).
-     rewrite Qmult_inv_r. ring.
-     intros contra. rewrite contra in MAp. discriminate MAp.
-   }
+Admitted.
 
-Check Qeq.
-Locate Proper.
+Fixpoint Rinv(a : Real) : Real :=
+  match a with
+    | (Real_intro A HA) => Real_intro (Cauchy_inv A) (Cauchy_inv_Cauchy A HA) 
+  end.
 
 
 
