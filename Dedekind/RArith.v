@@ -460,20 +460,102 @@ Proof.
 Admitted.
 
 Definition Cut_multPP (A B : Q -> Prop) : Q -> Prop :=
- (fun x => exists x0 x1 : Q, x0>0 /\ x1>0 /\ A x0 /\ B x1 /\ (Qeq (x0*x1) x))
+ (fun x => (exists x0 x1 : Q, x0>0 /\ x1>0 /\ A x0 /\ B x1 /\ (Qeq (x0*x1) x)))
+.
+Definition Cut_multNP (A B : Q -> Prop) : Q -> Prop :=
+ (fun x => (exists x0 x1 : Q, x0<0 /\ x1>0 /\ A x0 /\ ~ B x1 /\ (Qeq (x0*x1) x)))
+.
+Definition Cut_multPN (A B : Q -> Prop) : Q -> Prop :=
+ (fun x => (exists x0 x1 : Q, x0>0 /\ x1<0 /\ ~ A x0 /\ B x1 /\ (Qeq (x0*x1) x)))
+.
+Definition Cut_multNN (A B : Q -> Prop) : Q -> Prop :=
+ (fun x => (exists x0 x1 : Q, x0<0 /\ x1<0 /\ A x0 /\ B x1 /\ (Qeq (x0*x1) x)))
 .
 
-Theorem Dedekind_mult (A B : Q -> Prop) : Dedekind A -> Dedekind B -> Dedekind (Cut_multPP A B).
+Definition Cut_mult : (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop):=
+  (fun A B x => (A 0 /\ B 0 /\ Cut_multPP A B x) \/
+                (~ A 0 /\ B 0 /\ Cut_multNP A B x) \/
+                (A 0 /\ ~ B 0 /\ Cut_multPN A B x) \/
+                (~ A 0 /\ ~ B 0 /\ Cut_multNN A B x))
+.
+
+Theorem Dedekind_mult (A B : Q -> Prop) : Dedekind A -> Dedekind B -> Dedekind (Cut_mult A B).
 Proof.
+  intros. split.
+  - split.
+    + unfold Cut_mult.
+      assert(A 0 \/~ A 0).  { apply classic. }
+      assert(B 0 \/~ B 0).  { apply classic. }
+      destruct H1, H2.
+      * destruct (Dedekind_properties3 _ H 0). apply H1.
+        destruct (Dedekind_properties3 _ H0 0). apply H2.
+        exists (x*x0). left.
+        repeat split; auto.
+        unfold Cut_multPP. exists x, x0. destruct H3, H4.
+        repeat split; auto.
+      * destruct (Dedekind_properties1 _ H ).
+        destruct (Dedekind_properties1 _ H0).
+        destruct H4. assert(x>0).
+        { apply Qnot_le_lt. unfold not in *. intros. apply H4.
+          apply (Dedekind_properties2 _ H 0).
+          split. apply H1. apply H7. }
+        destruct H5. assert(x0<0).
+        { apply Qnot_le_lt. unfold not in *. intros. apply H2.
+          apply (Dedekind_properties2 _ H0 x0).
+          split. apply H5. apply H8. }
+        exists (x*x0). right. right. left.
+        repeat split; auto.
+        exists x, x0. destruct H3.
+        repeat split; auto.
+      * destruct (Dedekind_properties1 _ H ).
+        destruct (Dedekind_properties1 _ H0).
+        destruct H6. assert(x>0).
+        { apply Qnot_le_lt. unfold not in *. intros. apply H6.
+          apply (Dedekind_properties2 _ H0 0).
+          split. auto. auto. }
+        destruct H3. assert(x0<0).
+        { apply Qnot_le_lt. unfold not in *. intros. apply H1.
+          apply (Dedekind_properties2 _ H x0).
+          split. auto. auto. }
+        exists (x0*x). right. left.
+        repeat split; auto.
+        exists x0, x.
+        repeat split; auto.
+      * destruct (Dedekind_properties1 _ H ).
+        destruct (Dedekind_properties1 _ H0).
+        destruct H5. assert(x<0).
+        { apply Qnot_le_lt. unfold not in *. intros. apply H2.
+          apply (Dedekind_properties2 _ H0 x).
+          split. auto. auto. }
+        destruct H3. assert(x0<0).
+        { apply Qnot_le_lt. unfold not in *. intros. apply H1.
+          apply (Dedekind_properties2 _ H x0).
+          split. auto. auto. }
+        exists (x0*x). right. right. right.
+        repeat split; auto.
+        exists x0, x.
+        repeat split; auto.
+    + unfold Cut_mult, not.
+      assert(A 0 \/~ A 0).  { apply classic. }
+      assert(B 0 \/~ B 0).  { apply classic. }
+      destruct H1, H2.
+      * destruct (Dedekind_properties3 _ H 0). apply H1.
+        destruct (Dedekind_properties3 _ H0 0). apply H2.
+        exists (- 1%Q). intros. inversion H5.
+        unfold Cut_multPP in H6.
+        destruct H6, H7, H8, H8, H8, H9, H10, H11. apply Qlt_le_weak in H8. apply Qlt_le_weak in H9. Qmult_le_0_compat
+        unfold Cut_multPP. exists x, x0. destruct H3, H4.
+        repeat split; auto.
 Admitted.
 
-Definition RmultPP (a b :Real) (H: (Rzero < a)%R /\ (Rzero < b)%R) : Real :=
+Definition Rmult (a b :Real) : Real :=
   match a with
   | Real_cons A HA => match b with
                       | Real_cons B HB =>
-                        Real_cons (Cut_multPP A B) (Dedekind_mult A B HA HB)
+                        Real_cons (Cut_mult A B) (Dedekind_mult A B HA HB)
                       end
   end.
+
 
 (* Definition Cut_le (A B : Q -> Prop) : Prop :=
   forall x , A x -> B x.

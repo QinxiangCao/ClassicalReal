@@ -10,6 +10,7 @@ From Coq Require Import omega.Omega.
 From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import QArith.QArith_base.
+From Coq Require Import Classes.Morphisms.
 Import ListNotations.
 
 (** In this part, we use Dedekind Cut to constructing real numbers.*)
