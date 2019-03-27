@@ -472,10 +472,10 @@ Definition Cut_multPP (A B : Q -> Prop) : Q -> Prop :=
  (fun x => (exists x0 x1 : Q, x0>0 /\ x1>0 /\ A x0 /\ B x1 /\ (x <= (x0*x1))))
 .
 Definition Cut_multNP (A B : Q -> Prop) : Q -> Prop :=
- (fun x => (exists x0 x1 : Q, x0<0 /\ x1>0 /\ A x0 /\ ~ B x1 /\ (x <= (x0*x1))))
+ Cut_opp (fun x => (exists x0 x1 : Q, x0>0 /\ x1>0 /\ Cut_opp A x0 /\ B x1 /\ (x <= (x0*x1))))
 .
 Definition Cut_multPN (A B : Q -> Prop) : Q -> Prop :=
- (fun x => (exists x0 x1 : Q, x0>0 /\ x1<0 /\ ~ A x0 /\ B x1 /\ (x <= (x0*x1))))
+ Cut_opp (fun x => (exists x0 x1 : Q, x0>0 /\ x1>0 /\ A x0 /\ Cut_opp B x1 /\ (x <= (x0*x1))))
 .
 Definition Cut_multNN (A B : Q -> Prop) : Q -> Prop :=
  (fun x => (exists x0 x1 : Q, x0>0 /\ x1>0 /\ Cut_opp A x0 /\ Cut_opp B x1 /\ (x <= (x0*x1))))
@@ -486,14 +486,40 @@ Definition Cut_mult0 (A B : Q -> Prop) : Q -> Prop :=
 
 Definition Cut_mult : (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop):=
   (fun A B x => (A 0 /\ B 0 /\ Cut_multPP A B x) \/
-                (~ A 0 /\ B 0 /\ Cut_multNP A B x) \/
-                (A 0 /\ ~ B 0 /\ Cut_multPN A B x) \/
-                (~ A 0 /\ ~ B 0 /\ Cut_multNN A B x)\/
+                (Cut_opp A 0 /\ B 0 /\ Cut_multNP A B x) \/
+                (A 0 /\Cut_opp B 0 /\ Cut_multPN A B x) \/
+                (Cut_opp A 0 /\ Cut_opp B 0 /\ Cut_multNN A B x)\/
                 (~ A 0 /\ ~ B 0 /\ ~ (Cut_opp A 0 /\ Cut_opp B 0)
                 /\ Cut_mult0 A B x))
 .
 
-
+(** To make sure the definition is correct.  *)
+Lemma Rmult_situation : forall A B, Dedekind A -> Dedekind B ->
+  (A 0/\B 0)\/
+  (Cut_opp A 0 /\ B 0)\/
+  (A 0 /\Cut_opp B 0)\/
+  (Cut_opp A 0 /\ Cut_opp B 0)\/
+  (~ A 0 /\ ~ Cut_opp A 0) \/( ~ B 0 /\ ~ Cut_opp B 0).
+Proof.
+  intros.
+  assert(A 0 \/~ A 0).  { apply classic. }
+  assert(B 0 \/~ B 0).  { apply classic. }
+  assert(Cut_opp A 0 \/~ Cut_opp A 0).  { apply classic. }
+  assert(Cut_opp B 0 \/~ Cut_opp B 0).  { apply classic. }
+  destruct H1, H2.
+  - left. split. auto. auto.
+  - destruct H4.
+    + right. right. left. split. auto. auto.
+    + repeat right. split. auto. auto.
+  - destruct H3.
+    + right. left. split. auto. auto.
+    + right. right. right. right. left. split. auto. auto.
+  - destruct H3.
+    + destruct H4.
+      * right. right. right. left. split. auto. auto.
+      * repeat right; split; auto.
+    + right. right. right. right. left. split. auto. auto.
+Qed.
 
 (** Write definition like this:
 Definition Cut_mult: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop) :=
@@ -552,29 +578,36 @@ Proof.
   intros. split.
   - split.
     + unfold Cut_mult.
-      assert(A 0 \/~ A 0).  { apply classic. }
-      assert(B 0 \/~ B 0).  { apply classic. }
-      destruct H1, H2.
+      assert(
+  (A 0/\B 0)\/
+  (Cut_opp A 0 /\ B 0)\/
+  (A 0 /\Cut_opp B 0)\/
+  (Cut_opp A 0 /\ Cut_opp B 0)\/
+  (~ A 0 /\ ~ Cut_opp A 0) \/( ~ B 0 /\ ~ Cut_opp B 0)).
+      { apply Rmult_situation. auto. auto. }
+        destruct H1. destruct H1.
       * destruct (Dedekind_properties3 _ H 0). apply H1.
         destruct (Dedekind_properties3 _ H0 0). apply H2.
         exists (x*x0). left.
         repeat split; auto.
         unfold Cut_multPP. exists x, x0. destruct H3, H4.
         repeat split; auto. apply Qle_refl.
-      * destruct (Dedekind_properties1 _ H ).
-        destruct (Dedekind_properties1 _ H0).
+      * destruct H1. destruct H1. **
+(*         destruct (Dedekind_properties1 _ H ).
         destruct H4. assert(x>0).
         { apply Qnot_le_lt. unfold not in *. intros. apply H4.
           apply (Dedekind_properties2 _ H 0).
-          split. apply H1. apply H7. }
-        destruct H5. assert(x0<0).
+          split. apply H1. apply H5. }
+        assert(exists x0, x0 < 0).
         { apply Qnot_le_lt. unfold not in *. intros. apply H2.
           apply (Dedekind_properties2 _ H0 x0).
           split. apply H5. apply H8. }
         exists (x*x0). right. right. left.
         repeat split; auto.
-        exists x, x0. destruct H3.
-        repeat split; auto. apply Qle_refl.
+        { unfold Cut_opp.
+          exists (-x0). split. { rewrite <- (Qplus_0_l (- x0)).
+                                 rewrite <- Qlt_minus_iff. auto. }
+                               { 
       * destruct (Dedekind_properties1 _ H ).
         destruct (Dedekind_properties1 _ H0).
         destruct H6. assert(x>0).
@@ -595,7 +628,7 @@ Proof.
         { apply classic. }
         destruct H7.
         ++ unfold Cut_opp in H7. destruct H7, H7, H7, H8, H8.
-        exists (x0*x). right. right. right. left.
+        exists (x/(2#1)*(x0/(2#1))). right. right. right. left.
         repeat split; auto.
         exists (x/(2#1)), (x0/(2#1)).
         repeat split.
@@ -621,8 +654,7 @@ Proof.
         apply (Dedekind_properties4 _ H0 (- (x0 / (2 # 1)) + - (x0 / (2 # 1)))).
         { symmetry. rewrite Qplus_0_l. apply Qdiv2_opp. }
         { auto. }
-        *** rewrite (Qmult_comm x0 x). apply (Qdiv2_x_y x x0).
-            auto. auto.
+        *** apply Qle_refl.
         ++ exists (-1%Q). repeat right. unfold Cut_mult0.
            repeat split; auto.
     + unfold Cut_mult, not.
@@ -639,7 +671,7 @@ Proof.
         apply Qlt_le_weak in H8. apply Qlt_le_weak in H9.
         apply Qmult_le_0_compat with (a:=x2) in H8.
         unfold Cut_multPP. exists x, x0. destruct H3, H4.
-        repeat split; auto.
+        repeat split; auto. *)
 Admitted.
 
 Definition Rmult (a b :Real) : Real :=
