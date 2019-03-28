@@ -32,9 +32,9 @@ Definition Rlt (a b:Real) : Prop :=
 
 Notation "a < b" := (Rlt a b) (at level 70) : R_scope.
 
-Definition Reqb(a b : Real) : Prop := (a <= b)%R /\ (b <= a)%R.
+Definition Req(a b : Real) : Prop := (a <= b)%R /\ (b <= a)%R.
 
-Notation "a == b" := (Reqb a b).
+Notation "a == b" := (Req a b).
 
 Theorem Rle_refl: forall x : Real, (x <= x)%R.
 Proof.
@@ -44,10 +44,10 @@ Proof.
   intros. apply H0.
 Qed.
 
-Theorem Reqb_refl: forall x : Real, x == x.
+Theorem Req_refl: forall x : Real, x == x.
 Proof.
   intros.
-  unfold Reqb.
+  unfold Req.
   split.
   apply Rle_refl.
   apply Rle_refl.
@@ -127,7 +127,7 @@ Theorem Rle_antisym: forall x y : Real,
           (x <= y)%R -> (y <= x)%R -> (x == y)%R.
 Proof.
   intros.
-  unfold Reqb.
+  unfold Req.
   split. apply H. apply H0.
 Qed.
 
@@ -264,7 +264,7 @@ Proof.
     + apply NNPP in H1. apply H1.
 Qed.
 
-Instance R_Setoid : Equivalence Reqb.
+Instance R_Setoid : Equivalence Req.
 Proof.
   split.
   - split.
