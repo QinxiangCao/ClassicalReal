@@ -1,7 +1,15 @@
 From Coq Require Import Init.Nat.
 From Coq Require Import Classes.RelationClasses.
+(** excluded_middle and proof by contradiction**)
+Axiom excluded_middle : forall P : Prop, P \/ ~ P.
+Theorem not_one_another_true : forall P : Prop, (~P -> False) -> P.
+Proof.
+  intros. assert(P \/ ~P). -apply excluded_middle. -destruct H0.
+    +apply H0. +apply H in H0. destruct H0.
+Qed.
+()
+(*****************************************************)
 (** def of preorder-field and metric space **)
-
 Class preOrderField (X : Type) :={
     le : X -> X -> Prop;
     reflexivie : forall (x : X), le x x;
@@ -36,6 +44,8 @@ Local Open Scope Field.
 (** Putting Type definitions in to type class arguments
 are probably better. -- Qinxiang *)
 
+(** Cauchy seq and converge in m-space**)
+
 (** Quote from Litao Zhou's well definition. - B **)
 Class CauchySeq (A : Type) (X : Type) (M : Metric A X) (Cseq : nat -> A -> Prop):={
     HCseq1 : forall(n : nat), (exists (a : A), Cseq n a);
@@ -55,6 +65,8 @@ Class Converge (A : Type) (X : Type)  (M : Metric A X) (Seq : nat -> A -> Prop):
       -> (dist a lim) <= eps);
 }.
 
+(** process of completeness, cauchilize **)
+
 Inductive Cauchilize (A : Type) (X : Type) : Type :=
   | con_intro (Cseq : nat -> A  -> Prop) (M : Metric A X) (H : CauchySeq A X M Cseq) .
 
@@ -62,6 +74,36 @@ Definition A := Type.
 Definition X := Type.
 Definition H := Metric A X.
 
+(** each element in the previous space corresponds an element in the cauchilized space **)
+
+Definition refl {A : Type} (reflseq : seq) (a : A) : Prop :=
+  (forall (n : nat), reflseq n a) /\ (forall (a' : A) (n : nat) , a <> a' -> ~(reflseq n a')).
+
+Theorem c_trans :
+    forall (A X : Type) (M : Metric A X) (reflseq : seq) (a : A),refl reflseq a
+      -> CauchySeq A X M reflseq.
+Proof.
+    intros. unfold refl in H. split. + intros. exists a. apply H.
+  +split. intros. rewrite H0 in H1. apply H1. intros. rewrite H0. apply H1.
+  +intros. assert(~(a <> a1)). {destruct H. unfold not in H2. unfold not.
+    intros. assert(reflseq m a1 -> False). apply H2.  apply H3. apply H4, H0. }
+    apply not_one_another_true in H2.
+    assert(~(a <> a2)). {destruct H. unfold not in H3. unfold not.
+    intros. assert(reflseq m a2 -> False). apply H3.  apply H4. apply H5, H1. }
+    apply not_one_another_true in H3. rewrite  <-H2, H3. reflexivity.
+  +intros. exists 0. intros. destruct H2, H. assert(~(a <> a0)). {
+    unfold not in H4. unfold not. intros. apply H4 with (n := m) in H5.
+    apply H5. apply H2. }
+    apply not_one_another_true in H5.
+    assert(~(a <> b)). unfold not in H4. unfold not. intros. apply H4 with (n := n) in H6.
+   apply H6. apply H3.     apply not_one_another_true in H6.
+    rewrite <-H6, <-H5. assert(dist a a  = x0). apply HM3. rewrite H7.
+    apply H0.
+Qed.
+
+(**uncompleted, Ctr : A -> Cauchilize A X ,trans an element from previous space to cauchilized space - B**)
+
+(** equ-relation on cauchilized space **)
 Definition equC {A X : Type} (x1 : Cauchilize A X) (x2 : Cauchilize A X) :  Prop  :=
   match x1,   x2 with
     | con_intro _ _ cseq1 M1 H1, con_intro _ _ cseq2 M2 H2 =>
@@ -72,6 +114,8 @@ Definition equC {A X : Type} (x1 : Cauchilize A X) (x2 : Cauchilize A X) :  Prop
   end.
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
+    
+(** pre-order relation on cauchilized space**)
 Definition leC {X : Type} (x1 : Cauchilize X X) (x2 : Cauchilize X X)  : Prop :=
     match x1,   x2 with
     | con_intro _ _ cseq1 _ _, con_intro _ _ cseq2 _ _ =>
@@ -91,6 +135,8 @@ Theorem preOrder_trans : forall (X : Type), preOrderField X ->
    preOrderField (Cauchilize X X).
 Proof.
   Admitted.
+
+(** cauchilized space (Cauchilize A X, Cauchilize X X) is also a metric space**)
 
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
