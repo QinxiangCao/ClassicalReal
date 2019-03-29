@@ -1,15 +1,14 @@
 From Coq Require Import Init.Nat.
 From Coq Require Import Classes.RelationClasses.
-(** excluded_middle and proof by contradiction**)
-Axiom excluded_middle : forall P : Prop, P \/ ~ P.
+From Coq Require Import Logic.Classical.
+(** def of preorder-field and metric space **)
+Check NNPP.
 Theorem not_one_another_true : forall P : Prop, (~P -> False) -> P.
 Proof.
   intros. assert(P \/ ~P). -apply excluded_middle. -destruct H0.
     +apply H0. +apply H in H0. destruct H0.
 Qed.
-()
-(*****************************************************)
-(** def of preorder-field and metric space **)
+
 Class preOrderField (X : Type) :={
     le : X -> X -> Prop;
     reflexivie : forall (x : X), le x x;
@@ -25,6 +24,11 @@ Class Field  (X : Type)  :={
     HF4 : forall (x : X), (exists ix, plus x ix = x0);
 }.
 
+Class dense (X : Type) :={
+    D_pO : preOrderField X;
+    D : forall (x1 x2 : X), le x1 x2 -> (exists x3, le x1 x3 /\ le x3 x2);
+}.
+
 Class Metric (A : Type) (X : Type):={
     dist : A -> A -> X;
     HM_F :> Field X;
@@ -34,7 +38,7 @@ Class Metric (A : Type) (X : Type):={
     HM3 : forall (p : A), dist p p = x0;
     HM4 : forall (p1 p2 p3 : A), le (dist p1 p3) (plus (dist p1 p2) (dist p2 p2));
 }.
-(** def of notations with clear meanings - B **)
+(** def of notations with clear meanings **)
 Notation "x <= y" := (le x y): metric.
 Local Open Scope metric.
 Notation "| x , y |" := (dist x y) : metric.
@@ -43,11 +47,10 @@ Notation "x + y" := (plus x y) : Field.
 Local Open Scope Field.
 (** Putting Type definitions in to type class arguments
 are probably better. -- Qinxiang *)
+Definition seq {A : Type} :=nat -> A -> Prop.
 
-(** Cauchy seq and converge in m-space**)
-
-(** Quote from Litao Zhou's well definition. - B **)
-Class CauchySeq (A : Type) (X : Type) (M : Metric A X) (Cseq : nat -> A -> Prop):={
+(** Quote from Litao Zhou's well definition. **)
+Class CauchySeq (A : Type) (X : Type) (M : Metric A X) (Cseq : seq):={
     HCseq1 : forall(n : nat), (exists (a : A), Cseq n a);
     HCseq2 : forall(m : nat) (a1 a2 : A), (a1 = a2) -> (Cseq m a1 <-> Cseq m a2);
     HCseq3 : forall(m : nat) (a1 a2 : A), Cseq m a1 -> Cseq m a2 -> (a1 = a2);
@@ -57,7 +60,7 @@ Class CauchySeq (A : Type) (X : Type) (M : Metric A X) (Cseq : nat -> A -> Prop)
          -> (dist a b) <= eps);
 }.
 
-Class Converge (A : Type) (X : Type)  (M : Metric A X) (Seq : nat -> A -> Prop):={
+Class Converge (A : Type) (X : Type)  (M : Metric A X) (Seq : seq):={
     HC1 : forall(n : nat), (exists (a : A), Seq n a);
     HC2 : forall(m : nat) (a1 a2 : A), (a1 = a2) -> (Seq m a1 <-> Seq m a2);
     HC3 : forall(m : nat) (a1 a2 : A), Seq m a1 -> Seq m a2 -> (a1 = a2);
@@ -65,19 +68,12 @@ Class Converge (A : Type) (X : Type)  (M : Metric A X) (Seq : nat -> A -> Prop):
       -> (dist a lim) <= eps);
 }.
 
-(** process of completeness, cauchilize **)
-
 Inductive Cauchilize (A : Type) (X : Type) : Type :=
-  | con_intro (Cseq : nat -> A  -> Prop) (M : Metric A X) (H : CauchySeq A X M Cseq) .
-
-Definition A := Type.
-Definition X := Type.
-Definition H := Metric A X.
-
-(** each element in the previous space corresponds an element in the cauchilized space **)
+  | con_intro (Cseq : seq) (M : Metric A X) (H : CauchySeq A X M Cseq) .
 
 Definition refl {A : Type} (reflseq : seq) (a : A) : Prop :=
   (forall (n : nat), reflseq n a) /\ (forall (a' : A) (n : nat) , a <> a' -> ~(reflseq n a')).
+
 
 Theorem c_trans :
     forall (A X : Type) (M : Metric A X) (reflseq : seq) (a : A),refl reflseq a
@@ -101,9 +97,12 @@ Proof.
     apply H0.
 Qed.
 
-(**uncompleted, Ctr : A -> Cauchilize A X ,trans an element from previous space to cauchilized space - B**)
+Definition Ctr {A X  :Type} : A -> Cauchilize A X.
+Proof.
+  intros.
 
-(** equ-relation on cauchilized space **)
+
+
 Definition equC {A X : Type} (x1 : Cauchilize A X) (x2 : Cauchilize A X) :  Prop  :=
   match x1,   x2 with
     | con_intro _ _ cseq1 M1 H1, con_intro _ _ cseq2 M2 H2 =>
@@ -114,38 +113,42 @@ Definition equC {A X : Type} (x1 : Cauchilize A X) (x2 : Cauchilize A X) :  Prop
   end.
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
-    
-(** pre-order relation on cauchilized space**)
 Definition leC {X : Type} (x1 : Cauchilize X X) (x2 : Cauchilize X X)  : Prop :=
     match x1,   x2 with
     | con_intro _ _ cseq1 _ _, con_intro _ _ cseq2 _ _ =>
         (exists (N  : nat), forall (n : nat), (n > N)%nat
             ->  forall (a1 a2 : X), cseq1 n a1  -> cseq2 n a2
-             -> a1 <= a2)
+             -> a1 <= a2) \/ equC x1 x2
     end.
 
 Notation " x1 <= x2" := (leC x1 x2).
-(** This notation seems fail to reload - B  **)
+
+Definition A := Type .
+Definition X := Type .
+
 
 Definition siCauchilize : Type :=(Cauchilize A X).
 Definition xsiCauchilize : Type :=(Cauchilize X X) .
 Definition biCauchilize: Type := Cauchilize (Cauchilize A X) (Cauchilize X X).
 
-Theorem preOrder_trans : forall (X : Type), preOrderField X ->
+Theorem preOrder_trans : forall (X : Type), preOrderField X -> dense X ->
    preOrderField (Cauchilize X X).
 Proof.
-  Admitted.
-
-(** cauchilized space (Cauchilize A X, Cauchilize X X) is also a metric space**)
+  intros. split with (le := leC). +intros. unfold leC.
+    inversion X2. 
 
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
   Admitted.
-  
+
+
+
+
 Theorem Cauchilized_x_can_be_divided_by_2 :
     forall (X : Type) (x : Cauchilize X X), (exists x1, leC (x1 + x1) x) .
 Proof.
     Admitted.
+
 
 Theorem Cauchy_seq_converge :
     forall (A X : Type) (seq : nat -> Cauchilize A X -> Prop) (M : Metric (Cauchilize A X) (Cauchilize X X)),
