@@ -25,12 +25,29 @@ Import ListNotations.
     We use the letters p,q,r to denote rational numbers and A,B,C to denote the cuts.
 *)
 
-Record Dedekind ( A : Q-> Prop) : Prop := {
+Class Dedekind ( A : Q-> Prop) : Prop := {
   Dedekind_properties1 : (exists (x : Q) , A x) /\ (exists (x : Q) , ~ A x) ;
   Dedekind_properties2 : forall (p q : Q) , A p /\ (Qle q p) -> A q ;
   Dedekind_properties3 : forall (p : Q) , A p -> (exists r, A r /\ (Qlt p r)) ;
   Dedekind_properties4 : forall (p q : Q), p == q -> A p -> A q ;
 }.
+Arguments Dedekind_properties1 (A) (Dedekind) : clear implicits.
+Arguments Dedekind_properties2 (A) (Dedekind) : clear implicits.
+Arguments Dedekind_properties3 (A) (Dedekind) : clear implicits.
+Arguments Dedekind_properties4 (A) (Dedekind) : clear implicits.
+
+Instance Dedekind_properties4' : forall A, Dedekind A -> Proper (Qeq ==> iff) A.
+Proof.
+  intros.
+  hnf.
+  intros.
+  split.
+  + apply Dedekind_properties4; auto.
+  + apply Dedekind_properties4; auto.
+    symmetry.
+    auto.
+Qed.
+(** Use this instance to improve proofs. -- Qinxiang *)
 
 Inductive Real : Type :=
   | Real_cons (A : Q -> Prop) (H : Dedekind A)

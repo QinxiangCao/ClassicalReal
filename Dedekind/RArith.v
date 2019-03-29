@@ -493,6 +493,13 @@ Definition Cut_mult : (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop):=
                 /\ Cut_mult0 A B x)
 .
 
+Lemma Cut_multPP_spec: forall A B: Q -> Prop,
+  A 0 -> B 0 ->
+  (forall x, Cut_multPP A B x <-> Cut_mult A B x).
+Abort.
+(** Use this lemma to separate the proof that "the multiplication of
+two Dedekind cut is still a Dedekind cut". -- Qinxiang *)
+
 (** To make sure the definition is correct.  *)
 Lemma Rmult_situation : forall A B, Dedekind A -> Dedekind B ->
   (A 0/\B 0)\/
