@@ -10,6 +10,7 @@ From Coq Require Import omega.Omega.
 From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import QArith.QArith_base.
+From Coq Require Import Classes.Morphisms.
 Import ListNotations.
 
 (** In this part, we use Dedekind Cut to constructing real numbers.*)
@@ -24,17 +25,37 @@ Import ListNotations.
     We use the letters p,q,r to denote rational numbers and A,B,C to denote the cuts.
 *)
 
-Record Dedekind ( A : Q-> Prop) : Prop := {
+Class Dedekind ( A : Q-> Prop) : Prop := {
   Dedekind_properties1 : (exists (x : Q) , A x) /\ (exists (x : Q) , ~ A x) ;
   Dedekind_properties2 : forall (p q : Q) , A p /\ (Qle q p) -> A q ;
   Dedekind_properties3 : forall (p : Q) , A p -> (exists r, A r /\ (Qlt p r)) ;
   Dedekind_properties4 : forall (p q : Q), p == q -> A p -> A q ;
 }.
+Arguments Dedekind_properties1 (A) (Dedekind) : clear implicits.
+Arguments Dedekind_properties2 (A) (Dedekind) : clear implicits.
+Arguments Dedekind_properties3 (A) (Dedekind) : clear implicits.
+Arguments Dedekind_properties4 (A) (Dedekind) : clear implicits.
+
+Instance Dedekind_properties4' : forall A, Dedekind A -> Proper (Qeq ==> iff) A.
+Proof.
+  intros.
+  hnf.
+  intros.
+  split.
+  + apply Dedekind_properties4; auto.
+  + apply Dedekind_properties4; auto.
+    symmetry.
+    auto.
+Qed.
+(** Use this instance to improve proofs. -- Qinxiang *)
 
 Inductive Real : Type :=
   | Real_cons (A : Q -> Prop) (H : Dedekind A)
 .
 
+Delimit Scope R_scope with R.
+
+Local Open Scope R_scope.
 (** Then we will add some properties to ensure R become a field.*)
 
 (** First , we find some members to denote zero and one.*)
@@ -56,9 +77,10 @@ Proof.
   - intros.
     inversion H.
     apply Qle_lt_trans with (y := q).
-    apply Qle_lteq. right. reflexivity.
-    apply Qle_lt_trans with (y := p). apply H1.
-    apply H0.
+    + apply Qle_lteq. right. reflexivity.
+    + apply Qle_lt_trans with (y := p).
+      * apply H1.
+      * apply H0.
   - intros.
     exists ((p + x1) * / (2 # 1) ).
     split.
@@ -77,7 +99,9 @@ Proof.
         rewrite Zmult_assoc. reflexivity.
       }
       rewrite H'.
-      apply Qplus_lt_le_compat. apply H. apply Qle_refl.
+      apply Qplus_lt_le_compat.
+      * apply H.
+      * apply Qle_refl.
     + apply Qlt_shift_div_l. 
       reflexivity.
       assert(H' : p * (2 # 1) == p + p).
@@ -114,8 +138,8 @@ Proof.
   apply H0. 
   apply (Dedekind_properties2 _ H) with x1.
   split.
-  apply H1.
-  apply H2.
+  - apply H1.
+  - apply H2.
 Qed.
 
 (* Fri 2019.3.15 12:44 Wu Xiwei , Hu Zhixuan *)

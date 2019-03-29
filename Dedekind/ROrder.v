@@ -13,6 +13,7 @@ Import ListNotations.
 
 (** Next, we will define the plus operation and the mult operation. *)
 (** First, we will define order of Real and proof some theorem about the order.*)
+
 Definition Rle (a b:Real) : Prop :=
   match a with
     | Real_cons A HA => match b with
@@ -20,7 +21,7 @@ Definition Rle (a b:Real) : Prop :=
                         end
   end.
 
-Notation "a <= b" := (Rle a b).
+Notation "a <= b" := (Rle a b) (at level 70) : R_scope.
 
 Definition Rlt (a b:Real) : Prop :=
   match a with
@@ -29,13 +30,13 @@ Definition Rlt (a b:Real) : Prop :=
                         end
   end.
 
-Notation "a < b" := (Rlt a b).
+Notation "a < b" := (Rlt a b) (at level 70) : R_scope.
 
-Definition Reqb(a b : Real) : Prop := a <= b /\ b <= a.
+Definition Req(a b : Real) : Prop := (a <= b)%R /\ (b <= a)%R.
 
-Notation "a == b" := (Reqb a b).
+Notation "a == b" := (Req a b).
 
-Theorem Rle_refl: forall x : Real, x <= x.
+Theorem Rle_refl: forall x : Real, (x <= x)%R.
 Proof.
   intros.
   destruct x.
@@ -43,16 +44,16 @@ Proof.
   intros. apply H0.
 Qed.
 
-Theorem Reqb_refl: forall x : Real, x == x.
+Theorem Req_refl: forall x : Real, x == x.
 Proof.
   intros.
-  unfold Reqb.
+  unfold Req.
   split.
   apply Rle_refl.
   apply Rle_refl.
 Qed.
 
-Theorem Rlt_le_weak: forall x y : Real, x < y -> x <= y.
+Theorem Rlt_le_weak: forall x y : Real, (x < y)%R -> (x <= y)%R.
 Proof.
   intros.
   destruct x.
@@ -62,7 +63,8 @@ Proof.
   apply H2.
 Qed.
 
-Theorem Rle_trans: forall x y z : Real, x <= y -> y <= z -> x <= z.
+Theorem Rle_trans: forall x y z : Real, 
+          (x <= y)%R -> (y <= z)%R -> (x <= z)%R.
 Proof.
   intros.
   destruct x.
@@ -73,7 +75,8 @@ Proof.
   apply H0. apply H. apply H4.
 Qed.
 
-Theorem Rlt_trans: forall x y z : Real, x < y -> y < z -> x < z.
+Theorem Rlt_trans: forall x y z : Real, 
+          (x < y)%R -> (y < z)%R -> (x < z)%R.
 Proof.
   intros.
   destruct x.
@@ -86,7 +89,7 @@ Proof.
     exists x. split. apply H0. apply H6. apply H6.
 Qed.
 
-Theorem Rle_not_lt: forall x y : Real, x <= y -> ~ y < x.
+Theorem Rle_not_lt: forall x y : Real, (x <= y)%R -> ~ (y < x)%R.
 Proof.
   intros.
   destruct x.
@@ -103,7 +106,7 @@ Proof.
   apply H5. apply H4.
 Qed.
 
-Theorem Rlt_not_le: forall x y : Real, x < y -> ~ y <= x.
+Theorem Rlt_not_le: forall x y : Real, (x < y)%R -> ~ (y <= x)%R.
 Proof.
   intros.
   destruct x.
@@ -120,14 +123,16 @@ Proof.
   apply H5. apply H4.
 Qed.
 
-Theorem Rle_antisym: forall x y : Real, x <= y -> y <= x -> x == y.
+Theorem Rle_antisym: forall x y : Real, 
+          (x <= y)%R -> (y <= x)%R -> (x == y)%R.
 Proof.
   intros.
-  unfold Reqb.
+  unfold Req.
   split. apply H. apply H0.
 Qed.
 
-Theorem Rle_lt_trans: forall x y z : Real, x <= y -> y < z -> x < z.
+Theorem Rle_lt_trans: forall x y z : Real, 
+          (x <= y)%R -> (y < z)%R -> (x < z)%R.
 Proof.
   intros.
   destruct x.
@@ -147,7 +152,8 @@ Proof.
       apply H4. apply H. apply H5.
 Qed.
 
-Theorem Rlt_le_trans: forall x y z : Real, x < y -> y <= z -> x < z.
+Theorem Rlt_le_trans: forall x y z : Real, 
+          (x < y)%R -> (y <= z)%R -> (x < z)%R.
 Proof.
   intros.
   destruct x.
@@ -185,7 +191,7 @@ Proof.
   - unfold not. intros. destruct H0. apply H in H0. apply H0.
 Qed.
 
-Theorem Rnot_le_lt: forall x y : Real, ~ x <= y -> y < x.
+Theorem Rnot_le_lt: forall x y : Real, ~ (x <= y)%R -> (y < x)%R.
 Proof.
   intros.
   destruct x.
@@ -220,7 +226,7 @@ Proof.
     + apply not_imply_elim2 in H. apply H.
 Qed.
 
-Theorem Rnot_lt_le: forall x y : Real, ~ x < y -> y <= x.
+Theorem Rnot_lt_le: forall x y : Real, ~ (x < y)%R -> (y <= x)%R.
 Proof.
   intros.
   destruct x.
@@ -258,3 +264,20 @@ Proof.
     + apply NNPP in H1. apply H1.
 Qed.
 
+Instance R_Setoid : Equivalence Req.
+Proof.
+  split.
+  - split.
+    + apply Rle_refl.
+    + apply Rle_refl.
+  - split.
+    + destruct H. apply H0.
+    + destruct H. apply H.
+  - split.
+    + destruct H, H0. apply (Rle_trans x y z).
+      * apply H.
+      * apply H0.
+    + destruct H, H0. apply (Rle_trans z y x).
+      * apply H2.
+      * apply H1.
+Qed.
