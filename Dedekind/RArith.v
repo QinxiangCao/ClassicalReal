@@ -793,6 +793,20 @@ Qed.
 
 Theorem Rmult_1 : forall a : Real, (a * Rone == a)%R.
 Proof.
+  intros. unfold Rmult, Req, Rone. destruct a.
+  unfold Cut_mult. split.
+  - unfold Rle. intros.
+    destruct H0.
+    * unfold Cut_multPP in H0.
+      destruct H0, H1, H2, H2, H2, H3, H4, H5.
+      apply (Dedekind_properties2 _ H x0). split. auto.
+      apply (Qle_trans x (x0*x1) x0). auto.
+      rewrite <- (Qmult_1_r x0). rewrite <- Qmult_assoc.
+      rewrite Qmult_1_l. rewrite Qmult_comm. rewrite (Qmult_comm x0 1).
+      apply Qmult_le_compat_r.
+      apply Qlt_le_weak. auto.
+      apply Qlt_le_weak. auto.
+    * 
 Admitted.
 
 Theorem Rmult_comm : forall a b : Real, (a * b == b * a)%R.
