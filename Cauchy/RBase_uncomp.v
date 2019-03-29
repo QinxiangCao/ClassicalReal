@@ -87,6 +87,8 @@ Record Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
           Qabs (q1 - q2) < eps);
 }.
 
+(** Learn how to use proper by reading Dedekind's definition. -- Qinxiang Cao*)
+
 Inductive Real : Type :=
 | Real_intro (CSeq : nat -> Q -> Prop) (H: Cauchy CSeq).
 
@@ -782,7 +784,8 @@ Proof. intros A HA Hnot0 [eps [Heps H]].
     }
 Qed.
 
-
+Definition Rdiv_type: Real -> {x: Real | ~ Real_equiv x Rzero} -> Real.
+(** Use this as div's type. -- Qinxiang *)
 
 Lemma Cauchy_inv_nonzero: forall A , Cauchy A -> (forall n, ~(A n 0)) ->
  (exists (eps:Q), eps>0 /\ forall (N:nat), exists(nN:nat),(nN > N)%nat /\
