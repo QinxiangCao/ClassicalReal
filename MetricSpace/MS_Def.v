@@ -2,12 +2,6 @@ From Coq Require Import Init.Nat.
 From Coq Require Import Classes.RelationClasses.
 From Coq Require Import Logic.Classical.
 (** def of preorder-field and metric space **)
-Check NNPP.
-Theorem not_one_another_true : forall P : Prop, (~P -> False) -> P.
-Proof.
-  intros. assert(P \/ ~P). -apply excluded_middle. -destruct H0.
-    +apply H0. +apply H in H0. destruct H0.
-Qed.
 
 Class preOrderField (X : Type) :={
     le : X -> X -> Prop;
@@ -83,14 +77,14 @@ Proof.
   +split. intros. rewrite H0 in H1. apply H1. intros. rewrite H0. apply H1.
   +intros. assert(~(a <> a1)). {destruct H. unfold not in H2. unfold not.
     intros. assert(reflseq m a1 -> False). apply H2.  apply H3. apply H4, H0. }
-    apply not_one_another_true in H2.
+    apply NNPP in H2.
     assert(~(a <> a2)). {destruct H. unfold not in H3. unfold not.
     intros. assert(reflseq m a2 -> False). apply H3.  apply H4. apply H5, H1. }
-    apply not_one_another_true in H3. rewrite  <-H2, H3. reflexivity.
+    apply NNPP in H3. rewrite  <-H2, H3. reflexivity.
   +intros. exists 0. intros. destruct H2, H. assert(~(a <> a0)). {
     unfold not in H4. unfold not. intros. apply H4 with (n := m) in H5.
     apply H5. apply H2. }
-    apply not_one_another_true in H5.
+    apply NNPP in H5.
     assert(~(a <> b)). unfold not in H4. unfold not. intros. apply H4 with (n := n) in H6.
    apply H6. apply H3.     apply not_one_another_true in H6.
     rewrite <-H6, <-H5. assert(dist a a  = x0). apply HM3. rewrite H7.
