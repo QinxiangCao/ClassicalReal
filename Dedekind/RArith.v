@@ -342,14 +342,14 @@ Proof.
   - apply inverse_not. intros. rewrite <- not_exists_dist. apply PPNN, H.
 Qed.
 
-Lemma Qarchimedean : forall p q :Q, p > 0 -> q > 0 -> exists n : Q, n*p>q.
+Lemma Qarchimedean : forall p q :Q, p > 0 -> exists n : Q, n*p>q.
 Proof.
   intros. exists ((q*/p)+1)%Q. rewrite Qmult_plus_distr_l.
   assert(H':(~p==0)%Q).
   { apply Qlt_not_eq in H.
     unfold not.
     intros.
-    apply H. rewrite H1. reflexivity.
+    apply H. rewrite H0. reflexivity.
   }
   rewrite Qmult_comm.
   apply (Qmult_div_r q) in H'.
@@ -361,32 +361,262 @@ Proof.
   rewrite Qplus_0_r. apply H.
 Qed.
 
-Lemma mylemma1 : forall (A : Q -> Prop),
- Dedekind A -> ~ (forall x : Q, A x -> A (x + 1)).
+Lemma Pos1 : forall p : positive, (1 <= Z.pos p)%Z.
+Proof.
+intros.
+apply Pos2Z.pos_le_pos.
+apply Pos.le_1_l.
+Qed.
+
+Lemma ZQ0 : (0==inject_Z 0)%Q.
+Proof.
+reflexivity.
+Qed.
+
+Lemma inject_Z_le : forall x : Q, exists m : Z, inject_Z m >= x.
+Proof.
+    destruct x. 
+    assert(Qnum >= 0 \/~ Qnum >= 0)%Z. apply classic. destruct H.
+  - exists Qnum. unfold inject_Z.
+    assert(~ Qden < 1)%positive.
+    { apply Pos.nlt_1_r. }
+    apply Pos.le_nlt in H0.
+    rewrite Qmake_Qdiv. rewrite Qmake_Qdiv.
+    rewrite <- (Qmult_1_r (inject_Z Qnum / inject_Z 1)).
+    rewrite (Qdiv_mult_l (inject_Z Qnum) (/ inject_Z 1) ).
+    { apply Qle_shift_div_r.
+    { reflexivity. }
+      rewrite Qmult_comm. rewrite <- Qmult_1_l. rewrite Qmult_assoc.
+      apply Qmult_le_compat_r.
+      { rewrite Qmult_1_r. unfold inject_Z. apply Pos1. }
+        rewrite ZQ0.
+        rewrite <- Zle_Qle. apply Z.ge_le. apply H. }
+      unfold not. intros. inversion H1.
+  - exists 0%Z. unfold inject_Z. apply Znot_ge_lt in H.
+    rewrite Qmake_Qdiv. apply Qle_shift_div_r.
+    + reflexivity.
+    + rewrite Qmult_0_l. rewrite ZQ0. rewrite <- Zle_Qle.
+      apply Zlt_le_weak. apply H.
+Qed.
+
+Lemma Z_of_nat_le : forall m:Z, exists n:nat, (m <= Z.of_nat n)%Z.
+Proof.
+  intros. assert(m <= 0 \/ ~ m <= 0)%Z. apply classic.
+  destruct H.
+  - exists 1%nat. apply Z.le_trans with (m:=0%Z).
+    apply H. apply Nat2Z.is_nonneg.
+  - exists (Z.to_nat m). rewrite Z2Nat.id.
+    reflexivity.
+    rewrite <- Z.lt_nge in H.
+    apply Zlt_le_weak. apply H.
+Qed.
+
+Lemma inject_Z_of_nat_le :
+  forall x : Q, exists n: nat, inject_Z (Z.of_nat n) >= x.
+Proof.
+ intros. assert(forall m:Z, exists n:nat, (m <= Z.of_nat n)%Z).
+  { apply Z_of_nat_le. }
+  assert(forall x : Q, exists m : Z, inject_Z m >= x).
+  { apply inject_Z_le. }
+  destruct (H0 x).
+  destruct (H x0).
+  exists x1. apply Qle_trans with (y:=(inject_Z x0)).
+  - apply H1.
+  - rewrite <- Zle_Qle. apply H2.
+Qed.
+
+Lemma le_inject_Z : forall x : Q, exists m : Z, inject_Z m <= x.
+Proof.
+    destruct x.
+    assert(Qnum >= 0 \/~ Qnum >= 0)%Z. apply classic. destruct H.
+  - exists 0%Z. rewrite Qmake_Qdiv.
+    apply Qle_shift_div_l.
+    + rewrite ZQ0. rewrite <- Zlt_Qlt. reflexivity.
+    + rewrite Qmult_0_l. rewrite ZQ0. rewrite <- Zle_Qle.
+      apply Z.ge_le. apply H.
+  - apply Znot_ge_lt in H. exists Qnum. unfold inject_Z.
+    assert(~ Qden < 1)%positive.
+    { apply Pos.nlt_1_r. }
+    apply Pos.le_nlt in H0.
+    rewrite Qmake_Qdiv. rewrite Qmake_Qdiv.
+    rewrite <- (Qmult_1_r (inject_Z Qnum / inject_Z 1)).
+    rewrite (Qdiv_mult_l (inject_Z Qnum) (/ inject_Z 1) ).
+    { apply Qle_shift_div_l.
+    { reflexivity. }
+      rewrite Qmult_comm. rewrite <- inject_Z_mult.
+      rewrite <- Zle_Qle. rewrite <- Zmult_1_l.
+      apply Z.mul_le_mono_neg_r. auto.
+      apply Pos1. }
+    unfold not. intros. inversion H1.
+Qed.
+
+Lemma le_Z_of_nat : forall m:Z,(0 <= m)%Z -> exists n:nat, (Z.of_nat n <= m)%Z.
+Proof.
+  intros.
+  exists 0%nat. apply H.
+Qed.
+
+
+Lemma mylemma2 : forall (A : Q -> Prop),
+ Dedekind A ->
+(forall m : Z, A (inject_Z m) -> A (inject_Z (m+ 1)))
+ -> exists x1, forall m1, A (inject_Z (x1 + m1)).
 Proof.
   intros.
   destruct (Dedekind_properties1 _ H ).
-  destruct H0, H1.
-  unfold not.
-  intros.
-Admitted.
+  destruct H1, H2.
+  assert(forall x : Q, exists m : Z, inject_Z m <= x).
+  apply le_inject_Z.
+  destruct (H3 x).
+  assert (A (inject_Z x1)). {
+  apply (Dedekind_properties2 _ H x (inject_Z x1)).
+  repeat split; auto. } exists x1. apply Zind.
+  - rewrite Zplus_0_r. auto.
+  - unfold Z.succ. intros.
+    assert(inject_Z (x1 + (x2 + 1))=inject_Z (x1 + x2 + 1)).
+    { rewrite Zplus_assoc. reflexivity. }
+    rewrite H7. apply H0. apply H6.
+  - intros.
+    apply (Dedekind_properties2 _ H (inject_Z (x1 + x2))).
+    split; auto.
+    rewrite <- Zle_Qle. apply Zplus_le_compat_l.
+    apply Z.le_pred_l.
+Qed.
 
-Lemma Rarchimedean : forall (A : Q -> Prop),
- Dedekind A -> (exists n:Q, A n /\ ~ A(n + 1)).
+Lemma Zarchimedean : forall (A : Q -> Prop),
+ Dedekind A ->
+(forall m : Z, A (inject_Z m) -> A (inject_Z (m+ 1)))
+ -> forall m1 : Z, A (inject_Z m1).
 Proof.
-  intros. destruct (Dedekind_properties1 _ H ).
-  destruct H0, H1.
-  (* exists m:Z, m > 0 /\ x0 - m < x.
-     exists m:Z, m = 0 /\ x0 - m > x. *)
-  (* Define: P (u: nat) := x0 - u > x.
-     P 0, ~ P m, -> exists n, P n /\ ~ P (n + 1). *)
-  Check Z.of_nat.
-  Check Z.to_nat.
-  SearchAbout Z Q.
-  Check inject_Z.
-(** Check these functions and proof approached. -- Qinxiang  *)
-  rewrite exists_dist. unfold not. intros.
-Admitted.
+  intros. assert((forall m : Z, A (inject_Z m) -> A (inject_Z (m+ 1)))
+ -> exists x1, forall m1, A (inject_Z (x1 + m1))).
+  { apply mylemma2. auto. }
+  apply H1 in H0. destruct H0.
+  assert(A (inject_Z (x+(-x+m1)))).
+  { apply (H0 (-x+m1)%Z). }
+  apply (Dedekind_properties2 _ H (inject_Z (x + (- x + m1)))).
+  split; auto.
+  rewrite <- Zle_Qle. rewrite Zplus_assoc.
+  rewrite Z.add_opp_diag_r. reflexivity.
+Qed.
+
+Lemma forall_imply_to_exists_and :
+  forall (P T :Q -> Prop), forall y : Q, y>0 ->
+ ~(forall (m : Q), P m -> T (m + y)%Q) -> exists m1 : Q, P m1 /\ ~ T (m1 + y)%Q.
+Proof.
+  intros. apply exists_dist. unfold not in *. intros.
+  apply H0. intros. 
+  assert (P m /\ (T (m + y)%Q -> False) -> False).
+  apply (H1 m).
+  apply not_and_or in H3. destruct H3.
+  - destruct H3. auto.
+  - apply NNPP. apply H3.
+Qed.
+
+Lemma mylemma1 : forall (A : Q -> Prop),
+ Dedekind A ->
+~(forall m : Z, A (inject_Z m) -> A (inject_Z (m+ 1))).
+Proof.
+  unfold not. intros. assert((forall m1 : Z, A (inject_Z m1)) -> False).
+  { intros. destruct (Dedekind_properties1 _ H).
+    destruct H3.
+    assert(exists m : Z, inject_Z m >= x).
+    { apply inject_Z_le. }
+    destruct H4. apply H3.
+    apply (Dedekind_properties2 _ H (inject_Z x0)). split.
+    apply H1.
+    apply H4. }
+  apply H1. apply Zarchimedean. auto. auto.
+Qed.
+
+Lemma mylemma3 : forall (A : Q -> Prop),
+ Dedekind A -> forall y : Q, y>0 -> (forall x : Q, A x -> A (x + y))
+ -> forall (x : Q) (m : Z), A x -> A (x + y*(inject_Z m)).
+Proof.
+  intros. apply (Zind (fun m => A (x + y * inject_Z m))).
+  - unfold inject_Z. rewrite Qmult_0_r. rewrite Qplus_0_r. auto.
+  - intros. unfold Z.succ. rewrite inject_Z_plus.
+    rewrite Qmult_plus_distr_r. rewrite Qplus_assoc.
+    rewrite Qmult_1_r.
+    apply (H1 (x + y * inject_Z x0)).
+    apply H3.
+  - intros. apply (Dedekind_properties2 _ H (x + y * inject_Z x0)).
+    split; auto.
+    rewrite Qmult_comm.
+    rewrite Qmult_comm with (y:=(inject_Z x0)).
+    rewrite Qplus_le_r. apply Qmult_le_compat_r.
+    rewrite <- Zle_Qle. apply Z.le_pred_l.
+    apply Qlt_le_weak. auto.
+Qed.
+
+Lemma mylemma4 : forall (A : Q -> Prop),
+ Dedekind A -> forall y : Q, y>0 -> (forall x : Q, A x -> A (x + y))
+ -> forall (x : Q) (m : Z), A (x + y*(inject_Z m)).
+Proof.
+  intros. assert(forall (x : Q) (m : Z), A x -> A (x + y*(inject_Z m))).
+  { apply mylemma3. auto. auto. auto. }
+  destruct (Dedekind_properties1 _ H).
+  destruct H3.
+  assert(forall x1:Q, exists m : Z, (inject_Z m) * y > x1).
+  { intros. assert(forall p q :Q, p > 0 -> exists n : Q, n*p>q).
+  { apply Qarchimedean. } assert(exists n : Q, x1 < n * y).
+  { apply (H5 y x1). auto. }
+    destruct H6. assert(exists m : Z, inject_Z m >= x2).
+    { apply inject_Z_le. }
+    destruct H7. exists x3. apply Qlt_le_trans with (y:=x2 * y).
+    auto. apply Qmult_le_compat_r. auto. apply Qlt_le_weak. auto. }
+  destruct (H5 (x + y * inject_Z m - x0)).
+  apply (H2 x0 x1) in H3.
+  rewrite <- Qplus_lt_l with (z:=x0) in H6.
+  rewrite <- (Qplus_assoc (x + y * inject_Z m) (-x0) x0) in H6.
+  rewrite (Qplus_comm (-x0) x0 ) in H6. rewrite Qplus_opp_r in H6.
+  apply (Dedekind_properties2 _ H (x0 + y * inject_Z x1)).
+  split; auto.
+  apply Qlt_le_weak.
+  rewrite Qplus_comm with (y:=y * inject_Z x1).
+  rewrite Qplus_0_r in H6. rewrite Qmult_comm with (y:=inject_Z x1).
+  auto.
+Qed.
+
+Lemma mylemma5 : forall (A : Q -> Prop),
+ Dedekind A -> forall y : Q, y>0 -> (forall x : Q, A x -> A (x + y))
+ -> forall (x : Q), A x.
+Proof.
+  intros. assert(forall (x : Q) (m : Z), A (x + y*(inject_Z m))).
+  { apply mylemma4. auto. auto. auto. }
+  assert(A (x + y * 0)). { apply (H2 x 0%Z). }
+  rewrite Qmult_0_r in H3. rewrite Qplus_0_r in H3. auto.
+Qed.
+
+Lemma mylemma6 : forall (A : Q -> Prop),
+ Dedekind A -> forall y : Q, y>0 ->
+~(forall x : Q, A x -> A (x + y)).
+Proof.
+  unfold not. intros. assert((forall (x : Q), A x) -> False).
+  { intros. destruct (Dedekind_properties1 _ H).
+    destruct H4.
+    destruct H4.
+    apply mylemma5 with (y:=y). auto. auto. apply H1. }
+  apply H2. intros. apply mylemma5 with (y:=y). auto. auto. auto.
+Qed.
+
+Lemma Dedekind1_strong : forall (A : Q -> Prop),
+ Dedekind A -> forall y : Q, y>0 -> (exists x:Q, A x /\ ~ A (x + y)).
+Proof.
+  intros.
+  apply forall_imply_to_exists_and. auto.
+  apply mylemma6. auto. auto.
+Qed.
+
+Fact Qdiv2 : forall x : Q, (x == ((x * / (2 # 1)) + (x * / (2 # 1))))%Q.
+Proof.
+  intros. assert( x == 0 \/~ x == 0)%Q. { apply classic. } destruct H.
+  - rewrite H. reflexivity.
+  - rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_1_r.
+    rewrite <- Qmult_assoc.
+    rewrite Qmult_inj_l with (z := x).
+    reflexivity. apply H.
+Qed.
 
 Theorem Rplus_opp :
   forall a : Real, (a + (Ropp a))%R == Rzero.
@@ -427,29 +657,40 @@ Proof.
       rewrite <- (Qplus_comm x2). rewrite Qplus_opp_r. rewrite Qplus_0_l. reflexivity.
     }
     apply H'. unfold Cut_opp.
-    
-(*     exists x0, (Qplus (-x0) x).
-    split; [apply H |].
-    split.
-    * unfold Cut_opp.
-      destruct H1.
-      exists (Qplus (-x1) (Qplus (-x0) (-x))).
-      split.
-     ++ apply Qplus_lt_l with (z := Qplus x0 x).
-        rewrite Qplus_0_l. rewrite <- Qplus_assoc.
-        assert (H' : Qeq (Qplus (Qplus (-x0) (-x)) (Qplus x0 x)) 0).
-        {
-          rewrite Qplus_assoc.
-          rewrite Qplus_comm.
-          rewrite <- Qplus_assoc.
-          rewrite Qplus_comm with (y := Qplus (-x) x0).
-          rewrite <- Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_r.
-          apply Qplus_opp_r.
-        }
-        rewrite H'. 
-        apply Qplus_lt_le_compat.
-        apply Dedekind_le with A ; auto. *)
-Admitted.
+    assert(exists y:Q, A y /\ ~ A (y +(- x/(2#1)))).
+    { apply Dedekind1_strong. auto.
+      apply Qmult_lt_r with (z:=2#1). reflexivity.
+      assert(H'':~(2#1==0)%Q). { unfold not. intros. inversion H2. }
+      apply (Qdiv_mult_l (-x)) in H''.
+      rewrite <- (Qmult_assoc (-x) (/(2#1)) (2#1)).
+      rewrite (Qmult_comm (/(2 # 1))).
+      rewrite (Qmult_assoc (-x) (2#1) (/(2#1))). rewrite H''.
+      rewrite Qmult_0_l.
+      rewrite <- (Qplus_0_l (-x)). rewrite <- Qlt_minus_iff. auto. }
+    destruct H2, H2. exists x2. split. auto.
+    exists (-x/(2#1)). split.
+    + apply Qmult_lt_r with (z:=2#1). reflexivity.
+      assert(H'':~(2#1==0)%Q). { unfold not. intros. inversion H4. }
+      apply (Qdiv_mult_l (-x)) in H''.
+      rewrite <- (Qmult_assoc (-x) (/(2#1)) (2#1)). rewrite (Qmult_comm (/(2 # 1))).
+      rewrite (Qmult_assoc (-x) (2#1) (/(2#1))). rewrite H''.
+      rewrite Qmult_0_l.
+      rewrite <- (Qplus_0_l (-x)). rewrite <- Qlt_minus_iff. auto.
+    + unfold not. intros. apply H3.
+      apply (Dedekind_properties4 _ DA (- (x - x2) + - (- x / (2 # 1)))).
+      * rewrite <- Qplus_inj_r with (z:= - x / (2 # 1)).
+        rewrite <- Qplus_assoc.
+        rewrite (Qplus_comm (- (- x / (2 # 1)))).
+        rewrite Qplus_opp_r. rewrite <- Qplus_assoc.
+        rewrite <- (Qdiv2 (-x)).
+        rewrite Qplus_0_r. rewrite <- Qplus_inj_l with (z:=(x-x2)).
+        rewrite Qplus_opp_r. rewrite (Qplus_comm x2).
+        rewrite (Qplus_comm (x) (-x2)).
+        rewrite <- Qplus_assoc. rewrite Qplus_assoc with (y:=(-x)).
+        rewrite Qplus_opp_r. rewrite Qplus_0_l.
+        rewrite Qplus_comm. symmetry. apply Qplus_opp_r.
+      * auto.
+Qed.
 
 Theorem Rplus_l_compat :
   forall a b c : Real, b == c -> (a + b == a + c)%R.
@@ -522,6 +763,7 @@ Definition Cut_mult : (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop):=
 Lemma Cut_multPP_spec: forall A B: Q -> Prop,
   A 0 -> B 0 ->
   (forall x, Cut_multPP A B x <-> Cut_mult A B x).
+Proof.
 Abort.
 (** Use this lemma to separate the proof that "the multiplication of
 two Dedekind cut is still a Dedekind cut". -- Qinxiang *)
@@ -606,16 +848,6 @@ Definition Cut_mult: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop) :=
     
     -- Qinxiang *)
 
-Fact Qdiv2 : forall x : Q, (x == ((x * / (2 # 1)) + (x * / (2 # 1))))%Q.
-Proof.
-  intros. assert( x == 0 \/~ x == 0)%Q. { apply classic. } destruct H.
-  - rewrite H. reflexivity.
-  - rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_1_r.
-    rewrite <- Qmult_assoc.
-    rewrite Qmult_inj_l with (z := x).
-    reflexivity. apply H.
-Qed.
-
 Fact Qdiv2_opp : forall x : Q, (- x == - (x * / (2 # 1)) + - (x * / (2 # 1)))%Q.
 Proof.
   intros.
@@ -644,7 +876,7 @@ Proof.
   apply Qlt_le_weak.
   rewrite Qmult_lt_l.
   { reflexivity. }
-  { SearchAbout Qmult Qlt. rewrite <- (Qmult_0_l x). apply (Qmult_lt_compat_r 0 y x).
+  { rewrite <- (Qmult_0_l x). apply (Qmult_lt_compat_r 0 y x).
   auto. auto. }
 Qed.
 
@@ -862,7 +1094,7 @@ Proof.
   + right. split.
   * unfold not. intros. inversion H1.
   * unfold not. intros. destruct H1, H1.
-    Search Qopp. rewrite Qlt_minus_iff in H2.
+    rewrite Qlt_minus_iff in H2.
     rewrite Qplus_0_l in H2. rewrite Qplus_0_l in H2.
     rewrite Qopp_involutive in H2.
     exfalso. apply H2, H1.
@@ -872,7 +1104,7 @@ Qed.
 Lemma Cut_Cut_opp : forall (A : Q -> Prop) (x : Q),
   Dedekind A -> ~ A x -> (forall x0, x0 > 0 -> Cut_opp A (-x-x0)).
 Proof.
-  intros. hnf. exists x0. split. auto. Search Qplus.
+  intros. hnf. exists x0. split. auto.
   assert(- (- x - x0) + - x0 == x)%Q.
   { rewrite (Qmult_plus_distr_r (-1%Q) (-x) (-x0)).
     assert(-(1)*(-x0)==--x0)%Q.
@@ -932,7 +1164,7 @@ Proof.
       + apply Cut_Cut_opp. auto. auto.
         apply Qlt_shift_div_l. auto. apply H1.
       + apply Qlt_shift_div_r. auto.
-        rewrite (Qdiv2_opp x0). rewrite Qplus_assoc. Search Qopp Qlt.
+        rewrite (Qdiv2_opp x0). rewrite Qplus_assoc.
         rewrite Qplus_comm. rewrite Qmult_1_l.
         rewrite <- (Qplus_0_l (- x + - (x0 / (2 # 1)))).
         rewrite Qplus_lt_l. rewrite Qlt_minus_iff.
@@ -942,7 +1174,7 @@ Proof.
         { rewrite Qmult_comm.
           rewrite <- (Qmult_assoc ((- x + - x0)) (/ (- x + - (x0 / (2 # 1)))) ((- x + - (x0 / (2 # 1))))).
           rewrite (Qmult_comm (/ (- x + - (x0 / (2 # 1)))) ).
-          rewrite Qmult_assoc. apply Qdiv_mult_l. Search Qeq Qlt.
+          rewrite Qmult_assoc. apply Qdiv_mult_l.
           hnf. intros. apply Qlt_not_eq in H7. apply H7. rewrite H8.
           reflexivity. }
         rewrite H8. apply Qle_refl.
