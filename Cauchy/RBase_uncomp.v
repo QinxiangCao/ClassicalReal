@@ -71,23 +71,41 @@ Proof. intros. apply Qle_lteq in H.  destruct H.
     apply (Qle_lt_trans _ b1). auto. auto.
 Qed.
 
+Lemma Qopp_lt_compat : forall p q, p<q -> -q < -p.
+Proof. intros. assert(H1:p<q) by auto. apply Qlt_le_weak in H.
+  apply Qopp_le_compat in H. apply Qle_lteq in H.
+  destruct H. auto.
+  assert (E: p == q). rewrite <- Qopp_involutive. rewrite <- H.
+  rewrite Qopp_involutive. reflexivity. rewrite E in H1.
+  apply Qlt_irrefl in H1. contradiction.
+Qed.
 
 
 
-
-Record Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
+Class Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
   Cauchy_exists : forall (n:nat), exists (q:Q), (CSeq n q);
   Cauchy_unique : forall (n:nat) (q1 q2:Q),
       CSeq n q1 -> CSeq n q2 -> q1 == q2;
-  Cauchy_refl : forall (n:nat) (q1 q2:Q),
-      q1 == q2 -> ((CSeq n q1) <-> (CSeq n q2));
+  Cauchy_proper: forall (p q: Q) n, p==q -> (CSeq n p -> CSeq n q);
   Cauchy_def : forall (eps:Q), eps > 0 -> (exists (n:nat),
      forall (m1 m2:nat), (m1 > n)%nat -> (m2 > n)%nat
      -> forall (q1 q2:Q), CSeq m1 q1 -> CSeq m2 q2 ->
           Qabs (q1 - q2) < eps);
 }.
 
-(** Learn how to use proper by reading Dedekind's definition. -- Qinxiang Cao*)
+Arguments Cauchy_exists (CSeq) (Cauchy) : clear implicits.
+Arguments Cauchy_unique (CSeq) (Cauchy) : clear implicits.
+Arguments Cauchy_def (CSeq) (Cauchy) : clear implicits. 
+
+Instance Cauchy_proper_iff: forall A n, Cauchy A -> Proper (Qeq ==> iff) (A n).
+Proof.
+  intros.
+  hnf.
+  intros.
+  split.
+  + apply Cauchy_proper. auto.
+  + apply Cauchy_proper. symmetry. auto.
+Qed.
 
 Inductive Real : Type :=
 | Real_intro (CSeq : nat -> Q -> Prop) (H: Cauchy CSeq).
@@ -163,10 +181,10 @@ Theorem Real_has_Q: forall (x1:Q) , Cauchy (fun (n:nat) => (fun x => x == x1)).
 Proof. intros. split.
   - intros. exists x1. reflexivity.
   - intros. rewrite H. rewrite H0. reflexivity.
-  - intros. split. intros. rewrite <- H. apply H0.
-    intros. rewrite H. apply H0.
-  - intros. exists O. intros. rewrite H2,H3. unfold Qminus. Search Qabs.
+  - intros. intros. rewrite <- H0. symmetry. apply H.
+  - intros. exists O. intros. rewrite H2,H3. unfold Qminus.
     rewrite Qplus_opp_r. apply H.
+
 Qed.
 
 Notation "a == b" := (Real_equiv a b) :Real_scope.
@@ -195,9 +213,7 @@ Proof. intros A B HA HB. split.
   assert (E1: q1 == qa + qb). { auto. }
   assert (E2: q2 == qa + qb). { auto. }
   rewrite E1. rewrite E2. reflexivity.
-- unfold CauchySeqPlus. intros n q1 q2 H. split.
-  + intros H'. intros qa qb Hqa Hqb. rewrite <- H. apply H'. auto. auto.
-  + intros H'. intros qa qb Hqa Hqb. rewrite H. auto.
+- intros. hnf in H0. hnf. intros. rewrite <- H. auto.
 - unfold CauchySeqPlus. intros eps Heps.
   destruct ((Cauchy_def _ HA) _ (eps_divide_2_positive eps Heps)) as [n1 HAC].
   destruct ((Cauchy_def _ HB) _ (eps_divide_2_positive eps Heps)) as [n2 HBC].
@@ -342,9 +358,7 @@ Proof. intros. unfold Cauchy_opp. split.
     assert (E1: q1 == - q) by (apply (H1 q Hq)).
     assert (E2: q2 == - q) by (apply (H2 q Hq)).
     rewrite E1,E2. reflexivity.
-  - intros. split.
-    + intros. rewrite <- H0. apply H1. apply H2.
-    + intros. rewrite H0. apply H1. apply H2.
+  - intros. rewrite <- H0. auto.
   - intros. apply (Cauchy_def _ H) in H0. destruct H0 as [n H0].
     exists n. intros.
     destruct (Cauchy_exists _ H m1) as [qa Hqa], (Cauchy_exists _ H m2) as [qb Hqb].
@@ -448,9 +462,7 @@ Proof. intros A B HA HB. unfold CauchySeqMult. split.
   assert (E1 : q1 == qa * qb) by (apply (H qa qb Hqa Hqb)).
   assert (E2 : q2 == qa * qb) by (apply (H0 qa qb Hqa Hqb)).
   rewrite E1,E2. reflexivity.
-- intros n q1 q2 E. split.
-  + intros H qa qb Hqa Hqb. rewrite <- E. auto.
-  + intros H qa qb Hqa Hqb. rewrite E. auto.
+- intros. rewrite <- H. auto.
 - intros eps Heps.
   destruct (CauchySeqBounded _ HA) as [MA [MAp HMA]].
   destruct (CauchySeqBounded _ HB) as [MB [MBp HMB]].
@@ -671,16 +683,47 @@ Qed.
 
 (*Proofs about Rinv*)
 
+Definition limit_not_0 (A:nat->Q->Prop):Prop:=
+(exists (eps:Q), eps>0 /\ forall (N:nat), exists(nN:nat),(nN > N)%nat /\
+   (forall(q:Q), A nN q -> Qabs q > eps)).
 
-Lemma Non_0_QSeq: forall (A:nat->Q->Prop), Cauchy A -> 
-(forall n, ~(A n 0) )<->( forall n q, A n q -> ~(q == 0)).
+Lemma Non_0_QSeq: forall (A:nat->Q->Prop) n, Cauchy A -> 
+( ~(A n 0) )<->( forall  q, A n q -> ~(q == 0)).
 Proof. split.
- - intros. intros C. apply (Cauchy_refl _ H n _ _ C) in H1. apply H0 in H1. destruct H1.
+ - intros. intros C. rewrite C in H1. apply H0 in H1. destruct H1.
  - intros. intros C. apply H0 in C. assert (T: 0 == 0) by reflexivity. apply C in T. destruct T.
 Qed.
 
+(* Every limit-not-0 Cauchy Sequence will not be 0 after a certain N *)
+Lemma limit_not_0_seq : forall A, Cauchy A -> limit_not_0 A ->
+ exists (N:nat), forall n q, (n>N)%nat -> A n q -> ~(q == 0).
+Proof. intros. destruct H0 as [eps [Heps H0]].
+  destruct (Cauchy_def _ H _ Heps) as [N' HN'].
+  destruct (H0 N') as [nN' [HnN' H']].
+  exists nN'. intros.
+  assert (E: (n > N')%nat) by omega.
+  destruct (Cauchy_exists _ H nN') as [qnN' HqnN'].
+  assert (E1: Qabs (qnN' - q) < eps). { apply (HN' nN' n). auto. auto. auto. auto. }
+  apply H' in HqnN'.
+  assert (E2: Qabs q >= Qabs (qnN') - Qabs (qnN' - q)).
+  { assert (Et: q == qnN' - (qnN' - q)) by ring.
+    remember (qnN' - q) as t.
+    rewrite Et. rewrite Heqt. apply Qabs_triangle_reverse. }
+  apply Qopp_lt_compat in E1. 
+  assert (E3: Qabs qnN' - Qabs (qnN' - q) > eps - eps).
+    { apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
+  rewrite (Qplus_opp_r eps) in E3.
+  assert (E4: Qabs q > 0). { apply (Qlt_le_trans _ _ _ E3 E2). }
+  intros C. rewrite C in E4. discriminate E4. 
+Qed.
+
+Definition limit_not_0_real (A:Real):Prop:=
+match A with
+| Real_intro CA HA => limit_not_0 CA
+end.
 
 
+(* Some helping lemmas in justifying Rinv *)
 Lemma FiniteSeqBounded_Below_nonneg: forall (A:nat->Q->Prop) (N:nat), Cauchy A ->
   exists (M:Q), M>=0 /\ forall (n:nat)(q:Q), (n < N)%nat -> A n q -> Qabs q >= M. 
 Proof. intros. induction N.
@@ -705,48 +748,50 @@ Qed.
 
 
 
-
 Lemma FiniteNo0SeqBounded_Below_positive: forall (A:nat->Q->Prop) (N:nat), Cauchy A ->
-  (forall n, ~(A n 0)) ->
-  exists (M:Q), M>0 /\ forall (n:nat)(q:Q), (n < N)%nat -> A n q -> Qabs q >= M. 
-Proof. intros. induction N.
-  - exists 1. intros. split. reflexivity. intros. inversion H1.
-  - destruct IHN as [M [HM IH]]. destruct (Cauchy_exists _ H N) as [xN HxN].
+  (exists N',forall n, (n>N')%nat ->  ~(A n 0)) ->
+  exists (N':nat),exists (M:Q), M>0 /\ forall (n:nat)(q:Q), (n>N')%nat -> (n < N)%nat -> A n q -> Qabs q >= M. 
+Proof. intros. induction N. destruct H0 as [N' H0].
+  - exists N',1. intros. split. reflexivity. intros. inversion H2.
+  - destruct H0 as [N'1 H0].
+    destruct IHN as [N' [M [HM IH]]]. destruct (Cauchy_exists _ H N) as [xN HxN].
     assert (Hq: Qlt M (Qabs xN) \/ ~ (Qlt M (Qabs xN))). { apply classic. } destruct Hq as [Hq | Hq].
-    + exists M.
+    + exists N',M.
       split. apply HM.
-      intros. unfold lt in H0. apply le_S_n in H1. apply Nat.le_lteq in H1. destruct H1.
-      * apply (IH n). auto. auto.
-      * rewrite <- H1 in HxN. assert (E: xN == q). { apply (Cauchy_unique _ H n _ _ HxN H2). }
+      intros. unfold lt in H0. apply le_S_n in H2. apply Nat.le_lteq in H2. destruct H2.
+      * apply (IH n). auto. auto. auto.
+      * rewrite <- H2 in HxN. assert (E: xN == q). { apply (Cauchy_unique _ H n _ _ HxN H3). }
         rewrite <- E. apply Qlt_le_weak. apply Hq.
-    + exists ((Qabs xN))%Q. apply Qnot_lt_le in Hq. split.
-      assert (E: 0<= Qabs xN) by (apply Qabs_nonneg). apply Qle_lteq in E.
-      destruct E. apply H1. symmetry in H1. apply Qabs_0 in H1.
-      apply (Cauchy_refl _ H _ _ _ H1) in HxN. apply H0 in HxN. destruct HxN. intros.
-      unfold lt in H1. apply le_S_n in H1. apply Nat.le_lteq in H1. destruct H1.
-      * apply (Qle_trans _ M). apply Hq. apply (IH n). apply H1. apply H2.
-      * rewrite <- H1 in HxN.
-        assert (E: xN == q). { apply (Cauchy_unique _ H n _ _ HxN H2). }
-        rewrite <- E. apply Qle_lteq. right. reflexivity.
+    + assert (En: lt N'1 N \/ ~ lt N'1 N) by (apply classic). destruct En as [En|En].
+      * exists N,((Qabs xN))%Q. apply Qnot_lt_le in Hq. split.
+        assert (E: 0<= Qabs xN) by (apply Qabs_nonneg). apply Qle_lteq in E.
+        destruct E. apply H1. symmetry in H1. apply Qabs_0 in H1.
+        rewrite H1 in HxN. apply H0 in HxN. destruct HxN. auto. intros.
+        unfold lt in H1. omega.
+      * exists N'1,1. split. reflexivity. intros.
+        assert (E: lt N'1 N) by omega. contradiction.
 Qed.
 
-
-
-
-
-Lemma Cauchy_nonzero_pre: forall A , Cauchy A -> (forall n, ~(A n 0)) ->
- (exists (eps:Q), eps>0 /\ forall (N:nat), exists(nN:nat),(nN > N)%nat /\
-   (forall(q:Q), A nN q -> Qabs q > eps))
-  -> exists (eps0:Q), eps0>0 /\ (forall (n:nat)(q:Q), A n q -> Qabs q >= eps0). 
-Proof. intros A HA Hnot0 [eps [Heps H]].
+Lemma Cauchy_nonzero_pre: forall A , Cauchy A  -> limit_not_0 A
+  -> exists (N:nat),
+( exists (eps0:Q), eps0>0 /\ (forall (n:nat)(q:Q), (n>N)%nat -> A n q -> Qabs q >= eps0)). 
+Proof. intros A HA. intros H.  destruct (limit_not_0_seq _ HA H) as [N0 Hnot0].
+  assert (Hlim: limit_not_0 A) by auto.
+  destruct H as [eps [Heps H]].
   destruct (Cauchy_def _ HA (eps*(1#2)) (eps_divide_2_positive _ Heps)) as [N1 HN].
   destruct (H N1) as [nN1 [HnN1N HnN1]].
-  destruct (FiniteNo0SeqBounded_Below_positive A (S N1) HA Hnot0) as [x [Hx H0]].
+
+assert (E:exists (N':nat),exists (M:Q), M>0 /\ forall (n:nat)(q:Q), (n>N')%nat -> (n < (S N1))%nat -> A n q -> Qabs q >= M ).
+{ apply FiniteNo0SeqBounded_Below_positive. auto.
+  destruct (limit_not_0_seq _ HA Hlim). exists x. intros. apply Non_0_QSeq. auto. 
+  intros. apply (H0 n). auto. auto. }
+destruct E as [N' [x [Hx H0]]].
+
   assert (Eq: x < eps * (1#2) \/ ~(x<eps*(1#2))). { apply classic. } destruct Eq as [Eq | Eq].
-  + exists x. split. apply Hx.
+  + exists N',x. split. apply Hx.
     intros. assert (En: lt n (S N1) \/ ~(lt n (S N1))) by (apply classic). destruct En.
-    { apply (H0 n). auto. auto. }
-    { apply not_lt in H2. apply Qlt_le_weak. apply (Qlt_trans _ (eps*(1#2)) _).  apply Eq.
+    { apply (H0 n). auto. auto. auto. }
+    { apply not_lt in H3. apply Qlt_le_weak. apply (Qlt_trans _ (eps*(1#2)) _).  apply Eq.
       destruct (Cauchy_exists _ HA nN1) as [qnN1 HqnN1].
       assert (E: (- q) == - (q - qnN1) - qnN1) by ring.
       rewrite <- Qabs_opp. rewrite E.
@@ -762,11 +807,11 @@ Proof. intros A HA Hnot0 [eps [Heps H]].
         rewrite (Qplus_comm (- (q - qnN1)) (- qnN1)).
         apply Qabs_triangle_reverse.
     }
-  + exists (eps*(1#2)). apply Qnot_lt_le in Eq. split.
+  + exists N',(eps*(1#2)). apply Qnot_lt_le in Eq. split.
     apply (eps_divide_2_positive _ Heps). intros. 
     assert (En: lt n (S N1) \/ ~(lt n (S N1))) by (apply classic). destruct En.
-    { apply (Qle_trans _ x _). auto. apply (H0 n). auto. auto. }
-    { apply not_lt in H2. apply Qlt_le_weak.
+    { apply (Qle_trans _ x _). auto. apply (H0 n). auto. auto. auto. }
+    { apply not_lt in H3. apply Qlt_le_weak.
       destruct (Cauchy_exists _ HA nN1) as [qnN1 HqnN1].
       assert (E: (- q) == - (q - qnN1) - qnN1) by ring.
       rewrite <- Qabs_opp. rewrite E.
@@ -784,129 +829,310 @@ Proof. intros A HA Hnot0 [eps [Heps H]].
     }
 Qed.
 
-Definition Rdiv_type: Real -> {x: Real | ~ Real_equiv x Rzero} -> Real.
-(** Use this as div's type. -- Qinxiang *)
-
-Lemma Cauchy_inv_nonzero: forall A , Cauchy A -> (forall n, ~(A n 0)) ->
- (exists (eps:Q), eps>0 /\ forall (N:nat), exists(nN:nat),(nN > N)%nat /\
-   (forall(q:Q), A nN q -> Qabs q > eps))
+(* A Cauchy Sequence can have its inversion as long as its limit is not 0 *)
+Lemma Cauchy_inv_nonzero: forall A , Cauchy A -> limit_not_0 A 
   -> Cauchy (fun (n:nat)(q:Q) => A n (/q)).
 Proof. intros. split.
 - intros. destruct (Cauchy_exists _ H n).
-  exists (/x). apply (Cauchy_refl _ H n (//x) x (Qinv_involutive x)). auto.
-- intros. assert (E:/q1==/q2). { apply (Cauchy_unique _ H _ _ _ H2 H3). }
+  exists (/x). rewrite <- (Qinv_involutive x) in H1. auto.
+- intros. assert (E:/q1==/q2). { apply (Cauchy_unique _ H _ _ _ H1 H2). }
   rewrite <- Qinv_involutive. rewrite E. apply Qinv_involutive.
-- intros. split.
-    + intros. apply (Cauchy_refl _ H n (/q1) (/q2)).
-      { rewrite H2. reflexivity. } apply H3.
-    + intros. apply (Cauchy_refl _ H n (/q1) (/q2)).
-      { rewrite <- H2. reflexivity. } apply H3.
+- intros. assert (E:/ p == / q). rewrite H1. reflexivity. rewrite <- E. auto.
 - intros.
-  assert (H0':(forall (n : nat) (q : Q), A n q -> ~ q == 0)). { apply (Non_0_QSeq _ H). apply H0. }
-  destruct (Cauchy_nonzero_pre A H H0 H1) as [eps0 [Heps0 H']].
+  assert (H0':(exists N', forall (n : nat) (q : Q), (n>N')%nat -> A n q -> ~ q == 0)). { apply limit_not_0_seq. auto. auto. }
+  destruct H0' as [N' H0'].
+  destruct (Cauchy_nonzero_pre A H H0) as [N0 [eps0 [Heps0 H']]].
   assert (Eeps: 0 < eps * eps0 * eps0). 
   { rewrite <- (Qmult_0_l eps0). apply (Qmult_lt_compat_r _ _ _ Heps0).
-    rewrite <- (Qmult_0_l eps0). apply (Qmult_lt_compat_r _ _ _ Heps0). apply H2. }
+    rewrite <- (Qmult_0_l eps0). apply (Qmult_lt_compat_r _ _ _ Heps0). apply H1. }
   destruct (Cauchy_def _ H _ Eeps) as [N HN].
-  exists N. intros m1 m2 Hm1N Hm2N q1 q2 Hq1 Hq2.
-  assert (E1:Qabs (/ q1 - / q2) < eps * eps0 * eps0). { apply (HN m1 m2). auto. auto. auto. auto. }
-  assert (E2:Qabs(/q1) >0). 
-  { assert (Eq:Qabs (/q1) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
-    - apply H3. - apply H0' in Hq1. symmetry in H3. apply Qabs_0 in H3. contradiction. }
-  assert (E3:Qabs(/q2) >0). 
-  { assert (Eq:Qabs (/q2) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
-    - apply H3. - apply H0' in Hq2. symmetry in H3. apply Qabs_0 in H3. contradiction. }
-  assert (E4:/Qabs (/ q1) <= /eps0).
-  { apply (Qmult_le_l _ _ _ E2). 
-    rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Hq1))).
-    rewrite Qmult_comm.
-    apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
-    rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
-    rewrite Qmult_1_r. rewrite Qmult_1_l.
-    apply (H' m1). auto. }
-  assert (E5:/Qabs (/ q2) <= /eps0).
-  { apply (Qmult_le_l _ _ _ E3). 
-    rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Hq2))).
-    rewrite Qmult_comm.
-    apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
-    rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
-    rewrite Qmult_1_r. rewrite Qmult_1_l.
-    apply (H' m2). auto. }
-  assert (E6:q1 - q2 == (/q2-/q1)/((/q1)*(/q2))).
-  { unfold Qdiv. unfold Qminus. rewrite Qmult_plus_distr_l.
-    rewrite Qinv_mult_distr. rewrite Qinv_involutive. rewrite Qinv_involutive. 
-    rewrite (Qmult_comm (/q2)). rewrite <- Qmult_assoc.
-    rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E3)))).
-    rewrite (Qmult_assoc). 
-    assert (Etmp: - / q1 * q1 * q2 == - (/ q1 * q1 * q2)) by ring. 
-    rewrite Etmp. rewrite (Qmult_comm (/q1)). 
-    rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E2)))).
-    ring. }
-  assert (E7:eps == eps * eps0 * eps0 *  (/ eps0 * / eps0)).
-  { rewrite Qmult_assoc.
-    rewrite <- (Qmult_assoc _ eps0 (/eps0)). 
-    rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
-    rewrite Qmult_1_r.
-    rewrite <- Qmult_assoc. rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
-    ring. }
-  assert (E8: Qabs ((/ q2 - / q1) / (/ q1 * / q2)) ==
-   Qabs (/ q2 - / q1) * (/ Qabs (/ q1) / Qabs (/ q2))).
-  { unfold Qdiv. rewrite Qabs_Qmult.
-    rewrite Qabs_Qinv. rewrite Qabs_Qmult. rewrite Qmult_assoc.
-    rewrite Qinv_mult_distr. rewrite Qmult_assoc. reflexivity. }
-  rewrite E6. rewrite E7. rewrite E8.
-  assert (E9: / Qabs (/ q1) / Qabs (/ q2) > 0). 
-  { rewrite <- (Qmult_0_l (/ Qabs (/ q2))).
-    apply (Qmult_lt_compat_r _ _ _ (Qinv_lt_0_compat _ E3) (Qinv_lt_0_compat _ E2)). }
-  apply ( Qmult_lt_compat_trans_positive (
-      Qabs (/ q2 - / q1))             (eps * eps0 * eps0)
-      (/ Qabs (/ q1) / Qabs (/ q2))   (/ eps0 * / eps0)).
-  apply Qabs_nonneg. apply E9.
-  rewrite Qabs_Qminus. apply E1.
-  unfold Qdiv. apply Qmult_le_compat_nonneg.
-  apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q1))).
-  apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q2))).
-  auto. auto.
+  assert (En: lt N' N \/ ~ lt N' N) by (apply classic). destruct En as [En|En].
+  { assert (En': lt N0 N \/ ~ lt N0 N) by (apply classic). destruct En' as [En'|En']. 
+    { exists N. intros m1 m2 Hm1N Hm2N q1 q2 Hq1 Hq2.
+      assert (E1:Qabs (/ q1 - / q2) < eps * eps0 * eps0). { apply (HN m1 m2). auto. auto. auto. auto. }
+      assert (E2:Qabs(/q1) >0). 
+      { assert (Eq:Qabs (/q1) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq1. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (E3:Qabs(/q2) >0). 
+      { assert (Eq:Qabs (/q2) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq2. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (Em1N': (m1 > N')%nat) by omega.
+      assert (Em2N': (m2 > N')%nat) by omega.
+      assert (E4:/Qabs (/ q1) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E2). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m1). auto. omega. auto. }
+      assert (E5:/Qabs (/ q2) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E3). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m2). auto. omega. auto. }
+      assert (E6:q1 - q2 == (/q2-/q1)/((/q1)*(/q2))).
+      { unfold Qdiv. unfold Qminus. rewrite Qmult_plus_distr_l.
+        rewrite Qinv_mult_distr. rewrite Qinv_involutive. rewrite Qinv_involutive. 
+        rewrite (Qmult_comm (/q2)). rewrite <- Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E3)))).
+        rewrite (Qmult_assoc). 
+        assert (Etmp: - / q1 * q1 * q2 == - (/ q1 * q1 * q2)) by ring. 
+        rewrite Etmp. rewrite (Qmult_comm (/q1)). 
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E2)))).
+        ring. }
+      assert (E7:eps == eps * eps0 * eps0 *  (/ eps0 * / eps0)).
+      { rewrite Qmult_assoc.
+        rewrite <- (Qmult_assoc _ eps0 (/eps0)). 
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r.
+        rewrite <- Qmult_assoc. rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        ring. }
+      assert (E8: Qabs ((/ q2 - / q1) / (/ q1 * / q2)) ==
+       Qabs (/ q2 - / q1) * (/ Qabs (/ q1) / Qabs (/ q2))).
+      { unfold Qdiv. rewrite Qabs_Qmult.
+        rewrite Qabs_Qinv. rewrite Qabs_Qmult. rewrite Qmult_assoc.
+        rewrite Qinv_mult_distr. rewrite Qmult_assoc. reflexivity. }
+      rewrite E6. rewrite E7. rewrite E8.
+      assert (E9: / Qabs (/ q1) / Qabs (/ q2) > 0). 
+      { rewrite <- (Qmult_0_l (/ Qabs (/ q2))).
+        apply (Qmult_lt_compat_r _ _ _ (Qinv_lt_0_compat _ E3) (Qinv_lt_0_compat _ E2)). }
+      apply ( Qmult_lt_compat_trans_positive (
+          Qabs (/ q2 - / q1))             (eps * eps0 * eps0)
+          (/ Qabs (/ q1) / Qabs (/ q2))   (/ eps0 * / eps0)).
+      apply Qabs_nonneg. apply E9.
+      rewrite Qabs_Qminus. apply E1.
+      unfold Qdiv. apply Qmult_le_compat_nonneg.
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q1))).
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q2))).
+      auto. auto.     }
+    { exists N0. apply not_lt in En'.
+      intros m1 m2 Hm1N Hm2N q1 q2 Hq1 Hq2.
+      assert (E1:Qabs (/ q1 - / q2) < eps * eps0 * eps0). { apply (HN m1 m2). omega. omega. auto. auto.  }
+      assert (E2:Qabs(/q1) >0). 
+      { assert (Eq:Qabs (/q1) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq1. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (E3:Qabs(/q2) >0). 
+      { assert (Eq:Qabs (/q2) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq2. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (Em1N': (m1 > N')%nat) by omega.
+      assert (Em2N': (m2 > N')%nat) by omega.
+      assert (E4:/Qabs (/ q1) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E2). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m1). auto. auto. }
+      assert (E5:/Qabs (/ q2) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E3). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m2). auto. auto. }
+      assert (E6:q1 - q2 == (/q2-/q1)/((/q1)*(/q2))).
+      { unfold Qdiv. unfold Qminus. rewrite Qmult_plus_distr_l.
+        rewrite Qinv_mult_distr. rewrite Qinv_involutive. rewrite Qinv_involutive. 
+        rewrite (Qmult_comm (/q2)). rewrite <- Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E3)))).
+        rewrite (Qmult_assoc). 
+        assert (Etmp: - / q1 * q1 * q2 == - (/ q1 * q1 * q2)) by ring. 
+        rewrite Etmp. rewrite (Qmult_comm (/q1)). 
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E2)))).
+        ring. }
+      assert (E7:eps == eps * eps0 * eps0 *  (/ eps0 * / eps0)).
+      { rewrite Qmult_assoc.
+        rewrite <- (Qmult_assoc _ eps0 (/eps0)). 
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r.
+        rewrite <- Qmult_assoc. rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        ring. }
+      assert (E8: Qabs ((/ q2 - / q1) / (/ q1 * / q2)) ==
+       Qabs (/ q2 - / q1) * (/ Qabs (/ q1) / Qabs (/ q2))).
+      { unfold Qdiv. rewrite Qabs_Qmult.
+        rewrite Qabs_Qinv. rewrite Qabs_Qmult. rewrite Qmult_assoc.
+        rewrite Qinv_mult_distr. rewrite Qmult_assoc. reflexivity. }
+      rewrite E6. rewrite E7. rewrite E8.
+      assert (E9: / Qabs (/ q1) / Qabs (/ q2) > 0). 
+      { rewrite <- (Qmult_0_l (/ Qabs (/ q2))).
+        apply (Qmult_lt_compat_r _ _ _ (Qinv_lt_0_compat _ E3) (Qinv_lt_0_compat _ E2)). }
+      apply ( Qmult_lt_compat_trans_positive (
+          Qabs (/ q2 - / q1))             (eps * eps0 * eps0)
+          (/ Qabs (/ q1) / Qabs (/ q2))   (/ eps0 * / eps0)).
+      apply Qabs_nonneg. apply E9.
+      rewrite Qabs_Qminus. apply E1.
+      unfold Qdiv. apply Qmult_le_compat_nonneg.
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q1))).
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q2))).
+      auto. auto. }
+    }
+
+  { assert (En': lt N0 N' \/ ~ lt N0 N') by (apply classic). destruct En' as [En'|En']. 
+    { apply not_lt in En. exists N'. intros m1 m2 Hm1N Hm2N q1 q2 Hq1 Hq2.
+      assert (E1:Qabs (/ q1 - / q2) < eps * eps0 * eps0). { apply (HN m1 m2). omega. omega. auto. auto. }
+      assert (E2:Qabs(/q1) >0). 
+      { assert (Eq:Qabs (/q1) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq1. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (E3:Qabs(/q2) >0). 
+      { assert (Eq:Qabs (/q2) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq2. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (Em1N': (m1 > N')%nat) by omega.
+      assert (Em2N': (m2 > N')%nat) by omega.
+      assert (E4:/Qabs (/ q1) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E2). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m1). auto. omega. auto. }
+      assert (E5:/Qabs (/ q2) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E3). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m2). auto. omega. auto. }
+      assert (E6:q1 - q2 == (/q2-/q1)/((/q1)*(/q2))).
+      { unfold Qdiv. unfold Qminus. rewrite Qmult_plus_distr_l.
+        rewrite Qinv_mult_distr. rewrite Qinv_involutive. rewrite Qinv_involutive. 
+        rewrite (Qmult_comm (/q2)). rewrite <- Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E3)))).
+        rewrite (Qmult_assoc). 
+        assert (Etmp: - / q1 * q1 * q2 == - (/ q1 * q1 * q2)) by ring. 
+        rewrite Etmp. rewrite (Qmult_comm (/q1)). 
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E2)))).
+        ring. }
+      assert (E7:eps == eps * eps0 * eps0 *  (/ eps0 * / eps0)).
+      { rewrite Qmult_assoc.
+        rewrite <- (Qmult_assoc _ eps0 (/eps0)). 
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r.
+        rewrite <- Qmult_assoc. rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        ring. }
+      assert (E8: Qabs ((/ q2 - / q1) / (/ q1 * / q2)) ==
+       Qabs (/ q2 - / q1) * (/ Qabs (/ q1) / Qabs (/ q2))).
+      { unfold Qdiv. rewrite Qabs_Qmult.
+        rewrite Qabs_Qinv. rewrite Qabs_Qmult. rewrite Qmult_assoc.
+        rewrite Qinv_mult_distr. rewrite Qmult_assoc. reflexivity. }
+      rewrite E6. rewrite E7. rewrite E8.
+      assert (E9: / Qabs (/ q1) / Qabs (/ q2) > 0). 
+      { rewrite <- (Qmult_0_l (/ Qabs (/ q2))).
+        apply (Qmult_lt_compat_r _ _ _ (Qinv_lt_0_compat _ E3) (Qinv_lt_0_compat _ E2)). }
+      apply ( Qmult_lt_compat_trans_positive (
+          Qabs (/ q2 - / q1))             (eps * eps0 * eps0)
+          (/ Qabs (/ q1) / Qabs (/ q2))   (/ eps0 * / eps0)).
+      apply Qabs_nonneg. apply E9.
+      rewrite Qabs_Qminus. apply E1.
+      unfold Qdiv. apply Qmult_le_compat_nonneg.
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q1))).
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q2))).
+      auto. auto.    }
+    { apply not_lt in En. apply not_lt in En'. exists N0.
+      intros m1 m2 Hm1N Hm2N q1 q2 Hq1 Hq2.
+      assert (E1:Qabs (/ q1 - / q2) < eps * eps0 * eps0). { apply (HN m1 m2). omega. omega. auto. auto.  }
+      assert (E2:Qabs(/q1) >0). 
+      { assert (Eq:Qabs (/q1) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq1. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (E3:Qabs(/q2) >0). 
+      { assert (Eq:Qabs (/q2) >= 0) by (apply Qabs_nonneg). apply Qle_lteq in Eq. destruct Eq.
+        - apply H2. - apply H0' in Hq2. symmetry in H2. apply Qabs_0 in H2. contradiction. omega. }
+      assert (Em1N': (m1 > N')%nat) by omega.
+      assert (Em2N': (m2 > N')%nat) by omega.
+      assert (E4:/Qabs (/ q1) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E2). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m1). auto. auto. }
+      assert (E5:/Qabs (/ q2) <= /eps0).
+      { apply (Qmult_le_l _ _ _ E3). 
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite Qmult_comm.
+        apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r. rewrite Qmult_1_l.
+        apply (H' m2). auto. auto. }
+      assert (E6:q1 - q2 == (/q2-/q1)/((/q1)*(/q2))).
+      { unfold Qdiv. unfold Qminus. rewrite Qmult_plus_distr_l.
+        rewrite Qinv_mult_distr. rewrite Qinv_involutive. rewrite Qinv_involutive. 
+        rewrite (Qmult_comm (/q2)). rewrite <- Qmult_assoc.
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E3)))).
+        rewrite (Qmult_assoc). 
+        assert (Etmp: - / q1 * q1 * q2 == - (/ q1 * q1 * q2)) by ring. 
+        rewrite Etmp. rewrite (Qmult_comm (/q1)). 
+        rewrite (Qmult_inv_r _ (Qinv_not_0 _ (Qabs_not_0 _ (Qlt_not_0 _ E2)))).
+        ring. }
+      assert (E7:eps == eps * eps0 * eps0 *  (/ eps0 * / eps0)).
+      { rewrite Qmult_assoc.
+        rewrite <- (Qmult_assoc _ eps0 (/eps0)). 
+        rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        rewrite Qmult_1_r.
+        rewrite <- Qmult_assoc. rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
+        ring. }
+      assert (E8: Qabs ((/ q2 - / q1) / (/ q1 * / q2)) ==
+       Qabs (/ q2 - / q1) * (/ Qabs (/ q1) / Qabs (/ q2))).
+      { unfold Qdiv. rewrite Qabs_Qmult.
+        rewrite Qabs_Qinv. rewrite Qabs_Qmult. rewrite Qmult_assoc.
+        rewrite Qinv_mult_distr. rewrite Qmult_assoc. reflexivity. }
+      rewrite E6. rewrite E7. rewrite E8.
+      assert (E9: / Qabs (/ q1) / Qabs (/ q2) > 0). 
+      { rewrite <- (Qmult_0_l (/ Qabs (/ q2))).
+        apply (Qmult_lt_compat_r _ _ _ (Qinv_lt_0_compat _ E3) (Qinv_lt_0_compat _ E2)). }
+      apply ( Qmult_lt_compat_trans_positive (
+          Qabs (/ q2 - / q1))             (eps * eps0 * eps0)
+          (/ Qabs (/ q1) / Qabs (/ q2))   (/ eps0 * / eps0)).
+      apply Qabs_nonneg. apply E9.
+      rewrite Qabs_Qminus. apply E1.
+      unfold Qdiv. apply Qmult_le_compat_nonneg.
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q1))).
+      apply (Qinv_le_0_compat _ (Qabs_nonneg (/ q2))).
+      auto. auto. }
+    }
 Qed.
 
 
-(* ----------- THE FOLLOWING ARE NOT FINISHED ----------
-
-Definition Cauchy_inv (A : nat -> Q -> Prop): (nat -> Q -> Prop) :=
-    fun (n:nat) (q:Q) =>
-     forall (q1:Q), (~(q1 == 0) -> (A n q1) -> q == /q1) \/ (q1 == 0 -> (A n q1) -> q == 0).
-
-
-Theorem Cauchy_inv_Cauchy: forall A, Cauchy A 
-  -> Cauchy (Cauchy_inv A).
-Proof. intros. unfold Cauchy_inv. split.
-  - intros. destruct (Cauchy_exists _ H n) as [q Hq]. exists (/ q).
-    intros. assert (H0:q==0\/~(q==0)) by (apply classic).
-    destruct H0.
-    + right. intros. rewrite H0. reflexivity.
-    + left. intros. rewrite (Cauchy_unique _ H n q q1 Hq H2). reflexivity.
-  - intros n q1 q2 [N1 H1] [N2 H2]. destruct (Cauchy_exists _ H n) as [q Hq].
-    assert (E1: q1 == / q) by (apply (H1 q Hq)).
-    assert (E2: q2 == / q) by (apply (H2 q Hq)).
-    rewrite E1,E2. reflexivity.
-  - intros. split.
-    + intros. rewrite <- H0. apply H1. apply H2.
-    + intros. rewrite H0. apply H1. apply H2.
-  - intros. apply (Cauchy_def _ H) in H0. destruct H0 as [n H0].
-    exists n. intros. 
-    destruct (Cauchy_exists _ H m1) as [qa Hqa], (Cauchy_exists _ H m2) as [qb Hqb].
-    rewrite (H3 qa Hqa). rewrite (H4 qb Hqb).
-    assert (E: /qa -/qb == (qb - qa)/(qa*qb)). { Search Qinv. unfold Qinv.
-    destruct (Qnum qa) eqn:Eb,(Qnum qb) eqn:Ea.
-  - unfold Qmult. rewrite Eb,Ea. simpl. Search Qmake. unfold Qdiv.
-    assert (E:(0 # Qden qa * Qden qb) == 0).
-    simpl. ring.
-  - 
+Definition Cauchy_inv (CSeq:nat->Q->Prop | (limit_not_0 CSeq)):(nat->Q->Prop).
 Admitted.
+(* Don't know how to write the definition *)
 
-Fixpoint Rinv(a : Real) : Real :=
-  match a with
-    | (Real_intro A HA) => Real_intro (Cauchy_inv A) (Cauchy_inv_Cauchy A HA) 
-  end.
+(* trying to write an even more compact definition of inv *)
+Lemma limit_not_0_iff_noteq0: forall A:Real, 
+ limit_not_0_real A <-> ~(Real_equiv A Rzero).
+Proof. intros. split.
+  - intros. destruct A as [A HA]. hnf in *. intros C. hnf in *.
+    destruct H as [eps0 [Heps0 H]]. apply C in Heps0.
+    destruct Heps0 as [n Hn]. destruct (H n) as [nN [HnN Hn']].
+    destruct (Cauchy_exists _ HA nN) as [qnN HqnN].
+    assert (E1: eps0 < Qabs qnN) by auto.
+    assert (E2: eps0 > Qabs (qnN - 0)). { apply (Hn nN). auto. auto. reflexivity. }
+    assert (Et: qnN-0 == qnN) by ring. rewrite Et in E2.
+    assert (Nonsense: Qabs qnN <Qabs qnN ). { apply (Qlt_trans _ eps0). auto. auto. }
+    apply Qlt_irrefl in Nonsense.  contradiction.
+  - Admitted.
+(*IFF TO BE PROVED*)
 
-*)
+
+Theorem Rmult_comm: forall A B,
+  (A * B == B * A)%R.
+Proof. intros [A HA] [B HB].
+unfold Real_equiv. unfold Rmult.
+unfold CauchySeqMult. intros eps Heps. exists O.
+intros. destruct (Cauchy_exists _ HA m) as [qa Hqa].
+destruct (Cauchy_exists _ HB m) as [qb Hqb].
+assert (E1: q1 == qa * qb). { auto. }
+assert (E2: q2 == qb * qa). { auto. }
+rewrite E1,E2.
+assert (E: qa * qb - qb * qa == 0) by ring.
+rewrite E. apply Heps.
+Qed.
+
