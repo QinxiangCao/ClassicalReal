@@ -1100,6 +1100,19 @@ Proof. intros. split.
     }
 Qed.
 
+Lemma limit_not_0_spec: forall x: Real,
+  (~ x == Rzero)%R <-> limit_not_0 match x with | Real_intro x0 _ => x0 end.
+Admitted.
+
+Definition Rinv (a: {a0: Real | (~ a0 == Rzero)%R }): Real :=
+  match a with
+  | exist _ (Real_intro a0 H) H0 =>
+      Real_intro
+        (fun (n : nat) (q : Q) => a0 n (/ q))
+        (Cauchy_inv_nonzero a0 H (proj1 (limit_not_0_spec (Real_intro a0 H)) H0))
+  end.
+
+(** Here is how to define Rinv.    -- Qinxiang Cao *)
 
 Definition Cauchy_inv (CSeq:nat->Q->Prop | (limit_not_0 CSeq)):(nat->Q->Prop).
 Admitted.
