@@ -11,76 +11,6 @@ From Coq Require Import Classes.Equivalence.
 From CReal Require Import QArith_ext.QArith_base_ext.
 From Coq Require Import Classes.Morphisms.
 
-Lemma eps_divide_2M_positive: forall (eps M:Q), 0 < eps -> 0 < M -> eps * (1 # 2) *(/M) > 0.
-Proof. intros.
-  apply (Qmult_lt_r _ _ _ H0). rewrite Qmult_0_l.
-  rewrite <- (Qmult_assoc (eps * (1 # 2))). rewrite (Qmult_comm _ M). rewrite Qmult_inv_r.
-  rewrite Qmult_1_r. apply eps_divide_2_positive. apply H.
-  intros contra. rewrite contra in H0. discriminate.
-Qed.
-Lemma Qabs_0: forall q, Qabs q == 0 -> q==0.
-Proof. intros. assert (Qabs q <= 0). { apply Qle_lteq. right. auto. }
-apply Qabs_Qle_condition in H0. destruct H0.
-apply Qle_lteq in H0. destruct H0.
-- assert (nonsense: -0 < 0). { apply (Qlt_le_trans _ _ _ H0 H1). } discriminate nonsense.
-- rewrite H0. reflexivity.
-Qed. 
-
-Lemma Qnot_0_abs: forall (q:Q), ~(q==0) -> ~(Qabs q == 0).
-Proof.
-intros. intros contra. apply Qabs_0 in contra. contradiction. 
-Qed.
-Lemma Qabs_not_0: forall (q:Q),  ~(Qabs q == 0) -> ~(q==0).
-Proof.
-intros. intros contra. rewrite contra in H. apply H. reflexivity.
-Qed.
-
-Lemma Qlt_not_0: forall (q:Q), q>0 -> ~(q==0).
-Proof. intros. intros Con. rewrite Con in H. discriminate H.
-Qed.
-Lemma Qinv_not_0: forall(q:Q), ~(/q == 0) -> ~(q==0).
-Proof. intros. intros C. rewrite C in H. apply H. reflexivity. Qed.
-
-Lemma Qmult_lt_compat_trans_positive: forall a b c d, a >= 0 -> c > 0
-  -> a < b -> c <= d -> a*c < b*d.
-Proof. intros. apply (Qle_lt_trans _ (a*d)).
-  - rewrite Qmult_comm. rewrite (Qmult_comm a). apply Qmult_le_compat_r.
-    apply H2. apply H.
-  - assert (E:d>0). { apply (Qlt_le_trans _ c). auto. auto. }
-    apply (Qmult_lt_r _ _ _ E). auto.
-Qed.
-
-Lemma Qmult_le_compat_nonneg: forall (a1 b1 a2 b2:Q), 0 <= a1 -> 0 <= b1 
-  -> a1 <= a2 -> b1 <= b2 -> a1 * b1 <= a2 * b2.
-Proof. intros. apply (Qle_trans _ (a1*b2)).
-  - rewrite (Qmult_comm a1). rewrite (Qmult_comm a1).
-    apply Qmult_le_compat_r. apply H2. apply H.
-  - apply Qmult_le_compat_r. apply H1. apply (Qle_trans _ b1). 
-    apply H0. apply H2.
-Qed.
-
-Lemma Qmult_lt_compat_nonneg: forall (a1 b1 a2 b2:Q), 0 <= a1 -> 0 <= b1 
-  -> a1 < a2 -> b1 < b2 -> a1 * b1 < a2 * b2.
-Proof. intros. apply Qle_lteq in H.  destruct H.
-  - assert (E: a1 * b1 < a1 * b2). 
-  { rewrite Qmult_comm. rewrite (Qmult_comm a1). apply Qmult_lt_compat_r. auto. auto. } 
-  apply (Qlt_le_trans _ _ _ E). assert (E': b2 > 0). { apply (Qle_lt_trans _ b1). auto. auto. }
-  apply (Qmult_le_r _ _ _ E'). apply Qlt_le_weak. auto.
-  - rewrite <- H. rewrite Qmult_0_l. rewrite <- H in H1. 
-    assert (E: 0 == a2 * 0) by ring. rewrite E. apply (Qmult_lt_l _ _ _ ). auto.
-    apply (Qle_lt_trans _ b1). auto. auto.
-Qed.
-
-Lemma Qopp_lt_compat : forall p q, p<q -> -q < -p.
-Proof. intros. assert(H1:p<q) by auto. apply Qlt_le_weak in H.
-  apply Qopp_le_compat in H. apply Qle_lteq in H.
-  destruct H. auto.
-  assert (E: p == q). rewrite <- Qopp_involutive. rewrite <- H.
-  rewrite Qopp_involutive. reflexivity. rewrite E in H1.
-  apply Qlt_irrefl in H1. contradiction.
-Qed.
-
-
 
 Class Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
   Cauchy_exists : forall (n:nat), exists (q:Q), (CSeq n q);
@@ -1102,7 +1032,41 @@ Qed.
 
 Lemma limit_not_0_spec: forall x: Real,
   (~ x == Rzero)%R <-> limit_not_0 match x with | Real_intro x0 _ => x0 end.
-Admitted.
+Proof. intros. split.
+- intros. hnf. unfold Real_equiv in H. destruct x as [A HA]. unfold Rzero in *.
+  apply not_all_ex_not in H. destruct H as [q Hq]. apply imply_to_and in Hq.
+  destruct Hq as [Hq H]. assert (E: forall n, ~(forall m, (m>n)%nat -> (forall q1 q2 : Q, A m q1 -> q2 == 0 -> Qabs (q1 - q2) < q))).
+  { intros n. apply (not_ex_all_not _ _ H n). }
+  exists (q*(1#2)). split. apply eps_divide_2_positive. auto.
+  intros N. assert (E1: ~(forall m : nat,
+     (m > N)%nat -> forall q1 q2 : Q, A m q1 -> q2 == 0 -> Qabs (q1 - q2) < q)). { apply E. }
+  clear H. clear E. apply not_all_ex_not in E1. destruct E1 as [nN E1].
+  exists nN. apply imply_to_and in E1. destruct E1 as [E1 E2].
+  split. apply E1. apply (not_all_ex_not) in E2. destruct E2 as [q1 Hq1].
+  apply not_all_ex_not in Hq1. destruct Hq1 as [q2 Hq1].
+  apply imply_to_and in Hq1. destruct Hq1 as [Hq1 H].
+  apply imply_to_and in H. destruct H as [Hq2 H].
+  rewrite Hq2 in H. intros q0 Hq0. assert (E: q0==q1).
+  { apply (Cauchy_unique _ HA nN). auto. auto. }
+  assert (E2: Qabs q0 >= q). { apply Qnot_lt_le in H. 
+    assert (Et:q1 - 0 == q1) by ring. rewrite Et in H. rewrite E. auto. }
+  apply (Qlt_le_trans _ q). 
+  { apply (Qplus_lt_l _ _ (-q*(1#2))).
+    assert (Et1: q * (1 # 2) + - q * (1 # 2) == 0) by ring.
+    assert (Et2: q + - q * (1 # 2) == q*(1#2)) by ring.
+    rewrite Et1,Et2. apply eps_divide_2_positive. auto. }
+  auto.
+- intros. destruct x as [A HA]. hnf in *. intros C. hnf in *.
+  destruct H as [eps0 [Heps0 H]]. apply C in Heps0.
+  destruct Heps0 as [n Hn]. destruct (H n) as [nN [HnN Hn']].
+  destruct (Cauchy_exists _ HA nN) as [qnN HqnN].
+  assert (E1: eps0 < Qabs qnN) by auto.
+  assert (E2: eps0 > Qabs (qnN - 0)). { apply (Hn nN). auto. auto. reflexivity. }
+  assert (Et: qnN-0 == qnN) by ring. rewrite Et in E2.
+  assert (Nonsense: Qabs qnN <Qabs qnN ). { apply (Qlt_trans _ eps0). auto. auto. }
+  apply Qlt_irrefl in Nonsense.  contradiction.
+Qed.
+
 
 Definition Rinv (a: {a0: Real | (~ a0 == Rzero)%R }): Real :=
   match a with
@@ -1111,29 +1075,6 @@ Definition Rinv (a: {a0: Real | (~ a0 == Rzero)%R }): Real :=
         (fun (n : nat) (q : Q) => a0 n (/ q))
         (Cauchy_inv_nonzero a0 H (proj1 (limit_not_0_spec (Real_intro a0 H)) H0))
   end.
-
-(** Here is how to define Rinv.    -- Qinxiang Cao *)
-
-Definition Cauchy_inv (CSeq:nat->Q->Prop | (limit_not_0 CSeq)):(nat->Q->Prop).
-Admitted.
-(* Don't know how to write the definition *)
-
-(* trying to write an even more compact definition of inv *)
-Lemma limit_not_0_iff_noteq0: forall A:Real, 
- limit_not_0_real A <-> ~(Real_equiv A Rzero).
-Proof. intros. split.
-  - intros. destruct A as [A HA]. hnf in *. intros C. hnf in *.
-    destruct H as [eps0 [Heps0 H]]. apply C in Heps0.
-    destruct Heps0 as [n Hn]. destruct (H n) as [nN [HnN Hn']].
-    destruct (Cauchy_exists _ HA nN) as [qnN HqnN].
-    assert (E1: eps0 < Qabs qnN) by auto.
-    assert (E2: eps0 > Qabs (qnN - 0)). { apply (Hn nN). auto. auto. reflexivity. }
-    assert (Et: qnN-0 == qnN) by ring. rewrite Et in E2.
-    assert (Nonsense: Qabs qnN <Qabs qnN ). { apply (Qlt_trans _ eps0). auto. auto. }
-    apply Qlt_irrefl in Nonsense.  contradiction.
-  - Admitted.
-(*IFF TO BE PROVED*)
-
 
 Theorem Rmult_comm: forall A B,
   (A * B == B * A)%R.
