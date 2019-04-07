@@ -7,44 +7,81 @@ From Coq Require Import omega.Omega.
 From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import Classes.RelationClasses.
-(** def of order-field and metric space **)
+From Coq Require Import Classes.Equivalence.
 
+(** funde theorem**)
 Theorem PNP : forall p : Prop, ~(p /\ ~p) .
 Proof.
   unfold not. intros. destruct H. apply H0 in H. apply H.
 Qed.
 
+
+Lemma le_one : forall (m n : nat), (m <= n)%nat \/ (n <= m)%nat.
+Proof.
+  intro m. induction m.
+  -intros. left. induction n. apply le_n. apply le_S. apply IHn.
+  -intros. destruct n. +right. apply le_0_n. +destruct IHm with (n := n).
+  {left. apply le_n_S. auto. } {right. apply le_n_S. auto. }
+Qed.
+
+Lemma le_equ : forall (m n : nat), (m <= n)%nat -> (n <= m)%nat -> m = n.
+Proof.
+  intro m. induction m as [| m' IH]. -intros. destruct n. auto. inversion H0.
+  -intros. destruct n. +inversion H. +apply le_S_n in H. apply le_S_n in H0.
+    assert (m' = n). apply IH. apply H. apply H0. auto.
+Qed.
+(******************************************************************)
+(** def of metric space**)
+
 Class EquR (X : Type) :={
     eq : X -> X -> Prop;
-    eqr : forall (x : X), eq x x;
-    eqt : forall (x y z : X), eq x y -> eq y z -> eq x z;
-    eqs : forall (x y : X), eq x y -> eq y x;
+    E : Equivalence eq;
 }.
 Notation " x -- y " := (eq x y)
   (at level 70 ,no associativity) : EquR.
 Notation " x !- y " := (~eq x y)
   (at level 70, no associativity) : EquR.
 Local Open Scope EquR.
+Lemma eqt : forall {X : Type} {H : EquR X} (x y z : X), eq x y -> eq y z -> eq x z.
+Proof.
+    intros. apply E with (y0 := y). auto. auto.
+Qed.
+Lemma eqr : forall {X : Type} {H : EquR X} (x : X), eq x x.
+Proof.
+  intros. apply E.
+Qed.
+Lemma eqs : forall {X : Type} {H : EquR X}  (x y : X), eq x y -> eq y x.
+Proof.
+   intros. apply E. apply H0.
+Qed.
+
+
 
 Class preOrderField (X : Type) :={
     le : X -> X -> Prop;
     pOE :> EquR X;
-    pOr : forall (x : X), le x x;
-    pOt : forall (x y z : X), le x y -> le y z -> le x z;
+    ppO : PreOrder le;
     pOe : forall (x y : X), le x y -> le y x -> eq x y;
     pOo : forall (x y : X), le x y \/ le y x;
     pOeq : forall (a b c d : X), eq a b -> eq c d -> le a c -> le b d;
 }.
 Notation "x <= y" := (le x y)
   (at level 70, no associativity) : preOrderField.
-
+Lemma pOr : forall {X : Type} { H : preOrderField X } (x : X), le x x.
+Proof. 
+  intros. apply ppO.
+Qed.
+Lemma pOt : forall {X : Type} {H : preOrderField X} (x y z : X), le x y -> le y z -> le x z.
+Proof.
+  intros. apply ppO with (y0 := y). auto. auto.
+Qed.
 Inductive lt {X : Type} {H : preOrderField X} (x y : X) : Prop :=
     | lt_intro (ltle : le x y) (lteq : ~eq x y) : lt x y.
 
 Theorem noteq : forall {X : Type} {H : EquR X} (a b c : X), a -- b -> a !- c -> b !- c.
 Proof.
-  intros. unfold not in H1. unfold not. intros. apply eqt with (z := c) in H0.
-  apply H1 in H0. apply H0. auto.
+  intros. unfold not in H1. unfold not. intros.
+  apply H1. apply eqt with (y := b). auto. auto.
 Qed.
 
 Theorem pOtq : forall {X : Type} {H : preOrderField X} (a b c d : X), eq a b -> eq c d -> lt a c -> lt b d.
@@ -73,20 +110,26 @@ Class Field  (X : Type)  :={
 Notation "x + y" := (plus x y)
     (at level 50, left associativity) : Field.
 
-
+Lemma HpOt : forall {X : Type} {H : Field X} (x y z : X), lt x y -> lt (plus x z) (plus y z).
+Proof.
+  intros. inversion H0. apply (HpO x y z) in ltle. unfold not in lteq.
+  assert(plus x z -- plus y z -> False). intros. assert(exists iz, plus z iz -- x0).
+  apply HF4. destruct H2 as [iz]. apply (HFeq (plus x z) (plus y z) iz iz) in H1.
+  rewrite HF2 in H1. 
+ 
 Theorem division_of_eps : forall {X : Type} {H : Field X} (eps : X ), lt x0 eps
-    -> (exists (d1 d2 : X), lt x0 d1 -> lt x0 d2 -> eq (plus d1 d2) eps) .
+    -> (exists (d1 d2 : X), lt x0 d1 /\ lt x0 d2 /\ eq (plus d1 d2) eps) .
 Proof.
     intros. destruct D with (x1 := x0) (x2 := eps). auto. destruct H1.
     assert(exists x', plus x x' -- x0). apply HF4. destruct H3.
     exists x. exists (plus eps x1). intros. assert(plus x (plus eps x1) -- plus (plus x x1) eps ).
     assert(plus x (plus eps x1) -- plus x (plus x1 eps)). assert((plus eps x1) -- (plus x1 eps)).
     apply HF1. apply (HFeq x x (plus eps x1) (plus x1 eps)). apply eqr. auto.
-    assert(plus (plus x x1) eps -- plus x (plus x1 eps)). apply HF2. apply eqs in H7.
+    assert(plus (plus x x1) eps -- plus x (plus x1 eps)). apply HF2. apply eqs in H5.
    apply (eqt (plus x (plus eps x1)) (plus x (plus x1 eps)) (plus (plus x x1) eps)).
    auto. auto. assert(plus (plus x x1) eps -- plus x0 eps). apply HFeq. auto. apply eqr.
     assert(plus x0 eps -- eps). apply HF3. apply eqt with (z := plus x0 eps) in H6.
-    apply eqt with (z := eps) in H6. auto. auto. auto.
+    apply eqt with (z := eps) in H6. split. auto. split. 
 Qed.
 
 Class Metric (A : Type) (X : Type):={
@@ -174,15 +217,33 @@ Definition equC {A X : Type} {M : Metric A X} (x1 x2 : @Cauchilize A X M):  Prop
   end.
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
+Lemma refl_equC : forall {A X : Type} {M : Metric A X} (x : @Cauchilize A X M), equC x x.
+Proof.
+  intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
+  destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
+  apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
+Qed.
+
 Theorem EquR_trans : forall {X : Type} {M : Metric X X}, EquR X ->
    EquR (@Cauchilize X X M).
 Proof.
   intros. split with (eq := equC).
-  -intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
-   destruct H0. exists x. intros. apply H0 with (m := n) (n := n). split. auto. auto.
-  split. auto. auto.
+  -apply refl_equC.
  -unfold equC. intros. destruct x. destruct y. destruct z. intros.
- (** warning : stop running here !**)
+   apply division_of_eps in H4. destruct H4 as [d1]. destruct H4 as [d2].
+  destruct H with (eps := d1). 
+  auto. destruct H0 with (eps := d2). auto.
+  
+
+  assert((x <= x1)%nat \/ (x1 <= x)%nat). apply le_one.
+  destruct H7. exists x1.
+    +intros. assert(exists am, Cseq0 n am). apply HCseq1.
+      destruct H11. destruct H5 with (n := n) (a1 := a1) (a2 := x2).
+      apply le_lt_or_eq in H7. destruct H7. apply (lt_trans x x1 n).
+      auto. auto. rewrite H7. auto. auto. auto.
+      destruct H6 with (n := n) (a1 :=x2) (a2 := a2). auto. auto. auto.
+      assert
+   
 
 Qed.
 
@@ -203,27 +264,8 @@ Definition siCauchilize : Type :=(@Cauchilize A_ X_ ).
 Definition xsiCauchilize : Type :=(@Cauchilize X_ X_) .
 Definition biCauchilize: Type := @Cauchilize (@Cauchilize A_ X_) (@Cauchilize X_ X_). **)
 
-Lemma refl_equC : forall {A X : Type} {M : Metric A X} (x : @Cauchilize A X M), equC x x.
-Proof.
-  intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
-  destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
-  apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
-Qed.
 
-Lemma le_one : forall (m n : nat), (m <= n)%nat \/ (n <= m)%nat.
-Proof.
-  intro m. induction m.
-  -intros. left. induction n. apply le_n. apply le_S. apply IHn.
-  -intros. destruct n. +right. apply le_0_n. +destruct IHm with (n := n).
-  {left. apply le_n_S. auto. } {right. apply le_n_S. auto. }
-Qed.
 
-Lemma le_equ : forall (m n : nat), (m <= n)%nat -> (n <= m)%nat -> m = n.
-Proof.
-  intro m. induction m as [| m' IH]. -intros. destruct n. auto. inversion H0.
-  -intros. destruct n. +inversion H. +apply le_S_n in H. apply le_S_n in H0.
-    assert (m' = n). apply IH. apply H. apply H0. auto.
-Qed.
 
 Theorem preOrder_trans : forall {X : Type} {M : Metric X X}, preOrderField X ->
    preOrderField (@Cauchilize X X M).
@@ -242,7 +284,8 @@ Proof.
     apply H5. apply H8. assert(forall x y : nat, (x <= y)%nat -> x < y \/ x = y). intros. apply le_lt_or_eq. auto.
     apply H9 in H4. destruct H4. apply (lt_trans x x1 n).
     auto. auto. rewrite <-H4 in H5. auto. auto. +unfold equC in H0. left.
-    
+
+(** warning : stop running !**)
 
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
