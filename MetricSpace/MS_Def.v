@@ -8,8 +8,10 @@ From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import Classes.RelationClasses.
 From Coq Require Import Classes.Equivalence.
+From Coq Require Import Classes.Morphisms.
+From Coq Require Import Setoids.Setoid.
 
-(** funde theorem**)
+(** fund theorem**)
 Theorem PNP : forall p : Prop, ~(p /\ ~p) .
 Proof.
   unfold not. intros. destruct H. apply H0 in H. apply H.
@@ -32,32 +34,53 @@ Proof.
 Qed.
 (******************************************************************)
 (** def of metric space**)
+Parameter X : Type.
+Parameter eq : relation X.
+Parameter E : Equivalence eq.
+Existing Instance E.
 
-Class EquR (X : Type) :={
-    eq : X -> X -> Prop;
-    E : Equivalence eq;
+Class Pre_Order_Field {X : Type} (eq : relation X) :={
+    le : relation X;
+    pofr : forall(a b : X), eq a b -> le a b;
+    poft : forall(a b c : X), le a b -> le b c -> le a c;
+    poeq : forall (a b c d : X), eq a b -> eq c d -> le a c -> le b d;
 }.
-Notation " x -- y " := (eq x y)
-  (at level 70 ,no associativity) : EquR.
-Notation " x !- y " := (~eq x y)
-  (at level 70, no associativity) : EquR.
-Local Open Scope EquR.
-Lemma eqt : forall {X : Type} {H : EquR X} (x y z : X), eq x y -> eq y z -> eq x z.
+Notation "a <= b" := (le a b)
+    (at level 70, no associativity).
+Class Plus_Field {X : Type} (eq : relation X) :={
+    plus : X -> X -> X; 
+    x0 : X;
+    pfc : forall (x y : X), eq (plus x y) (plus y x);
+    pfa : forall (x y z : X), eq (plus (plus x y) z) (plus x (plus y z));
+    pfz : forall (x : X), eq (plus x0 x) x;
+    pfi : forall (x : X), (exists ix, eq (plus x ix) x0);
+    pfeq : forall (a b c d : X), eq a b -> eq c d -> eq (plus a c) (plus b d);
+}.
+Notation "a + b" := (plus a b)
+    (at level 50, left associativity).
+
+Notation " x == y " := (eq x y)
+  (at level 70 ,no associativity).
+Notation " x != y " := (~eq x y)
+  (at level 70, no associativity).
+Inductive lt {H : Pre_Order_Field eq} (x y : X) : Prop :=
+    | lt_intro (ltle : le x y) (lteq : ~eq x y) : lt x y.
+Notation "x < y" := (lt x y)
+    (at level 70, no associativity).
+
+Theorem noteq : forall (a b c : X), a == b -> a != c -> b != c.
 Proof.
-    intros. apply E with (y0 := y). auto. auto.
-Qed.
-Lemma eqr : forall {X : Type} {H : EquR X} (x : X), eq x x.
-Proof.
-  intros. apply E.
-Qed.
-Lemma eqs : forall {X : Type} {H : EquR X}  (x y : X), eq x y -> eq y x.
-Proof.
-   intros. apply E. apply H0.
+  unfold not. intros. apply H0. rewrite H. apply H1.
 Qed.
 
+Theorem pOtq : forall {H : Pre_Order_Field eq} (a b c d : X), eq a b -> eq c d -> lt a c -> lt b d.
+Proof.
+    intros. inversion H2. unfold not in lteq. assert(b != c). apply (noteq a _ _).
+    auto. auto. apply lt_intro. apply (poeq a _ c _). auto. auto. auto. rewrite H1 in H3.
+    auto. 
+Qed.
 
-
-Class preOrderField (X : Type) :={
+(** Class preOrderField (X : Type) :={
     le : X -> X -> Prop;
     pOE :> EquR X;
     ppO : PreOrder le;
@@ -66,35 +89,39 @@ Class preOrderField (X : Type) :={
     pOeq : forall (a b c d : X), eq a b -> eq c d -> le a c -> le b d;
 }.
 Notation "x <= y" := (le x y)
-  (at level 70, no associativity) : preOrderField.
-Lemma pOr : forall {X : Type} { H : preOrderField X } (x : X), le x x.
-Proof. 
-  intros. apply ppO.
-Qed.
-Lemma pOt : forall {X : Type} {H : preOrderField X} (x y z : X), le x y -> le y z -> le x z.
-Proof.
-  intros. apply ppO with (y0 := y). auto. auto.
-Qed.
-Inductive lt {X : Type} {H : preOrderField X} (x y : X) : Prop :=
-    | lt_intro (ltle : le x y) (lteq : ~eq x y) : lt x y.
+  (at level 70, no associativity) : preOrderField. **)
 
-Theorem noteq : forall {X : Type} {H : EquR X} (a b c : X), a -- b -> a !- c -> b !- c.
-Proof.
-  intros. unfold not in H1. unfold not. intros.
-  apply H1. apply eqt with (y := b). auto. auto.
-Qed.
 
-Theorem pOtq : forall {X : Type} {H : preOrderField X} (a b c d : X), eq a b -> eq c d -> lt a c -> lt b d.
-Proof.
-   intros. inversion H2. apply (pOeq a b c d) in ltle. unfold not in lteq.
-   assert(b !- d). unfold not. intros. apply lteq. apply eqt with (z := d) in H0. apply eqs in H1.
-  apply eqt with (z := c) in H0. auto. auto. auto. apply (lt_intro b d ltle H3). auto. auto.  
-Qed.
+
+
+
+
 
 
 Notation "x < y" := (lt x y)
   (at level 70, no associativity).
 
+Module Test.
+
+Class Field  (X : Type) (eq: relation X)  :={
+    x0 : X;
+    plus : X -> X -> X;
+    HF1 : forall (x y : X), eq (plus x y) (plus y x);
+    HF2 : forall (x y z : X), eq (plus (plus x y) z) (plus x (plus y z));
+    HF3 : forall (x : X), eq (plus x0 x) x;
+    HF4 : forall (x : X), (exists ix, eq (plus x ix) x0);
+    HFeq : forall (a b c d : X), eq a b -> eq c d -> eq (plus a c) (plus b d);
+}.
+
+Class OrderedField (X : Type) (eq: relation X)  :={
+    is_Field :> Field X eq;
+    le: relation X;
+    is_PO :> True; (* About le and eq *)
+    HpO : forall (x y z : X), le x y -> le (plus x z) (plus y z);
+    (*D : forall (x1 x2 : X), lt x1 x2 -> (exists x3, lt x1 x3 /\ lt x3 x2);*)
+}.
+
+End Test.
 Class Field  (X : Type)  :={
     x0 : X;
     plus : X -> X -> X;
@@ -107,16 +134,15 @@ Class Field  (X : Type)  :={
     HpO : forall (x y z : X), le x y -> le (plus x z) (plus y z);
     D : forall (x1 x2 : X), lt x1 x2 -> (exists x3, lt x1 x3 /\ lt x3 x2);
 }.
+
 Notation "x + y" := (plus x y)
     (at level 50, left associativity) : Field.
 
 Lemma HpOt : forall {X : Type} {H : Field X} (x y z : X), lt x y -> lt (plus x z) (plus y z).
 Proof.
-  intros. inversion H0. apply (HpO x y z) in ltle. unfold not in lteq.
-  assert(plus x z -- plus y z -> False). intros. assert(exists iz, plus z iz -- x0).
-  apply HF4. destruct H2 as [iz]. apply (HFeq (plus x z) (plus y z) iz iz) in H1.
-  rewrite HF2 in H1. 
- 
+  intros.
+(** require rewrite tatic to make a neat proof**)
+
 Theorem division_of_eps : forall {X : Type} {H : Field X} (eps : X ), lt x0 eps
     -> (exists (d1 d2 : X), lt x0 d1 /\ lt x0 d2 /\ eq (plus d1 d2) eps) .
 Proof.
@@ -129,7 +155,11 @@ Proof.
    apply (eqt (plus x (plus eps x1)) (plus x (plus x1 eps)) (plus (plus x x1) eps)).
    auto. auto. assert(plus (plus x x1) eps -- plus x0 eps). apply HFeq. auto. apply eqr.
     assert(plus x0 eps -- eps). apply HF3. apply eqt with (z := plus x0 eps) in H6.
-    apply eqt with (z := eps) in H6. split. auto. split. 
+    apply eqt with (z := eps) in H6. split. auto. split. assert(plus x x1 < plus eps x1).
+    apply (HpOt x eps x1). auto. assert(plus x x1 -- x0). auto.
+    apply (pOtq (plus x x1) x0 (plus eps x1) (plus eps x1)). auto. apply eqr.
+    auto. assert(plus x (plus eps x1) -- plus x0 eps). apply eqt with (y := plus (plus x x1) eps).
+    auto. auto. apply eqt with (y := plus x0 eps). auto. auto. apply HF3. apply eqs. auto.
 Qed.
 
 Class Metric (A : Type) (X : Type):={
@@ -228,7 +258,15 @@ Theorem EquR_trans : forall {X : Type} {M : Metric X X}, EquR X ->
    EquR (@Cauchilize X X M).
 Proof.
   intros. split with (eq := equC).
-  -apply refl_equC.
+  -split. +unfold Reflexive. apply refl_equC.
+             +unfold Symmetric. unfold equC. destruct x. destruct y.
+               intros. destruct H1 with (eps := eps). auto.
+               exists x. intros. apply  apply H3 with (n := n). auto.
+
+
+
+
+
  -unfold equC. intros. destruct x. destruct y. destruct z. intros.
    apply division_of_eps in H4. destruct H4 as [d1]. destruct H4 as [d2].
   destruct H with (eps := d1). 
