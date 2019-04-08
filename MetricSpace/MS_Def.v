@@ -11,7 +11,7 @@ From Coq Require Import Classes.Equivalence.
 From Coq Require Import Classes.Morphisms.
 From Coq Require Import Setoids.Setoid.
 
-(** fund theorem**)
+(** useful theorem**)
 Theorem PNP : forall p : Prop, ~(p /\ ~p) .
 Proof.
   unfold not. intros. destruct H. apply H0 in H. apply H.
