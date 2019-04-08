@@ -34,38 +34,62 @@ Proof.
 Qed.
 (******************************************************************)
 (** def of metric space**)
-Parameter X : Type.
-Parameter eq : relation X.
-Parameter E : Equivalence eq.
-Existing Instance E.
-
 Class Pre_Order_Field {X : Type} (eq : relation X) :={
     le : relation X;
     pofr : forall(a b : X), eq a b -> le a b;
     poft : forall(a b c : X), le a b -> le b c -> le a c;
     poeq : forall (a b c d : X), eq a b -> eq c d -> le a c -> le b d;
 }.
+Instance le_rewrite : forall (X : Type) (eq : relation X) (H : Equivalence eq) (Hpoe : Pre_Order_Field eq),
+    Proper (eq ==> eq ==> iff) le.
+Proof.
+    intros. hnf. intros. split. -apply poeq. auto. auto.
+        -apply poeq. symmetry. auto. symmetry. auto.
+Defined.
 Notation "a <= b" := (le a b)
     (at level 70, no associativity).
-Class Plus_Field {X : Type} (eq : relation X) :={
+Inductive lt {X : Type} {eq : relation X} {Heq : Equivalence eq} {H : Pre_Order_Field eq} (x y : X) : Prop :=
+    | lt_intro (ltle : le x y) (lteq : ~eq x y) : lt x y.
+Notation "x < y" := (lt x y)
+    (at level 70, no associativity).
+Instance  lt_rewrite : forall (X : Type) (eq : relation X) (H : Equivalence eq) (Hpoe : Pre_Order_Field eq),
+    Proper (eq ==> eq ==> iff) lt.
+Proof.
+    intros. hnf. intros. hnf. intros. split.
+    -intros. inversion H2. rewrite H0 in ltle. rewrite H1 in ltle.
+      rewrite H1 in lteq. rewrite H0 in lteq. apply lt_intro. auto. auto.
+    -intros. inversion H2. rewrite <-H0 in ltle. rewrite <-H1 in ltle.
+      rewrite <-H1 in lteq. rewrite <-H0 in lteq. apply lt_intro. auto. auto.
+Defined.
+Class Plus_Field {X : Type} (eq : relation X) {H : Equivalence eq} :={
     plus : X -> X -> X; 
+    p_pof :> Pre_Order_Field eq;
     x0 : X;
     pfc : forall (x y : X), eq (plus x y) (plus y x);
     pfa : forall (x y z : X), eq (plus (plus x y) z) (plus x (plus y z));
     pfz : forall (x : X), eq (plus x0 x) x;
     pfi : forall (x : X), (exists ix, eq (plus x ix) x0);
     pfeq : forall (a b c d : X), eq a b -> eq c d -> eq (plus a c) (plus b d);
+    ppof : forall (x y z : X), le x y -> le (plus x z) (plus y z);
+    pd : forall (x1 x2 : X), lt x1 x2 -> (exists x3 : X, lt x1 x3 /\ lt x3 x2);
 }.
 Notation "a + b" := (plus a b)
     (at level 50, left associativity).
+Instance plus_rewrite : forall (X : Type) (eq : relation X) (H : Equivalence eq) (Hpf : Plus_Field eq),
+    Proper (eq ==> eq ==> eq) plus.
+Proof.
+    intros. hnf. intros. hnf. intros. apply pfeq. auto. auto.
+Defined.
 
-Notation " x == y " := (eq x y)
-  (at level 70 ,no associativity).
-Notation " x != y " := (~eq x y)
-  (at level 70, no associativity).
-Inductive lt {H : Pre_Order_Field eq} (x y : X) : Prop :=
-    | lt_intro (ltle : le x y) (lteq : ~eq x y) : lt x y.
-Notation "x < y" := (lt x y)
+Section ProofModule_1.
+
+Variables X : Type.
+Variables eq : relation X.
+Variables HE : Equivalence eq.
+
+Notation "a == b" := (eq a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eq a b)
     (at level 70, no associativity).
 
 Theorem noteq : forall (a b c : X), a == b -> a != c -> b != c.
@@ -73,35 +97,26 @@ Proof.
   unfold not. intros. apply H0. rewrite H. apply H1.
 Qed.
 
-Theorem pOtq : forall {H : Pre_Order_Field eq} (a b c d : X), eq a b -> eq c d -> lt a c -> lt b d.
+Lemma HpOt : forall {H : Plus_Field eq} (x y z : X), lt x y -> lt (plus x z) (plus y z).
 Proof.
-    intros. inversion H2. unfold not in lteq. assert(b != c). apply (noteq a _ _).
-    auto. auto. apply lt_intro. apply (poeq a _ c _). auto. auto. auto. rewrite H1 in H3.
-    auto. 
+  intros. inversion H0. apply (ppof _ _ z) in ltle. assert(x + z != y  + z).
+  unfold not. intros. unfold not in lteq. apply lteq. assert(exists z', z + z' == x0).
+  apply pfi. destruct H2 as[z']. assert(x + z + z' == y + z + z'). rewrite H1. reflexivity.
+  rewrite pfa in H3. rewrite H2 in H3. rewrite pfa in H3. rewrite H2 in H3. rewrite pfc in H3.
+   rewrite pfz in H3. rewrite pfc in H3. rewrite pfz in H3. auto. apply lt_intro. auto. auto.
 Qed.
 
-(** Class preOrderField (X : Type) :={
-    le : X -> X -> Prop;
-    pOE :> EquR X;
-    ppO : PreOrder le;
-    pOe : forall (x y : X), le x y -> le y x -> eq x y;
-    pOo : forall (x y : X), le x y \/ le y x;
-    pOeq : forall (a b c d : X), eq a b -> eq c d -> le a c -> le b d;
-}.
-Notation "x <= y" := (le x y)
-  (at level 70, no associativity) : preOrderField. **)
+Theorem division_of_eps : forall {H : Plus_Field eq} (eps : X ), lt x0 eps
+    -> (exists (d1 d2 : X), lt x0 d1 /\ lt x0 d2 /\ eq (plus d1 d2) eps) .
+Proof.
+    intros. destruct (pd x0 eps). auto. destruct H1. exists x.
+    destruct (pfi x) as [x']. exists (eps + x'). split. auto. split.
+    apply (HpOt x eps x') in H2. rewrite H3 in H2. auto. rewrite (pfc eps x').
+    rewrite <-pfa. rewrite H3. rewrite pfz. reflexivity.
+Qed. 
+End ProofModule_1.
 
-
-
-
-
-
-
-
-Notation "x < y" := (lt x y)
-  (at level 70, no associativity).
-
-Module Test.
+(** Module Test.
 
 Class Field  (X : Type) (eq: relation X)  :={
     x0 : X;
@@ -121,7 +136,8 @@ Class OrderedField (X : Type) (eq: relation X)  :={
     (*D : forall (x1 x2 : X), lt x1 x2 -> (exists x3, lt x1 x3 /\ lt x3 x2);*)
 }.
 
-End Test.
+End Test. 
+
 Class Field  (X : Type)  :={
     x0 : X;
     plus : X -> X -> X;
@@ -133,34 +149,11 @@ Class Field  (X : Type)  :={
     HFeq : forall (a b c d : X), a -- b -> c -- d -> (plus a c) -- (plus b d);
     HpO : forall (x y z : X), le x y -> le (plus x z) (plus y z);
     D : forall (x1 x2 : X), lt x1 x2 -> (exists x3, lt x1 x3 /\ lt x3 x2);
-}.
+}. **)
 
-Notation "x + y" := (plus x y)
-    (at level 50, left associativity) : Field.
 
-Lemma HpOt : forall {X : Type} {H : Field X} (x y z : X), lt x y -> lt (plus x z) (plus y z).
-Proof.
-  intros.
+
 (** require rewrite tatic to make a neat proof**)
-
-Theorem division_of_eps : forall {X : Type} {H : Field X} (eps : X ), lt x0 eps
-    -> (exists (d1 d2 : X), lt x0 d1 /\ lt x0 d2 /\ eq (plus d1 d2) eps) .
-Proof.
-    intros. destruct D with (x1 := x0) (x2 := eps). auto. destruct H1.
-    assert(exists x', plus x x' -- x0). apply HF4. destruct H3.
-    exists x. exists (plus eps x1). intros. assert(plus x (plus eps x1) -- plus (plus x x1) eps ).
-    assert(plus x (plus eps x1) -- plus x (plus x1 eps)). assert((plus eps x1) -- (plus x1 eps)).
-    apply HF1. apply (HFeq x x (plus eps x1) (plus x1 eps)). apply eqr. auto.
-    assert(plus (plus x x1) eps -- plus x (plus x1 eps)). apply HF2. apply eqs in H5.
-   apply (eqt (plus x (plus eps x1)) (plus x (plus x1 eps)) (plus (plus x x1) eps)).
-   auto. auto. assert(plus (plus x x1) eps -- plus x0 eps). apply HFeq. auto. apply eqr.
-    assert(plus x0 eps -- eps). apply HF3. apply eqt with (z := plus x0 eps) in H6.
-    apply eqt with (z := eps) in H6. split. auto. split. assert(plus x x1 < plus eps x1).
-    apply (HpOt x eps x1). auto. assert(plus x x1 -- x0). auto.
-    apply (pOtq (plus x x1) x0 (plus eps x1) (plus eps x1)). auto. apply eqr.
-    auto. assert(plus x (plus eps x1) -- plus x0 eps). apply eqt with (y := plus (plus x x1) eps).
-    auto. auto. apply eqt with (y := plus x0 eps). auto. auto. apply HF3. apply eqs. auto.
-Qed.
 
 Class Metric (A : Type) (X : Type):={
     dist : A -> A -> X;
