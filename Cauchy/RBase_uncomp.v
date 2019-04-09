@@ -1090,3 +1090,63 @@ assert (E: qa * qb - qb * qa == 0) by ring.
 rewrite E. apply Heps.
 Qed.
 
+Theorem Rmult_assoc: forall A B C,
+  ( A * B * C == A * (B * C))%R.
+Proof. intros [A HA] [B HB] [C HC]. hnf.
+  unfold CauchySeqMult. intros eps Heps. exists O.
+  intros. destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  destruct (Cauchy_exists _ HC m) as [qc Hqc].
+  assert (E1: q1 == qa * qb * qc). 
+  { apply H0. intros. rewrite (Cauchy_unique _ HA m q0 qa H2 Hqa).
+    rewrite (Cauchy_unique _ HB m qb q3 Hqb H3).
+    reflexivity. auto. }
+  assert (E2: q2 == qa * (qb * qc)).
+  { apply H1. auto. intros. rewrite (Cauchy_unique _ HB m q0 qb H2 Hqb).
+    rewrite (Cauchy_unique _ HC m qc q3 Hqc H3). reflexivity. }
+  assert (E: qa * qb * qc - qa * (qb * qc) == 0) by ring.
+  rewrite E1,E2,E. apply Heps.
+Qed.
+
+Definition Rone:Real :=
+ Real_intro (fun (n:nat) => (fun x => x == 1)) (Real_has_Q 1).
+
+Theorem Rmult_1_r: forall A, (A * Rone == A)%R.
+Proof. intros [A HA]. hnf. unfold CauchySeqMult.
+  intros. exists O. intros.
+  assert (E:q1 == q2). { rewrite <- (Qmult_1_r q2). apply H1. auto. reflexivity. }
+  rewrite E. unfold Qminus. rewrite Qplus_opp_r. apply H.
+Qed.
+
+
+Theorem Rmult_inv_1: forall A:{A: Real | (~ A == Rzero)%R }, 
+((match A with | exist _ A0 _ => A0 end) * (Rinv A) == Rone)%R.
+Proof. intros [[A HA1] HA2]. hnf. apply limit_not_0_spec in HA2.
+  apply (limit_not_0_seq _ HA1) in HA2. destruct HA2 as [N HA2].
+  intros eps Heps. exists N. intros. unfold CauchySeqMult in H0.
+  destruct (Cauchy_exists _ HA1 m) as [qm Hqm].
+  assert (E: q1 == qm * /qm). { apply H0. apply Hqm. rewrite Qinv_involutive. apply Hqm. }
+  rewrite Qmult_inv_r in E. rewrite H1,E. apply Heps.
+  apply (HA2 m). auto. auto.
+Qed.
+
+Theorem Rmult_plus_distr_r: forall A B C, (A*(B+C)==A*B+A*C)%R.
+Proof. intros [A HA] [B HB] [C HC] eps Heps. hnf. unfold CauchySeqMult. unfold CauchySeqPlus.
+  exists O. intros m Hm Q1 Q2 H1 H2.
+  destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  destruct (Cauchy_exists _ HC m) as [qc Hqc].
+  assert (E1: Q1 == qa * (qb + qc)).
+  { apply H1. auto. intros. rewrite (Cauchy_unique _ HB m q1 qb H Hqb).
+    rewrite (Cauchy_unique _ HC m qc q2 Hqc H0). reflexivity. }
+  assert (E2: Q2 == qa * qb + qa * qc).
+  { apply H2. intros. rewrite (Cauchy_unique _ HA m q1 qa H Hqa).
+    rewrite (Cauchy_unique _ HB m q2 qb H0 Hqb). reflexivity.
+    intros. rewrite (Cauchy_unique _ HA m q1 qa H Hqa).
+    rewrite (Cauchy_unique _ HC m qc q2 Hqc H0). reflexivity. }
+  assert (E: qa * (qb + qc) - (qa * qb + qa * qc) == 0) by ring.
+  rewrite E1,E2,E. auto.
+Qed.
+
+
+
