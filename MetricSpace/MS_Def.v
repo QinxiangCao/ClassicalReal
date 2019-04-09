@@ -48,7 +48,7 @@ Proof.
 Defined.
 Notation "a <= b" := (le a b)
     (at level 70, no associativity).
-Inductive lt {X : Type} {eq : relation X} {Heq : Equivalence eq} {H : Pre_Order_Field eq} (x y : X) : Prop :=
+Inductive lt {X : Type} {eq : relation X} {H : Pre_Order_Field eq} (x y : X) : Prop :=
     | lt_intro (ltle : le x y) (lteq : ~eq x y) : lt x y.
 Notation "x < y" := (lt x y)
     (at level 70, no associativity).
@@ -61,7 +61,7 @@ Proof.
     -intros. inversion H2. rewrite <-H0 in ltle. rewrite <-H1 in ltle.
       rewrite <-H1 in lteq. rewrite <-H0 in lteq. apply lt_intro. auto. auto.
 Defined.
-Class Plus_Field {X : Type} (eq : relation X) {H : Equivalence eq} :={
+Class Plus_Field {X : Type} (eq : relation X):={
     plus : X -> X -> X; 
     p_pof :> Pre_Order_Field eq;
     x0 : X;
@@ -116,58 +116,22 @@ Proof.
 Qed. 
 End ProofModule_1.
 
-(** Module Test.
-
-Class Field  (X : Type) (eq: relation X)  :={
-    x0 : X;
-    plus : X -> X -> X;
-    HF1 : forall (x y : X), eq (plus x y) (plus y x);
-    HF2 : forall (x y z : X), eq (plus (plus x y) z) (plus x (plus y z));
-    HF3 : forall (x : X), eq (plus x0 x) x;
-    HF4 : forall (x : X), (exists ix, eq (plus x ix) x0);
-    HFeq : forall (a b c d : X), eq a b -> eq c d -> eq (plus a c) (plus b d);
-}.
-
-Class OrderedField (X : Type) (eq: relation X)  :={
-    is_Field :> Field X eq;
-    le: relation X;
-    is_PO :> True; (* About le and eq *)
-    HpO : forall (x y z : X), le x y -> le (plus x z) (plus y z);
-    (*D : forall (x1 x2 : X), lt x1 x2 -> (exists x3, lt x1 x3 /\ lt x3 x2);*)
-}.
-
-End Test. 
-
-Class Field  (X : Type)  :={
-    x0 : X;
-    plus : X -> X -> X;
-    FoF :> preOrderField X;
-    HF1 : forall (x y : X), eq (plus x y) (plus y x);
-    HF2 : forall (x y z : X), eq (plus (plus x y) z) (plus x (plus y z));
-    HF3 : forall (x : X), eq (plus x0 x) x;
-    HF4 : forall (x : X), (exists ix, eq (plus x ix) x0);
-    HFeq : forall (a b c d : X), a -- b -> c -- d -> (plus a c) -- (plus b d);
-    HpO : forall (x y z : X), le x y -> le (plus x z) (plus y z);
-    D : forall (x1 x2 : X), lt x1 x2 -> (exists x3, lt x1 x3 /\ lt x3 x2);
-}. **)
-
-
-
-(** require rewrite tatic to make a neat proof**)
-
-Class Metric (A : Type) (X : Type):={
+Class Metric {A : Type} {X : Type} (eq : relation X) (eqA : relation A):={
     dist : A -> A -> X;
-    M_EA :> EquR A;
-    M_OF :> Field X;
-    M1 : forall (p1 p2 : A), le x0 (dist p1 p2);
-    M2 : forall (p1 p2 : A), eq (dist p1 p2) (dist p2 p1);
-    M3 : forall (p1 p2 : A), eq p1 p2 -> eq (dist p1 p2) x0;
-    M4 : forall (p1 p2 p3 : A), le (dist p1 p3) (plus (dist p1 p2) (dist p2 p2));
+    mof :> Plus_Field eq;
+    mle : forall (p1 p2 : A), le x0 (dist p1 p2);
+    msy : forall (p1 p2 : A), eq (dist p1 p2) (dist p2 p1);
+    mre : forall (p1 p2 : A), eqA p1 p2 -> eq (dist p1 p2) x0;
+    mtr : forall (p1 p2 p3 : A), le (dist p1 p3) (plus (dist p1 p2) (dist p2 p3));
+    meq : forall (p1 p2 p3 p4 : A), eqA p1 p2 -> eqA p3 p4 -> eq (dist p1 p3) (dist p2 p4);
 }.
 Notation "[ x , y ]" := (dist x y)
     (at level 50, no associativity) : Metric.
-
-
+Instance dist_rewrite : forall (X A : Type) (eq : relation X) (eqA : relation A) (Heq : Equivalence eq) (HeqA : Equivalence eqA)
+      (Hm : Metric eq eqA), Proper (eqA ==> eqA ==> eq) dist.
+Proof.
+    intros. hnf. intros. hnf. intros. apply meq. auto. auto.
+Defined.
 
 Definition seq {A : Type} :=nat -> A -> Prop.
 
