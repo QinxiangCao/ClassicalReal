@@ -61,6 +61,7 @@ Proof.
     -intros. inversion H2. rewrite <-H0 in ltle. rewrite <-H1 in ltle.
       rewrite <-H1 in lteq. rewrite <-H0 in lteq. apply lt_intro. auto. auto.
 Defined.
+
 Class Plus_Field {X : Type} (eq : relation X):={
     plus : X -> X -> X; 
     p_pof :> Pre_Order_Field eq;
@@ -91,6 +92,14 @@ Notation "a == b" := (eq a b)
     (at level 70, no associativity).
 Notation "a != b" := (~eq a b)
     (at level 70, no associativity).
+
+Theorem lttr : forall {H : Pre_Order_Field eq} (x y z : X),
+   x < y -> y < z -> x < z.
+Proof.
+    intros. inversion H0. inversion H1. apply lt_intro. apply (poft _ y _). auto. auto.
+    unfold not. intros.
+(** stop running **)
+Qed.
 
 Theorem noteq : forall (a b c : X), a == b -> a != c -> b != c.
 Proof.
@@ -217,6 +226,14 @@ Definition equC {A X : Type} (eq : relation X) (eqA : relation A) {M : Metric eq
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
 
+Lemma refl_equC : forall {A X : Type} {eq : relation X} {eqA : relation A} {HE : Equivalence eq} {HEA : Equivalence eqA}
+      {M : Metric eq eqA} (x : @Cauchilize A X eq eqA M), equC  eq eqA x x.
+Proof.
+  intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
+  destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
+  apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
+Qed.
+
 Section ProofModule.
 Variables X : Type.
 Variables eq : relation X.
@@ -225,30 +242,28 @@ Variables A : Type.
 Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
 
-Lemma refl_equC : forall {A X : Type} {M : Metric A X} (x : @Cauchilize A X M), equC x x.
+Notation "a == b" := (eq a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eq a b)
+    (at level 70, no associativity).
+
+Theorem EquR_trans : forall {M : Metric eq eq}, Equivalence (equC eq eq).
 Proof.
-  intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
-  destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
-  apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
-Qed.
-
-Theorem EquR_trans : forall {X : Type} {M : Metric X X}, EquR X ->
-   EquR (@Cauchilize X X M).
-Proof.
-  intros. split with (eq := equC).
-  -split. +unfold Reflexive. apply refl_equC.
-             +unfold Symmetric. unfold equC. destruct x. destruct y.
-               intros. destruct H1 with (eps := eps). auto.
-               exists x. intros. apply  apply H3 with (n := n). auto.
-
-
-
-
-
- -unfold equC. intros. destruct x. destruct y. destruct z. intros.
-   apply division_of_eps in H4. destruct H4 as [d1]. destruct H4 as [d2].
-  destruct H with (eps := d1). 
-  auto. destruct H0 with (eps := d2). auto.
+  intros. split.
+  -unfold Reflexive. apply refl_equC.
+  -unfold Symmetric. unfold equC. destruct x. destruct y.
+    intros. destruct H1 with (eps := eps). auto.
+    exists x. intros. rewrite msy. apply H3 with (n := n). auto.
+    auto. auto.
+ -unfold Transitive. unfold equC. destruct x. destruct y. destruct z.
+  intros. apply division_of_eps in H4. destruct H4 as [d1].
+  destruct H4 as [d2]. destruct H4. destruct H5. destruct H2 with (eps := d1).
+  auto. destruct H3 with (eps := d2). auto. assert((x <= x1) %nat \/ (x1 <= x)%nat). apply le_one.
+  destruct H9. exists x1. intros. assert(exists a, Cseq0 n a). apply HCseq1. destruct H13 as [a].
+  destruct H7 with (n := n) (a1 := a1) (a2 := a). apply le_lt_or_eq in H9. destruct H9. apply (lt_trans _ x1 _).
+  auto. auto. rewrite H9. auto. auto. auto. destruct H8 with (n := n) (a1 := a) (a2 := a2). auto. auto. auto.
+  apply l
+  
   
 
   assert((x <= x1)%nat \/ (x1 <= x)%nat). apply le_one.
