@@ -81,7 +81,7 @@ Proof.
     intros. hnf. intros. hnf. intros. apply pfeq. auto. auto.
 Defined.
 
-Section ProofModule_1.
+Section ProofModule.
 
 Variables X : Type.
 Variables eq : relation X.
@@ -114,7 +114,7 @@ Proof.
     apply (HpOt x eps x') in H2. rewrite H3 in H2. auto. rewrite (pfc eps x').
     rewrite <-pfa. rewrite H3. rewrite pfz. reflexivity.
 Qed. 
-End ProofModule_1.
+End ProofModule.
 
 Class Metric {A : Type} {X : Type} (eq : relation X) (eqA : relation A):={
     dist : A -> A -> X;
@@ -136,67 +136,79 @@ Defined.
 Definition seq {A : Type} :=nat -> A -> Prop.
 
 (** Quote from Litao Zhou's well definition. **)
-Class CauchySeq (A : Type) (X : Type) (M : Metric A X) (Cseq : seq):={
+Class CauchySeq {A : Type} {X : Type} (eq : relation X) (eqA : relation A) {M : Metric eq eqA} (Cseq : seq):={
     HCseq1 : forall(n : nat), (exists (a : A), Cseq n a);
-    HCseq2 : forall(m : nat) (a1 a2 : A), (eq a1 a2) -> (Cseq m a1 <-> Cseq m a2);
-    HCseq3 : forall(m : nat) (a1 a2 : A), Cseq m a1 -> Cseq m a2 -> (eq a1 a2);
+    HCseq2 : forall(m : nat) (a1 a2 : A), (eqA a1 a2) -> (Cseq m a1 <-> Cseq m a2);
+    HCseq3 : forall(m : nat) (a1 a2 : A), Cseq m a1 -> Cseq m a2 -> (eqA a1 a2);
     HCA : forall (eps : X), x0 < eps
       -> (exists (N : nat), forall (m n:nat), (N < m)%nat /\ (N < n)%nat
             -> forall (a b : A), Cseq m a /\ Cseq n b
          -> (dist a b) < eps);
 }.
 
-Class Converge (A : Type) (X : Type)  (M : Metric A X) (Seq : seq):={
+Class Converge {A : Type} {X : Type} (eq : relation X) (eqA : relation A)  {M : Metric eq eqA} (Seq : seq):={
     HC1 : forall(n : nat), (exists (a : A), Seq n a);
-    HC2 : forall(m : nat) (a1 a2 : A), (eq a1 a2) -> (Seq m a1 <-> Seq m a2);
-    HC3 : forall(m : nat) (a1 a2 : A), Seq m a1 -> Seq m a2 -> (eq a1 a2);
+    HC2 : forall(m : nat) (a1 a2 : A), (eqA a1 a2) -> (Seq m a1 <-> Seq m a2);
+    HC3 : forall(m : nat) (a1 a2 : A), Seq m a1 -> Seq m a2 -> (eqA a1 a2);
     HC : forall (eps : X), (exists (N : nat) (lim : A) , forall (n : nat) (a : A), (N < n)%nat -> Seq n a
       -> (dist a lim) < eps);
 }.
 
-Inductive Cauchilize {A X : Type}  {M : Metric A X}  : Type :=
-  | con_intro (Cseq : seq)(H : CauchySeq A X M Cseq) .
+Inductive Cauchilize {A X : Type} (eq : relation X) (eqA : relation A)  {M : Metric eq eqA}  : Type :=
+  | con_intro (Cseq : seq)(H : CauchySeq eq eqA Cseq) .
 
-Definition refl {A : Type} {H : EquR A} (reflseq : seq) (a : A) : Prop :=
-  (forall (n : nat), reflseq n a) /\ (forall (a a': A) (n : nat) ,~eq a a' -> reflseq n a -> ~(reflseq n a')) /\
-    (forall (a a' : A) (n : nat) , eq a a' -> reflseq n a -> reflseq n a').
+Definition refl {A : Type} (eqA : relation A) (reflseq : seq) (a : A) : Prop :=
+  (forall (n : nat), reflseq n a) /\ (forall (a a': A) (n : nat) ,~eqA a a' -> reflseq n a -> ~(reflseq n a')) /\
+    (forall (a a' : A) (n : nat) , eqA a a' -> reflseq n a -> reflseq n a').
 
+Section ProofModule.
+Variables X : Type.
+Variables eq : relation X.
+Variables HE : Equivalence eq.
+Variables A : Type.
+Variables eqA : relation A.
+Variables HEA : Equivalence eqA.
+
+Notation "a == b" := (eq a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eq a b)
+    (at level 70, no associativity).
 
 Theorem c_trans :
-    forall {A X : Type} (M : Metric A X) (reflseq : seq) (a : A),refl reflseq a
-      -> CauchySeq A X M reflseq.
+    forall {M : Metric eq eqA} (reflseq : seq) (a : A),refl eqA reflseq a
+      -> CauchySeq eq eqA reflseq.
 Proof.
     intros. unfold refl in H. split.
   +intros. exists a. destruct H. apply H.
   +split. *intros. destruct H. destruct H2.
               apply H3 with (a := a1). auto. auto.
               *intros. destruct H. destruct H2. apply H3 with (a := a2).
-                apply eqs. auto. auto.
-  +intros. assert (~(~eq a1 a2)).
+                symmetry. auto. auto.
+  +intros. assert (~(~eqA a1 a2)).
              *destruct H. destruct H2. unfold not. intros.
                apply H2 with (n := m) in H4. apply H4. auto. auto.
             *apply NNPP in H2. auto.
   +intros. exists 0. intros.
-          assert(~(a !- b)). *unfold not. intros. apply H3.
+          assert(~(~eqA a  b)). *unfold not. intros. apply H3.
          destruct H2. destruct H. destruct H5. assert(reflseq n a). apply H.
          apply H5 with (n := n) in H3. unfold not in H3. apply H3 in H4. destruct H4. auto.
-         *assert(~(a !- a0)). { unfold not. intros. apply H4. destruct H2. destruct H. destruct H6.
+         *assert(~(~eqA a a0)). { unfold not. intros. apply H4. destruct H2. destruct H. destruct H6.
             assert(reflseq m a). apply H. apply H6 with (n := m) in H4. unfold not in H4. apply H4 in H2.
             destruct H2. auto. }
-        apply NNPP in H3. apply NNPP in H4. apply eqs in H3. assert(b -- a0). apply (eqt b a a0).
-        auto. auto. assert(dist a0 b -- x0). apply M3. apply eqs. auto. apply (pOtq x0 (dist a0 b) eps eps).
-        apply eqs. auto. apply eqr. apply H0.
+        apply NNPP in H3. apply NNPP in H4. symmetry in H3. assert(eqA b a0). transitivity a.
+        auto. auto. assert(dist a0 b == x0). apply (mre a0 b). symmetry. auto. rewrite H6.
+        auto.
 Qed.
 
-Definition A_ := Type.
-Definition X_ := Type.
+Definition ctr {M : Metric eq eqA}  (a : A) (reflseq : seq)
+      (H : refl eqA reflseq a) : Cauchilize eq eqA :=
+    con_intro eq eqA reflseq (c_trans reflseq a H).
 
-Definition ctr {A X : Type}  (M : Metric A X)  (a : A) (reflseq : seq) (H : refl reflseq a) : Cauchilize :=
-    con_intro reflseq (c_trans M reflseq a H).
+End ProofModule.
 
-Definition equC {A X : Type} {M : Metric A X} (x1 x2 : @Cauchilize A X M):  Prop  :=
+Definition equC {A X : Type} (eq : relation X) (eqA : relation A) {M : Metric eq eqA} (x1 x2 : Cauchilize eq eqA):  Prop  :=
   match x1,   x2 with
-    | con_intro cseq1 C1, con_intro cseq2 C2 =>
+    | con_intro _ _ cseq1 C1, con_intro _ _ cseq2 C2 =>
         (forall (eps : X), x0 < eps
              -> (exists (N : nat), forall (n :nat), (N < n)%nat
              -> forall (a1 a2 : A), cseq1 n a1  -> cseq2 n a2
@@ -204,6 +216,15 @@ Definition equC {A X : Type} {M : Metric A X} (x1 x2 : @Cauchilize A X M):  Prop
   end.
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
+
+Section ProofModule.
+Variables X : Type.
+Variables eq : relation X.
+Variables HE : Equivalence eq.
+Variables A : Type.
+Variables eqA : relation A.
+Variables HEA : Equivalence eqA.
+
 Lemma refl_equC : forall {A X : Type} {M : Metric A X} (x : @Cauchilize A X M), equC x x.
 Proof.
   intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
