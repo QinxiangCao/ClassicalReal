@@ -183,11 +183,13 @@ Fixpoint Rplus(a b : Real) : Real :=
                           end
   end.
 
-Notation "A + B" := (Rplus A B) (at level 50,left associativity):Real_scope.
+Infix "+" := Rplus : Real_scope.
+
 
 Definition Rzero:Real :=
  Real_intro (fun (n:nat) => (fun x => x == 0)) (Real_has_Q 0).
 
+Notation " 0 " := Rzero : Real_scope.
 
 Theorem Cauchy_Plus_equiv: forall (A1 A2 B1 B2: Real),
   (A1 == A2)%R -> (B1 == B2)%R ->
@@ -301,6 +303,11 @@ Fixpoint Ropp(a : Real) : Real :=
   match a with
     | (Real_intro A HA) => Real_intro (Cauchy_opp A) (Cauchy_opp_Cauchy A HA) 
   end.
+Notation "- x" := (Ropp x) : Real_scope.
+
+Definition Rminus (a b:Real) := Rplus a (Ropp b).
+
+Infix "-" := Rminus : Real_scope.
 
 Theorem Rplus_opp_r : forall (A:Real), Real_equiv (A + (Ropp A))  Rzero.
 Proof. intros. destruct A as [A Ha]. unfold Rzero. unfold Rplus.
@@ -526,7 +533,8 @@ match a with
                           end
   end.
 
-Notation "a * b":=(Rmult a b):Real_scope.
+Infix "*" := Rmult : Real_scope.
+
 
 Lemma CauchySeqBounded_two: forall A B, Cauchy A -> Cauchy B ->
   exists (M:Q), 0 < M 
@@ -704,7 +712,7 @@ Qed.
 
 Lemma Cauchy_nonzero_pre: forall A , Cauchy A  -> limit_not_0 A
   -> exists (N:nat),
-( exists (eps0:Q), eps0>0 /\ (forall (n:nat)(q:Q), (n>N)%nat -> A n q -> Qabs q >= eps0)). 
+( exists (eps0:Q), eps0>0 /\ (forall (n:nat), (n>N)%nat -> forall(q:Q), A n q -> Qabs q >= eps0)). 
 Proof. intros A HA. intros H.  destruct (limit_not_0_seq _ HA H) as [N0 Hnot0].
   assert (Hlim: limit_not_0 A) by auto.
   destruct H as [eps [Heps H]].
@@ -1076,6 +1084,12 @@ Definition Rinv (a: {a0: Real | (~ a0 == Rzero)%R }): Real :=
         (Cauchy_inv_nonzero a0 H (proj1 (limit_not_0_spec (Real_intro a0 H)) H0))
   end.
 
+Notation "/ x" := (Rinv x) : Real_scope.
+
+Definition Rdiv x y := Rmult x (Rinv y).
+
+Infix "/" := Rdiv : R_scope.
+
 Theorem Rmult_comm: forall A B,
   (A * B == B * A)%R.
 Proof. intros [A HA] [B HB].
@@ -1110,6 +1124,9 @@ Qed.
 
 Definition Rone:Real :=
  Real_intro (fun (n:nat) => (fun x => x == 1)) (Real_has_Q 1).
+
+
+Notation " 1 " := Rone : Real_scope.
 
 Theorem Rmult_1_r: forall A, (A * Rone == A)%R.
 Proof. intros [A HA]. hnf. unfold CauchySeqMult.
