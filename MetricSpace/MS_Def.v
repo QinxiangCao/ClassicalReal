@@ -39,7 +39,10 @@ Class Pre_Order_Field {X : Type} (eq : relation X) :={
     pofr : forall(a b : X), eq a b -> le a b;
     poft : forall(a b c : X), le a b -> le b c -> le a c;
     poeq : forall (a b c d : X), eq a b -> eq c d -> le a c -> le b d;
+    (** poor : forall (a b : X), le a b \/ le b a; **)
+    pore : forall (a b : X), le a b -> le b a -> eq a b;
 }.
+
 Instance le_rewrite : forall (X : Type) (eq : relation X) (H : Equivalence eq) (Hpoe : Pre_Order_Field eq),
     Proper (eq ==> eq ==> iff) le.
 Proof.
@@ -81,7 +84,19 @@ Instance plus_rewrite : forall (X : Type) (eq : relation X) (H : Equivalence eq)
 Proof.
     intros. hnf. intros. hnf. intros. apply pfeq. auto. auto.
 Defined.
-
+Definition plus_le  {X : Type} {eq : relation X} {Hpf : Plus_Field eq} : X -> X -> X -> X -> Prop  :=
+    fun a b c d => (a + b) <= (c + d).
+Instance plus_le_rewrite : forall (X : Type) (eq : relation X) (H : Equivalence eq) (Hpf : Plus_Field eq),
+    Proper (eq ==> eq ==> eq ==> eq ==> iff) plus_le.
+Proof.
+    intros. hnf. intros. hnf. intros. hnf. intros. hnf. intros. split.
+    -unfold plus_le. intros. assert(eq (x + x1) (y + y0)). apply pfeq.
+      auto. auto. assert(eq (x2 + x3) (y1 + y2)). apply pfeq. auto. auto.
+      apply (poeq (x + x1) (y + y0) (x2 + x3) (y1 + y2)). auto. auto. auto.
+    -unfold plus_le. intros. assert(eq (x + x1) (y + y0)). apply pfeq.
+      auto. auto. assert(eq (x2 + x3) (y1 + y2)). apply pfeq. auto. auto.
+      apply (poeq (y + y0) (x + x1) (y1 + y2) (x2 + x3)). symmetry. auto. symmetry. auto. auto.
+Defined.
 Section ProofModule.
 
 Variables X : Type.
@@ -93,12 +108,73 @@ Notation "a == b" := (eq a b)
 Notation "a != b" := (~eq a b)
     (at level 70, no associativity).
 
+(** Theorem ltor : forall {H : Pre_Order_Field eq} (x y : X) , x != y <-> x < y \/ y < x .
+Proof.
+    intros. split. { assert(x <= y \/ y <= x). apply poor. destruct H0. 
+    -left. apply lt_intro. auto. auto.
+    -right. apply lt_intro. auto. unfold not. intros. unfold not in H1. apply H1.
+      symmetry. auto. }
+                        { intros. destruct H0. inversion H0. auto. inversion H0. unfold not in lteq.
+                           unfold not. intros. apply lteq. symmetry. auto. }
+Qed. **)
+Theorem le_two_plus_two : forall  {H : Plus_Field eq} (a b c d : X),
+    a <= c -> b <= d -> a + b <= c + d.
+Proof.
+    intros. assert(a + b <= c + b). apply ppof. auto. assert(c + b <= c + d). rewrite pfc. rewrite (pfc c d).
+    apply ppof. auto. apply (poft _ (c + b) _). auto. auto.
+Qed.
+
+Lemma ppot : forall {H : Plus_Field eq}  (x y z : X), lt x y -> lt (plus x z) (plus y z).
+Proof.
+    intros. apply lt_intro. inversion H0. apply ppof. auto. unfold not. intros. assert(exists iz , z + iz == x0).
+    apply pfi. destruct H2 as [iz].
+    assert(x + z + iz == y + z + iz). apply (pfeq (x + z) (y + z) iz iz).
+    auto. reflexivity. rewrite pfa in H3. rewrite pfa in H3. rewrite H2 in H3.
+    rewrite pfc, pfz in H3. rewrite pfc, pfz in H3. inversion H0.
+    assert(x == y /\ x != y). split. auto. auto. apply PNP in H4. destruct H4.
+Qed.
+
+Theorem ltre : forall {H : Pre_Order_Field eq} (x : X), ~(x < x) .
+Proof.
+    intros. unfold not. intros. inversion H0. unfold not in lteq. apply lteq.
+    reflexivity.
+Qed.
+
+Theorem le_lt_eq : forall {H : Pre_Order_Field eq} (x y : X), x <= y <-> (x  < y) \/ (x == y)  .
+Proof.
+    intros. split. { assert(x == y \/ ~(x == y)). apply classic.  destruct H0. right. auto. left. apply lt_intro.
+    auto. auto. }
+                      { intros. destruct H0. inversion H0. auto. apply pofr. auto. }
+Qed.
+
+(** Theorem lt_not : forall {H : Pre_Order_Field eq} (x y : X), ~(x < y) <-> y <= x.
+Proof.
+    intros. split. { intros. unfold not in H0. assert(x <= y \/ y <= x). apply poor.
+    destruct H1. assert(x == y \/ x != y). apply classic. destruct H2.
+    symmetry in H2. apply pofr. auto. assert(x < y). apply lt_intro.
+    auto. auto. apply H0 in H3. destruct H3. auto. }
+                         { intros. unfold not. assert(x == y \/ x != y). apply classic.
+                           destruct H1. -intros. inversion H2. assert(x == y /\ ~(x == y)).
+                           split. auto. auto. apply PNP in H3. apply H3.
+                           -intros. apply H1. inversion H2. apply pore. auto. auto. } 
+Qed. **)
+
 Theorem lttr : forall {H : Pre_Order_Field eq} (x y z : X),
    x < y -> y < z -> x < z.
 Proof.
-    intros. inversion H0. inversion H1. apply lt_intro. apply (poft _ y _). auto. auto.
-    unfold not. intros.
-(** stop running **)
+    intros. inversion H0. inversion H1. apply lt_intro. apply (poft _ y _).
+    auto. auto. unfold not. intros. rewrite <-H2 in ltle0. assert(x == y).
+    apply pore. auto. auto. assert(~(x == y /\ x != y)). apply PNP.
+    unfold not in H4. apply H4. split. auto. auto.
+Qed.
+
+Theorem lt_two_plus_two : forall  {H : Plus_Field eq} (a b c d : X),
+    a < c -> b < d -> a + b < c + d.
+Proof.
+    intros. assert(a + b < c + b).
+    -apply ppot. auto.
+    -assert(c + b < c + d). +rewrite pfc. rewrite (pfc c d). apply ppot. auto.
+                                          +apply (lttr _ (c + b) _). auto. auto.
 Qed.
 
 Theorem noteq : forall (a b c : X), a == b -> a != c -> b != c.
@@ -262,7 +338,21 @@ Proof.
   destruct H9. exists x1. intros. assert(exists a, Cseq0 n a). apply HCseq1. destruct H13 as [a].
   destruct H7 with (n := n) (a1 := a1) (a2 := a). apply le_lt_or_eq in H9. destruct H9. apply (lt_trans _ x1 _).
   auto. auto. rewrite H9. auto. auto. auto. destruct H8 with (n := n) (a1 := a) (a2 := a2). auto. auto. auto.
-  apply l
+  assert(dist a1 a2 <= ((dist a1 a) + (dist a a2)) -> ((dist a1 a) + (dist a a2)) < eps -> dist a1 a2 < eps).
+  intros. apply le_lt_eq in H14. destruct H14. apply lttr with (y := (dist a1 a + dist a a2)). auto.
+  auto. auto. rewrite H14. auto. apply H14. apply mtr. apply lt_intro. rewrite <- H6. apply le_two_plus_two.
+  auto. auto. auto. rewrite <- H6. unfold not. intros. assert(dist a1 a + dist a a2 < d1 + d2).
+  apply lt_two_plus_two. auto. apply lt_intro. auto. auto. apply lt_intro. auto. auto. inversion H16.
+  assert(dist a1 a + dist a a2 == d1 + d2 /\ dist a1 a + dist a a2 != d1 + d2). split. auto. auto.
+  apply PNP in H17. destruct H17.
+  +exists x. intros. assert(exists a, Cseq0 n a). apply HCseq1. destruct H13 as [a].
+    destruct H8 with (n := n) (a1 := a) (a2 := a2).
+         *apply le_lt_or_eq in H9. destruct H9. apply (lt_trans _ x _). auto. auto. rewrite <-H9 in H10.
+           auto.
+         *auto. *auto.
+          *destruct H7 with(n := n) (a1 := a1) (a2 := a). auto. auto. auto.
+            rewrite <- H6. assert(dist a1 a2 <= dist a1 a + dist a a2). apply mtr. 
+           
   
   
 
