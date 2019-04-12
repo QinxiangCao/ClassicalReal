@@ -24,7 +24,7 @@ Cauchy_FILES = \
   RBase.v ROrder.v
 
 Iso_FILES = \
-  Dedekind2Cauchy.v
+  Bijection.v Dedekind2Cauchy.v Cauchy2Dedekind.v
 
 MetricSpace_FILES = \
   MS_Def.v
