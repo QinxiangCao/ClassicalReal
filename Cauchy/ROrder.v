@@ -277,4 +277,7 @@ Qed.
 Definition Rlt (a b:Real) : Prop :=
   Rpositive (Rminus a b).
 
+
+
+
 Notation "a < b" := (Rlt a b):Real_scope.
