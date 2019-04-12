@@ -1,5 +1,5 @@
 CURRENT_DIR=.
-COQBIN=
+COQBIN= /cygdrive/c/Coq/bin/
 
 -include CONFIGURE
 
@@ -21,7 +21,7 @@ Dedekind_FILES = \
   RBase.v ROrder.v RArith.v
 
 Cauchy_FILES = \
-  RBase.v RBase_uncomp.v
+  RBase.v ROrder.v
 
 Iso_FILES = \
   Dedekind2Cauchy.v
