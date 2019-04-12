@@ -2,6 +2,7 @@ Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import QArith.QArith_base.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
+From Coq Require Import Logic.Classical.
 
 Lemma Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
    Qabs (a - b) + Qabs (b - c).
@@ -90,3 +91,107 @@ Proof. split. apply Qopp_le_compat.
   intros. rewrite <- (Qopp_involutive q), <- (Qopp_involutive p).
   apply Qopp_le_compat. apply H.
 Qed.
+
+Lemma Qarchimedean : forall p q :Q, p > 0 -> exists n : Q, n*p>q.
+Proof.
+  intros. exists ((q*/p)+1)%Q. rewrite Qmult_plus_distr_l.
+  assert(H':(~p==0)%Q).
+  { apply Qlt_not_eq in H.
+    unfold not.
+    intros.
+    apply H. rewrite H0. reflexivity.
+  }
+  rewrite Qmult_comm.
+  apply (Qmult_div_r q) in H'.
+  rewrite H'.
+  rewrite Qmult_1_l.
+  apply Qplus_lt_l with (z:=0).
+  rewrite <- Qplus_assoc.
+  rewrite Qplus_lt_r with (z:=q).
+  rewrite Qplus_0_r. apply H.
+Qed.
+
+Fact Qdiv2 : forall x : Q, (x == ((x * / (2 # 1)) + (x * / (2 # 1))))%Q.
+Proof.
+  intros. assert( x == 0 \/~ x == 0)%Q. { apply classic. } destruct H.
+  - rewrite H. reflexivity.
+  - rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_1_r.
+    rewrite <- Qmult_assoc.
+    rewrite Qmult_inj_l with (z := x).
+    reflexivity. apply H.
+Qed.
+
+Fact Qdiv2_opp : forall x : Q, (- x == - (x * / (2 # 1)) + - (x * / (2 # 1)))%Q.
+Proof.
+  intros.
+  rewrite <- Qplus_inj_l with (z:=(x / (2 # 1))).
+  rewrite Qplus_assoc.
+  rewrite Qplus_opp_r with (q:=(x / (2 # 1))). rewrite Qplus_0_l.
+  rewrite <- Qplus_inj_l with (z:=(x / (2 # 1))).
+  rewrite Qplus_assoc.
+  rewrite Qplus_opp_r with (q:=(x / (2 # 1))).
+  rewrite <- Qplus_inj_r with (z:=x).
+  rewrite <- Qplus_assoc. rewrite (Qplus_comm (-x) x ).
+  rewrite Qplus_opp_r with (q:=x).
+  rewrite Qplus_0_l. rewrite Qplus_0_r.
+  symmetry. apply Qdiv2.
+Qed.
+
+Fact Qdiv2_x_y : forall x y :Q, x>0 -> y>0 -> x / (2 # 1) * (y / (2 # 1)) <= x * y.
+Proof.
+  unfold Qdiv. intros. rewrite Qmult_assoc.
+  rewrite (Qmult_comm x (/(2#1))).
+  rewrite <- (Qmult_assoc (/(2#1)) x y).
+  rewrite <- (Qmult_comm (x*y) (/(2#1))).
+  rewrite <- (Qmult_assoc (x*y) (/(2#1)) (/(2#1)) ).
+  rewrite (Qmult_comm x y). rewrite <- (Qmult_1_r (y*x)).
+  rewrite <- (Qmult_assoc (y*x) 1 ((/(2#1)) *(/(2#1)))).
+  apply Qlt_le_weak.
+  rewrite Qmult_lt_l.
+  { reflexivity. }
+  { rewrite <- (Qmult_0_l x). apply (Qmult_lt_compat_r 0 y x).
+  auto. auto. }
+Qed.
+
+Lemma Qmult_lt_compat : forall x y z t : Q,
+0 <= x -> 0 <= z -> x < y -> z < t -> x * z < y * t .
+Proof.
+  intros. apply Qle_lt_trans with (y:= y*z).
+  - apply Qmult_le_compat_r. apply Qlt_le_weak. auto. auto.
+  - rewrite Qmult_comm. rewrite (Qmult_comm y t).
+    apply Qmult_lt_compat_r.
+    apply Qle_lt_trans with (y:=x). auto. auto. auto.
+Qed.
+
+Lemma Qplus_opp_assoc : forall x y : Q, (-(x + y)== - x + - y)%Q.
+Proof.
+  intros. rewrite <- Qplus_inj_l with (z:=(x+y)).
+  rewrite Qplus_opp_r. rewrite (Qplus_comm x y).
+  rewrite <- Qplus_assoc. rewrite (Qplus_assoc x (-x) (-y)).
+  rewrite Qplus_opp_r. rewrite Qplus_0_l. rewrite Qplus_opp_r.
+  reflexivity.
+Qed.
+
+Lemma Qdensity : forall p q : Q, p<q-> exists x : Q, p<x/\x<q.
+Proof.
+  intros. exists ((p+q)/(2#1)). split.
+  - apply Qlt_shift_div_l. reflexivity.
+    assert(p * (2 # 1)==p+p)%Q.
+    { rewrite <- Qmult_inj_r with (z:=/(2#1)).
+    { assert(p * (2 # 1) * / (2 # 1)==p)%Q.
+    { apply Qdiv_mult_l. unfold not. intros. inversion H0. }
+      rewrite H0. rewrite Qmult_plus_distr_l.
+      rewrite <- Qdiv2. reflexivity. }
+    { unfold not. intros. inversion H0. } }
+    rewrite H0. rewrite Qplus_lt_r. auto.
+  - apply Qlt_shift_div_r. reflexivity.
+    assert(q * (2 # 1)==q+q)%Q.
+    { rewrite <- Qmult_inj_r with (z:=/(2#1)).
+    { assert(q * (2 # 1) * / (2 # 1)==q)%Q.
+    { apply Qdiv_mult_l. unfold not. intros. inversion H0. }
+      rewrite H0. rewrite Qmult_plus_distr_l.
+      rewrite <- Qdiv2. reflexivity. }
+    { unfold not. intros. inversion H0. } }
+    rewrite H0. rewrite Qplus_lt_l. auto.
+Qed.
+

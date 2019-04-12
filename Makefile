@@ -15,7 +15,7 @@ DEP_DEMO = -Q $(CURRENT_DIR) CReal
 DEP_FLAG = $(DEP_DEMO)
 
 QArith_ext_FILES = \
-  QArith_base_ext.v
+  QArith_base_ext.v Inject_lemmas.v
 
 Dedekind_FILES = \
   RBase.v ROrder.v RArith.v
