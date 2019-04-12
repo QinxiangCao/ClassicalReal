@@ -16,7 +16,7 @@ From Coq Require Import Classes.Morphisms.
 From CReal Require Import Dedekind.RBase.
 From CReal Require Import Dedekind.ROrder.
 From CReal Require Import Dedekind.RArith.
-Require Import CReal.Cauchy.RBase_uncomp.
+Require Import CReal.Cauchy.RBase.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
 
