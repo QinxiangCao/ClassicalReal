@@ -20,6 +20,9 @@ Require Import CReal.Cauchy.RBase.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
 
+(** TODO: Resume it after correctly import other two files. *)
+(*
 Theorem Bijection: forall x y,(D2C x==y) <->(C2D y==x).
 Proof.
 Admitted.
+*)
