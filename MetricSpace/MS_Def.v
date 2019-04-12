@@ -351,21 +351,11 @@ Proof.
            auto.
          *auto. *auto.
           *destruct H7 with(n := n) (a1 := a1) (a2 := a). auto. auto. auto.
-            rewrite <- H6. assert(dist a1 a2 <= dist a1 a + dist a a2). apply mtr. 
-           
-  
-  
-
-  assert((x <= x1)%nat \/ (x1 <= x)%nat). apply le_one.
-  destruct H7. exists x1.
-    +intros. assert(exists am, Cseq0 n am). apply HCseq1.
-      destruct H11. destruct H5 with (n := n) (a1 := a1) (a2 := x2).
-      apply le_lt_or_eq in H7. destruct H7. apply (lt_trans x x1 n).
-      auto. auto. rewrite H7. auto. auto. auto.
-      destruct H6 with (n := n) (a1 :=x2) (a2 := a2). auto. auto. auto.
-      assert
-   
-
+            rewrite <- H6. assert(dist a1 a2 <= dist a1 a + dist a a2). apply mtr. assert(dist a1 a + dist a a2 < d1 + d2).
+            apply lt_two_plus_two. auto. apply lt_intro. auto. auto. apply lt_intro. auto. auto.
+            apply le_lt_eq in H14. destruct H14. apply lttr with (y := dist a1 a + dist a a2).
+            auto. auto. auto. rewrite <-H14 in H15. auto.
+  +auto.
 Qed.
 
 
