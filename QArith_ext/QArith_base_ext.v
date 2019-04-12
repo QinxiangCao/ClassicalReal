@@ -84,3 +84,9 @@ Proof. intros. assert(H1:p<q) by auto. apply Qlt_le_weak in H.
   rewrite Qopp_involutive. reflexivity. rewrite E in H1.
   apply Qlt_irrefl in H1. contradiction.
 Qed.
+
+Lemma Qopp_le_compat_iff: forall p q, p<=q <-> -q <= -p.
+Proof. split. apply Qopp_le_compat.
+  intros. rewrite <- (Qopp_involutive q), <- (Qopp_involutive p).
+  apply Qopp_le_compat. apply H.
+Qed.

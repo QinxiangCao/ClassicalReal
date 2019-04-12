@@ -21,7 +21,7 @@ Dedekind_FILES = \
   RBase.v ROrder.v RArith.v
 
 Cauchy_FILES = \
-  RBase.v RBase_uncomp.v ROrder.v
+  RBase.v ROrder.v
 
 Iso_FILES = \
   Dedekind2Cauchy.v

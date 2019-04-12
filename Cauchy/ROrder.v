@@ -10,13 +10,7 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Classes.Equivalence.
 From CReal Require Import QArith_ext.QArith_base_ext.
 From Coq Require Import Classes.Morphisms.
-From CReal Require Import RBase_uncomp.
-
-Lemma Qopp_le_compat_iff: forall p q, p<=q <-> -q <= -p.
-Proof. split. apply Qopp_le_compat.
-  intros. rewrite <- (Qopp_involutive q), <- (Qopp_involutive p).
-  apply Qopp_le_compat. apply H.
-Qed.
+From CReal Require Import RBase.
 
 Definition Rpositive (A:Real):Prop:=
   exists eps0:Q, (eps0>0) /\ 
