@@ -125,6 +125,8 @@ Proof.
     + apply H0. 
 Qed.
 
+Definition Q_to_R (x1 : Q) : Real := Real_cons (fun x => x < x1) (Dedekind_Q x1).
+
 Definition Rzero : Real := Real_cons (fun x => x < 0) (Dedekind_Q 0).
 
 Definition Rone : Real := Real_cons (fun x => x < 1) (Dedekind_Q 1).

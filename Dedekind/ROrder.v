@@ -281,3 +281,21 @@ Proof.
       * apply H2.
       * apply H1.
 Qed.
+
+Instance Rle_comp : Proper (Req ==> Req ==> iff) Rle.
+Proof.
+  split ; intros ; destruct H; destruct H0.
+  - apply Rle_trans with (y := x0);auto.
+    apply Rle_trans with (y := x) ; auto.
+  - apply Rle_trans with (y := y0);auto.
+    apply Rle_trans with (y := y) ; auto.
+Qed.
+
+Instance Rlt_comp : Proper (Req ==> Req ==> iff) Rlt.
+Proof.
+  split ; intros ; destruct H; destruct H0.
+  - apply Rle_lt_trans with (y := x);auto.
+    apply Rlt_le_trans with (y := x0);auto.
+  - apply Rle_lt_trans with (y := y);auto.
+    apply Rlt_le_trans with (y := y0);auto.
+Qed.
