@@ -17,12 +17,12 @@ From CReal Require Import Dedekind.RBase.
 From CReal Require Import Dedekind.ROrder.
 From CReal Require Import Dedekind.RArith.
 Require Import CReal.Cauchy.RBase.
+Require Import CReal.Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
+Require Import CReal.Iso.Cauchy2Dedekind.
+Require Import CReal.Iso.Dedekind2Cauchy.
 
-(** TODO: Resume it after correctly import other two files. *)
-(*
-Theorem Bijection: forall x y,(D2C x==y) <->(C2D y==x).
+Theorem Bijection: forall x y,(D2C x==y)%C <->(C2D y==x)%D.
 Proof.
 Admitted.
-*)
