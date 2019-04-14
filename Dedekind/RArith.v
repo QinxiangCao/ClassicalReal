@@ -839,14 +839,13 @@ Proof.
   - apply Cut_mult_comm'.
 Qed.
 
-(** Write definition like this:
-Definition Cut_mult: (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop) :=
-  fun A B x =>
-    (A 0 /\ B 0 /\ Cut_multPP A B x) \/
-    ..
-    
-    
-    -- Qinxiang *)
+
+Lemma Cut_mult_assoc' : forall (A B C : Q -> Prop) (x : Q),
+ Cut_mult (Cut_mult A B) C x -> Cut_mult A (Cut_mult B C) x.
+Proof.
+  intros. unfold Cut_mult in *. destruct H as [?|[?|[?|[?|[]]]]].
+  - destruct H.
+Admitted.
 
 Fact Qdiv2_opp : forall x : Q, (- x == - (x * / (2 # 1)) + - (x * / (2 # 1)))%Q.
 Proof.
@@ -1499,6 +1498,11 @@ Qed.
 
 Theorem Rmult_assoc : forall a b c : Real, (a * b * c == a * (b * c))%R.
 Proof.
+  intros. unfold Req, Rmult, Cut_mult, Rle. destruct a, b, c. split.
+  - intros. destruct H2 as [?|[?|[?|[?|?]]]].
+    + left. split.
+      * apply H2. unfold PP in *. destruct H2.
+        
 Admitted.
 
 Theorem Rmult_distr_l :
