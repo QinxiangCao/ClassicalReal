@@ -310,20 +310,8 @@ Proof.
   apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
 Qed.
 
-Section ProofModule.
-Variables X : Type.
-Variables eq : relation X.
-Variables HE : Equivalence eq.
-Variables A : Type.
-Variables eqA : relation A.
-Variables HEA : Equivalence eqA.
-
-Notation "a == b" := (eq a b)
-    (at level 70, no associativity).
-Notation "a != b" := (~eq a b)
-    (at level 70, no associativity).
-
-Theorem EquR_trans : forall {M : Metric eq eq}, Equivalence (equC eq eq).
+Theorem EquR_trans : forall {X A : Type} {eq : relation X} {eqA : relation A} {HE : Equivalence eq} {HEA : Equivalence eqA}
+{M : Metric eq eq}, Equivalence (equC eq eq).
 Proof.
   intros. split.
   -unfold Reflexive. apply refl_equC.
@@ -343,7 +331,7 @@ Proof.
   auto. auto. rewrite H14. auto. apply H14. apply mtr. apply lt_intro. rewrite <- H6. apply le_two_plus_two.
   auto. auto. auto. rewrite <- H6. unfold not. intros. assert(dist a1 a + dist a a2 < d1 + d2).
   apply lt_two_plus_two. auto. apply lt_intro. auto. auto. apply lt_intro. auto. auto. inversion H16.
-  assert(dist a1 a + dist a a2 == d1 + d2 /\ dist a1 a + dist a a2 != d1 + d2). split. auto. auto.
+  assert(eq (dist a1 a + dist a a2) (d1 + d2) /\ ~eq (dist a1 a + dist a a2) (d1 + d2)). split. auto. auto.
   apply PNP in H17. destruct H17.
   +exists x. intros. assert(exists a, Cseq0 n a). apply HCseq1. destruct H13 as [a].
     destruct H8 with (n := n) (a1 := a) (a2 := a2).
@@ -359,15 +347,12 @@ Proof.
 Qed.
 
 
-
-Definition leC {X : Type} {M : Metric X X} (x1 x2 : @Cauchilize X X M) : Prop :=
+Definition leC {A X : Type} (eq : relation X) (eqA : relation A) {Hpof : Pre_Order_Field eqA} {M : Metric eq eqA} (x1 x2 : Cauchilize eq eqA) : Prop :=
     match x1,   x2 with
-    | con_intro cseq1 C1, con_intro cseq2 C2 =>
-        (exists (N: nat), forall (n : nat), (N < n)%nat
-            ->  forall (a1 a2 : X), cseq1 n a1  -> cseq2 n a2
-             -> a1 < a2) \/ (equC x1 x2)
+    | con_intro _ _ cseq1 _, con_intro _ _ cseq2 _ =>
+         ((exists (N : nat), forall (n : nat) (a1 a2 : A), (N < n)%nat -> cseq1 n a1
+             -> cseq2 n a2 -> a1 <= a2) \/ equC eq eqA x1 x2)
     end.
-
 
 Notation " x1 <= x2" := (leC x1 x2) : leC.
 (**
@@ -375,26 +360,10 @@ Definition siCauchilize : Type :=(@Cauchilize A_ X_ ).
 Definition xsiCauchilize : Type :=(@Cauchilize X_ X_) .
 Definition biCauchilize: Type := @Cauchilize (@Cauchilize A_ X_) (@Cauchilize X_ X_). **)
 
-
-
-
-Theorem preOrder_trans : forall {X : Type} {M : Metric X X}, preOrderField X ->
-   preOrderField (@Cauchilize X X M).
+Theorem preOrder_trans : forall {A X : Type} (eq : relation X) (eqA : relation A) {Hpof : Pre_Order_Field eqA} {M : Metric eq eqA},
+    @Pre_Order_Field (Cauchilize eq eqA) (equC eq eqA).
 Proof.
-  intros. . -intros. unfold leC. destruct x. right. apply refl_equC.
-  -intros. unfold leC. destruct x. destruct y. destruct z. unfold leC in H, H0.
-    destruct H. destruct H0. +left. destruct H. destruct H0. assert( (x1 <= x)%nat\/ (x <= x1)%nat ).
-    apply le_one. destruct H4. exists x. intros. inversion H2. destruct HCseq4 with (n := n). apply H with (a2 := x2) in H6.
-    apply H0 with (a1 := x2) in H7. {apply (HOF3 a1 x2 a2). apply H6. apply H7. }
-    {assert(forall x y : nat, (x <= y)%nat -> x < y \/ x = y). intros. apply le_lt_or_eq. auto.
-    -apply H9 in H4. destruct H4. + apply (lt_trans x1 x n).
-    apply H4. apply H5. +rewrite H4. auto. }
-    apply H8. apply H5. apply H8.
-    exists x1. intros. inversion H2. destruct HCseq4 with (n := n). apply H with (a2 := x2) in H6.
-    apply H0 with (a1 := x2) in H7. {apply (HOF3 a1 x2 a2). apply H6. apply H7. }
-    apply H5. apply H8. assert(forall x y : nat, (x <= y)%nat -> x < y \/ x = y). intros. apply le_lt_or_eq. auto.
-    apply H9 in H4. destruct H4. apply (lt_trans x x1 n).
-    auto. auto. rewrite <-H4 in H5. auto. auto. +unfold equC in H0. left.
+  
 
 (** warning : stop running !**)
 
