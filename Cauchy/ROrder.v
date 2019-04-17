@@ -10,14 +10,13 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Classes.Equivalence.
 From CReal Require Import QArith_ext.QArith_base_ext.
 From Coq Require Import Classes.Morphisms.
-From CReal Require Import RBase.
+From CReal.Cauchy Require Import RBase.
+
 
 Definition Rpositive (A:Real):Prop:=
   exists eps0:Q, (eps0>0) /\ 
     (exists N, forall n, (n>=N)%nat -> 
       forall q, (match A with | Real_intro A0 _ => A0 end) n q -> q >= eps0).
-
-
 
 Theorem Rpositive_equiv: forall A B,
   (A == B)%R -> Rpositive A -> Rpositive B.
@@ -272,6 +271,122 @@ Definition Rlt (a b:Real) : Prop :=
   Rpositive (Rminus a b).
 
 
-
-
 Notation "a < b" := (Rlt a b):Real_scope.
+
+Theorem Rlt_trans: forall A B C, (A < B)%R -> (B < C)%R -> (A < C)%R.
+Proof. intros.
+  destruct A as [A HA], B as [B HB], C as [C HC]. hnf in *.
+  unfold Rminus in *. unfold Ropp in *. unfold Cauchy_opp in *.
+  unfold Rplus in *. unfold CauchySeqPlus in *.
+  destruct H as [epsAB [HepsAB [NAB HAB]]]. destruct H0 as [epsBC [HepsBC [NBC HBC]]].
+  destruct (take_max_N NAB NBC
+                  (fun n => forall q : Q, (forall q1 q2 : Q, A n q1 -> (forall q3 : Q, B n q3 -> q2 == - q3) -> q == q1 + q2) -> epsAB <= q)
+                  (fun n => forall q : Q, (forall q1 q2 : Q, B n q1 -> (forall q3 : Q, C n q3 -> q2 == - q3) -> q == q1 + q2) -> epsBC <= q)
+                      HAB HBC) as [N H]. clear HAB HBC.
+  destruct (classic (epsAB<epsBC)) as [Heps|Heps].
+  - exists (epsAB+epsAB). split.
+      { rewrite <- Qplus_0_r. apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
+    exists N. intros n Hn qac Hq.
+    destruct (H n) as [H1 H2]. auto. clear H.
+    destruct (Cauchy_exists _ HA n) as [qa Hqa],
+             (Cauchy_exists _ HB n) as [qb Hqb],
+             (Cauchy_exists _ HC n) as [qc Hqc].
+    assert (E1: epsAB + epsAB <= epsAB + epsBC). 
+      { apply Qplus_le_compat. apply Qle_refl. apply Qlt_le_weak. auto. }
+    assert (E2: qa - qc == (qa - qb) + (qb - qc)) by ring.
+    assert (E3: qac == qa - qc). 
+      { apply Hq. auto. intros. rewrite (Cauchy_unique _ HC _ _ _ Hqc H). reflexivity. }
+    assert (E4: epsAB <= (qa - qb)).
+      { apply H1. intros. auto. rewrite (H0 qb Hqb).
+        rewrite (Cauchy_unique _ HA _ _ _ Hqa H). reflexivity. }
+    assert (E5: epsBC <= (qb - qc)).
+      { apply H2. intros. auto. rewrite (H0 qc Hqc).
+        rewrite (Cauchy_unique _ HB _ _ _ Hqb H). reflexivity. }
+    rewrite E3. rewrite E2. apply (Qle_trans _ _ _ E1).
+    apply Qplus_le_compat. auto. auto.
+  - exists (epsBC+epsBC). split.
+      { rewrite <- Qplus_0_r. apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
+    exists N. intros n Hn qac Hq. apply Qnot_lt_le in Heps.
+    destruct (H n) as [H1 H2]. auto. clear H.
+    destruct (Cauchy_exists _ HA n) as [qa Hqa],
+             (Cauchy_exists _ HB n) as [qb Hqb],
+             (Cauchy_exists _ HC n) as [qc Hqc].
+    assert (E1: epsBC + epsBC <= epsAB + epsBC). 
+      { apply Qplus_le_compat. auto. apply Qle_refl. }
+    assert (E2: qa - qc == (qa - qb) + (qb - qc)) by ring.
+    assert (E3: qac == qa - qc). 
+      { apply Hq. auto. intros. rewrite (Cauchy_unique _ HC _ _ _ Hqc H). reflexivity. }
+    assert (E4: epsAB <= (qa - qb)).
+      { apply H1. intros. auto. rewrite (H0 qb Hqb).
+        rewrite (Cauchy_unique _ HA _ _ _ Hqa H). reflexivity. }
+    assert (E5: epsBC <= (qb - qc)).
+      { apply H2. intros. auto. rewrite (H0 qc Hqc).
+        rewrite (Cauchy_unique _ HB _ _ _ Hqb H). reflexivity. }
+    rewrite E3. rewrite E2. apply (Qle_trans _ _ _ E1).
+    apply Qplus_le_compat. auto. auto.
+Qed.
+
+Theorem Rlt_plus_r: forall (A B C:Real), (A < B)%R -> (A+C < B+C)%R.
+Proof. intros. destruct A as [A HA], B as [B HB], C as [C HC]. hnf in *.
+  unfold Rminus in *. unfold Rplus in *. unfold CauchySeqPlus in *.
+  unfold Ropp in *. unfold Cauchy_opp in *. destruct H as [eps [Heps [N H]]].
+  exists eps. split. auto. exists N. intros.
+  destruct (Cauchy_exists _ HA n) as [qa Hqa],
+           (Cauchy_exists _ HB n) as [qb Hqb],
+           (Cauchy_exists _ HC n) as [qc Hqc].
+  assert (E: q == (qa + qc) - (qb + qc)).
+    { apply H1.
+      - intros. rewrite (Cauchy_unique _ HC _ _ _ Hqc H3).
+        rewrite (Cauchy_unique _ HA _ _ _ Hqa H2). reflexivity.
+      - intros. rewrite (H2 _ _ Hqb Hqc). reflexivity. }
+  assert (E1: (qa + qc) - (qb + qc) == qa - qb) by ring.
+  apply (H n). auto. intros.
+  rewrite <- (Cauchy_unique _ HA _ _ _ Hqa H2).
+  assert (E3: q2 == - qb) by auto. rewrite E3.
+  rewrite E. rewrite E1. reflexivity.
+Qed.
+
+Theorem Rlt_mult_r: forall (A B C:Real),  (Rpositive C) ->(A < B)%R -> (A*C < B*C)%R.
+Proof. intros. destruct A as [A HA], B as [B HB], C as [C HC]. hnf in *.
+  unfold Rminus in *. unfold Rplus in *. unfold CauchySeqPlus in *.
+  unfold Ropp in *. unfold Cauchy_opp in *. unfold Rmult in *.
+  unfold CauchySeqMult in *. destruct H as [eps1 [Heps1 [N1 H1]]].
+  destruct H0 as [eps2 [Heps2 [N2 H2]]].
+  destruct (take_max_N N1 N2
+                  (fun n => forall q : Q, C n q -> eps1 <= q)
+                  (fun n => forall q : Q, (forall q1 q2 : Q, A n q1 -> (forall q3 : Q, B n q3 -> q2 == - q3) -> q == q1 + q2) -> eps2 <= q)
+                      H1 H2) as [N H]. clear H1 H2 N1 N2.
+  exists (eps2*eps1). split.
+  { rewrite <- (Qmult_0_l eps1). apply (Qmult_lt_r). auto. auto. }
+  exists N. intros n Hn q H0. destruct (H _ Hn) as [H1 H2]. clear H.
+  destruct (Cauchy_exists _ HA n) as [qa Hqa],
+           (Cauchy_exists _ HB n) as [qb Hqb],
+           (Cauchy_exists _ HC n) as [qc Hqc].
+  assert (E1: q == qa*qc - qb*qc).
+  { apply H0.
+    - intros. rewrite (Cauchy_unique _ HC _ _ _ Hqc H3).
+      rewrite (Cauchy_unique _ HA _ _ _ Hqa H). reflexivity.
+    - intros. rewrite (H _ _ Hqb Hqc). reflexivity. }
+  assert (E2: qa*qc - qb*qc == (qa-qb)*qc) by ring.
+  assert (E3: eps2 <= qa -qb).
+  { apply H2. intros. rewrite (H3 _ Hqb).
+    rewrite (Cauchy_unique _ HA _ _ _ Hqa H). reflexivity. }
+  assert (E4: eps1 <= qc).
+  { apply H1. auto. }
+  rewrite E1,E2. apply Qmult_le_compat_nonneg.
+  apply Qlt_le_weak. auto.
+  apply Qlt_le_weak. auto.
+  auto. auto.
+Qed.
+
+Instance Rlt_comp : Proper (Real_equiv ==> Real_equiv ==> iff) Rlt.
+Proof. split.
+- intros. unfold Rlt. assert (E1: (y-y0==x-x0)%R).
+  rewrite <- H. rewrite H0. reflexivity.
+  unfold Rlt in H1. rewrite E1. apply H1.
+- intros. unfold Rlt. assert (E1: (y-y0==x-x0)%R).
+  rewrite <- H. rewrite H0. reflexivity.
+  unfold Rlt in H1. rewrite <- E1. apply H1.
+Qed.
+
+

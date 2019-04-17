@@ -1166,4 +1166,32 @@ Proof. intros [A HA] [B HB] [C HC] eps Heps. hnf. unfold CauchySeqMult. unfold C
 Qed.
 
 
+Instance Rplus_comp : Proper (Real_equiv ==> Real_equiv ==> Real_equiv) Rplus.
+Proof. hnf. intros. hnf. intros.
+  apply Cauchy_Plus_equiv. auto. auto.
+Qed.
+
+Instance Ropp_comp : Proper (Real_equiv ==> Real_equiv) Ropp.
+Proof. hnf. intros [A HA] [B HB] H. hnf in *. unfold Cauchy_opp in *. intros.
+  destruct (H _ H0) as [N HN]. exists N. intros.
+  destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  assert (E1: q1 == -qa) by auto.
+  assert (E2: q2 == -qb) by auto.
+  rewrite E1,E2. assert (E3: - qa - - qb == (qb - qa)) by ring.
+  rewrite E3. rewrite Qabs_Qminus. apply (HN _ H1). auto. auto.
+Qed.
+
+Instance Rminus_comp : Proper (Real_equiv ==> Real_equiv ==> Real_equiv) Rminus.
+Proof. hnf. intros. hnf. intros.
+  apply Ropp_comp in H0. unfold Rminus.
+  rewrite H,H0. reflexivity.
+Qed.
+
+Instance Rmult_comp : Proper (Real_equiv ==> Real_equiv ==> Real_equiv) Rmult.
+Proof. hnf. intros. hnf. intros.
+  apply Cauchy_Mult_equiv. auto. auto.
+Qed.
+
+
 
