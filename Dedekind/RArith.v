@@ -323,6 +323,21 @@ Definition Ropp (a : Real) : Real :=
 
 Notation " - a" := (Ropp a) : R_scope.
 
+Lemma Cut_cut_opp_not : forall (A : Q -> Prop) (x : Q),
+  Dedekind A -> A x -> ~ Cut_opp A (- x).
+Proof.
+  unfold not. intros. destruct H1, H1. apply H2.
+  rewrite Qopp_involutive.
+  apply (Dedekind_properties2 _ H x).
+  split; auto.
+  rewrite Qplus_comm.
+  rewrite <- Qplus_le_l with (z:=(-x)).
+  rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+  rewrite <- Qplus_le_r with (z:=x0).
+  rewrite Qplus_assoc. rewrite Qplus_opp_r.
+  repeat rewrite Qplus_0_r. apply Qlt_le_weak. auto.
+Qed.
+
 Lemma PPNN : forall P :Prop, P -> ~ ~ P.
 Proof.
   intros. unfold not. intros. apply H0, H.
@@ -637,13 +652,74 @@ Definition Cut_mult : (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop):=
                 (O A B /\ Cut_mult0 A B x))
 .
 
-Lemma Cut_multPP_spec: forall A B: Q -> Prop,
-  A 0 -> B 0 ->
-  (forall x, Cut_multPP A B x <-> Cut_mult A B x).
+Definition Cuteq (A B : Q -> Prop) := forall x : Q, A x <-> B x.
+
+Instance Cut_Setoid : Equivalence Cuteq.
 Proof.
-Abort.
-(** Use this lemma to separate the proof that "the multiplication of
-two Dedekind cut is still a Dedekind cut". -- Qinxiang *)
+  split.
+  - hnf. intros. hnf. intros. reflexivity.
+  - hnf. intros. hnf in *. intros. split.
+    + intros. rewrite H. auto.
+    + intros. rewrite <- H. auto.
+  - hnf. intros. hnf in *. intros. split.
+    + intros. apply H0, H, H1.
+    + intros. rewrite H, H0. auto.
+Qed.
+
+Lemma Cut_opp_opp :
+  forall (A : Q -> Prop), Dedekind A -> Cuteq A (Cut_opp (Cut_opp A)).
+Proof.
+  intros. split.
+  - intros. hnf. apply (Dedekind_properties3 _ ) in H0.
+    + destruct H0. exists (x0 - x). split.
+      * unfold Qminus. rewrite <- Qlt_minus_iff. apply H0.
+      * unfold Cut_opp. rewrite exists_dist. apply PPNN. intros.
+        hnf in *. intros. destruct H1, H2.
+        apply (Dedekind_properties2 _ H x0). split. apply H0.
+        assert(- (- x + - (x0 - x)) == x0)%Q.
+        { rewrite <- Qplus_opp_assoc. rewrite Qopp_involutive.
+          unfold Qminus. rewrite Qplus_comm. rewrite <- (Qplus_0_r x0).
+          rewrite <- Qplus_assoc. rewrite <- Qplus_assoc. rewrite Qplus_inj_l.
+          rewrite Qplus_assoc. rewrite Qplus_0_l. rewrite Qplus_comm.
+          apply Qplus_opp_r. }
+        rewrite H2. rewrite <- Qplus_le_l with (z:=x1).
+        rewrite <- Qplus_assoc. rewrite Qplus_le_r.
+        apply Qlt_le_weak. rewrite Qplus_comm. rewrite Qplus_opp_r. auto.
+    + auto.
+  - intros. hnf in H0. destruct H0, H0. hnf in H1. unfold Cut_opp in H1.
+    rewrite exists_dist in H1. apply NNPP in H1.
+    assert(~(0<x0/\~ A (- (- x + - x0) + - x0))).
+    { apply (H1 x0). } apply not_and_or in H2. destruct H2.
+    + destruct H2. auto.
+    + apply NNPP in H2.
+    rewrite <- (Qplus_opp_assoc x x0) in H2. rewrite Qopp_involutive in H2.
+      rewrite <- Qplus_assoc in H2. rewrite Qplus_opp_r in H2.
+      rewrite <- Qplus_0_r. auto.
+Qed.
+
+
+
+(* Instance Cut_mult_comp : Proper(Cuteq ==> Cuteq ==> Qeq ==> iff) Cut_mult.
+Proof.
+  split.
+  - intros. unfold Cut_mult in *. destruct H2 as [?|[?|[?|[?|[]]]]].
+    + left. destruct H2. repeat split.
+      * apply H, H2.
+      * apply H0, H2.
+      * destruct H3, H3. rewrite H1 in H3. destruct H3 as [?[?[?[?]]]].
+        exists x2, x3. repeat split;auto.
+        { apply H. auto. }
+        { apply H0. auto. }
+    + right; left. destruct H2, H2. repeat split.
+      * rewrite Cut_opp_eq in H. apply H, H2. auto. auto.
+      * apply H0, H2.
+      * destruct H3, H3. rewrite H1 in H3. destruct H3 as [?[?[?[?]]]].
+        exists x2, x3. repeat split;auto.
+        { apply H. auto. }
+        { apply H0. auto. }
+Admitted. *)
+
+
 
 (** To make sure the definition is correct.  *)
 Lemma Rmult_situation : forall A B, Dedekind A -> Dedekind B ->
@@ -673,7 +749,7 @@ Proof.
     + right. right. right. right. left. split. auto. auto.
 Qed.
 
-Lemma Cut_mult_comm' : forall (A B : Q -> Prop) (x : Q),
+Lemma Cut_mult_comm'' : forall (A B : Q -> Prop) (x : Q),
  Cut_mult A B x -> Cut_mult B A x.
 Proof.
   intros. unfold Cut_mult. intros. destruct H as [ |[|[|[|[]]]] ].
@@ -708,20 +784,139 @@ Proof.
       * auto.
 Qed.
 
+Lemma Cut_mult_comm' : forall (A B : Q -> Prop),
+ Cuteq (Cut_mult A B) (Cut_mult B A).
+Proof.
+  intros. split.
+  - apply Cut_mult_comm''.
+  - apply Cut_mult_comm''.
+Qed.
+
 Lemma Cut_mult_comm : forall (A B : Q -> Prop) (x : Q),
  Cut_mult A B x <-> Cut_mult B A x.
 Proof.
   intros. split.
-  - apply Cut_mult_comm'.
-  - apply Cut_mult_comm'.
+  - apply Cut_mult_comm''.
+  - apply Cut_mult_comm''.
 Qed.
 
-Lemma Cut_mult_assoc' : forall (A B C : Q -> Prop) (x : Q),
+Lemma NP0_false : forall (A B : Q -> Prop),
+  Dedekind A -> Dedekind B -> NP A B -> Cut_multNP A B 0 -> False.
+Proof.
+  intros. destruct H1. destruct H2, H2, H4.
+  apply Dedekind_opp in H.
+  apply (Dedekind_properties3 _) in H1.
+  apply (Dedekind_properties3 _) in H3.
+  { destruct H1, H1, H3, H3. exists x0, x1.
+    repeat split;auto. apply Qlt_le_weak. rewrite Qplus_0_l.
+    apply Qlt_trans with (y:=0). { rewrite Qlt_minus_iff.
+    rewrite Qopp_involutive. rewrite Qplus_0_l. auto. }
+    rewrite <- (Qmult_0_l 0).
+    repeat apply (Qmult_lt_compat 0 x0 0 x1).
+    apply Qle_refl. apply Qle_refl. auto. auto. }
+    auto. auto.
+Qed.
+
+Lemma PN0_false : forall (A B : Q -> Prop),
+  Dedekind A -> Dedekind B -> PN A B -> Cut_multPN A B 0 -> False.
+Proof.
+  intros. destruct H1. destruct H2, H2, H4.
+  apply Dedekind_opp in H0.
+  apply (Dedekind_properties3 _) in H1.
+  apply (Dedekind_properties3 _) in H3.
+  { destruct H1, H1, H3, H3. exists x0, x1.
+    repeat split;auto. apply Qlt_le_weak. rewrite Qplus_0_l.
+    apply Qlt_trans with (y:=0). { rewrite Qlt_minus_iff.
+    rewrite Qopp_involutive. rewrite Qplus_0_l. auto. }
+    rewrite <- (Qmult_0_l 0).
+    repeat apply (Qmult_lt_compat 0 x0 0 x1).
+    apply Qle_refl. apply Qle_refl. auto. auto. }
+    auto. auto.
+Qed.
+
+Lemma Cut_mult_assoc : forall (A B C : Q -> Prop) (x : Q),
+  Dedekind A -> Dedekind B -> Dedekind C ->
  Cut_mult (Cut_mult A B) C x -> Cut_mult A (Cut_mult B C) x.
 Proof.
-  intros. unfold Cut_mult in *. destruct H as [?|[?|[?|[?|[]]]]].
-  - destruct H.
+  intros. unfold Cut_mult in *. destruct H2 as [?|[?|[?|[?|[]]]]].
+  - destruct H2. destruct H2. destruct H2 as [?|[?|[?|[?|[]]]]].
+    + left. split.
+      * destruct H2, H2. split; auto. left. repeat split; auto.
+        apply (Dedekind_properties3 _) in H6.
+        apply (Dedekind_properties3 _) in H4.
+        { destruct H6, H6, H4, H4. exists x0, x1.
+          repeat split;auto. rewrite <- (Qmult_0_l 0).
+          apply Qlt_le_weak.
+          repeat apply (Qmult_lt_compat 0 x0 0 x1);auto;apply Qle_refl. }
+        auto. auto.
+      * destruct H2, H2. destruct H3, H3, H3, H7, H8, H9.
+        destruct H8 as [?|[?|[?|[?|[]]]]].
+        { destruct H8, H11, H11. destruct H11 as [?[?[?[?]]]].
+          exists x2, (x3*x1). repeat split;auto.
+          { rewrite <- (Qmult_0_l 0).
+            apply (Qmult_lt_compat 0 x3 0 x1);auto;apply Qle_refl. }
+          { left. repeat split;auto. exists x3, x1.
+            repeat split;auto;apply Qle_refl. }
+          { apply Qle_trans with (y:=x0*x1). auto.
+            rewrite Qmult_assoc. rewrite Qmult_le_r. auto. auto. } }
+        { destruct H8, H8.  apply (Cut_cut_opp_not A 0) in H.
+          destruct H. auto. auto. }
+        { destruct H8, H8.  apply (Cut_cut_opp_not B 0) in H0.
+          destruct H0. auto. auto. }
+        { destruct H8, H8.  apply (Cut_cut_opp_not A 0) in H.
+          destruct H. auto. auto. }
+        { destruct H8, H8, H8. auto. auto. }
+    + right; left. split.
+      * destruct H2, H2. split; auto. left. repeat split; auto.
+        apply (Dedekind_properties3 _) in H6.
+        apply (Dedekind_properties3 _) in H4.
+        { destruct H6, H6, H4, H4. exists x0, x1.
+          repeat split;auto. rewrite <- (Qmult_0_l 0).
+          apply Qlt_le_weak.
+          repeat apply (Qmult_lt_compat 0 x0 0 x1);auto;apply Qle_refl. }
+        auto. auto.
+      * destruct H2, H2. destruct H3, H3, H3, H7, H8, H9.
+        destruct H8 as [?|[?|[?|[?|[]]]]].
+        { destruct H8, H8.  apply (Cut_cut_opp_not A 0) in H.
+          destruct H. auto. auto. }
+        { destruct H8, H11, H11.
+          exists x2. split;auto. unfold not. intros. destruct H12.
+          destruct H13, H12. destruct H12 as [?[?[?[?]]]].
+          destruct H15 as [?|[?|[?|[?|[]]]]].
+          { destruct H15, H17, H17. destruct H17 as [?[?[?[?]]]].
+            exists x3, x5. repeat split; auto.
+            apply Qle_trans with (y:=0).
+            { rewrite <- Qplus_opp_assoc.
+              rewrite <- (Qopp_involutive 0). apply Qopp_le_compat.
+              rewrite <- Qplus_0_r.
+              repeat apply Qplus_le_compat;apply Qlt_le_weak;auto. }
+            { repeat apply Qmult_le_0_compat;apply Qlt_le_weak;auto. } }
+          { destruct H15, H15. apply (Cut_cut_opp_not B 0) in H0.
+            destruct H0. auto. auto. }
+          { destruct H15, H15. apply (Cut_cut_opp_not C 0) in H1.
+            destruct H1. auto. auto. }
+          { destruct H15, H15. apply (Cut_cut_opp_not C 0) in H1.
+            destruct H1. auto. auto. }
+          { destruct H15, H15. destruct H15. auto. destruct H15. auto. } }
+        { destruct H8, H8. apply (Cut_cut_opp_not A 0) in H.
+          destruct H. auto. auto. }
+        { destruct H8, H8.  apply (Cut_cut_opp_not B 0) in H0.
+          destruct H0. auto. auto. }
+        { destruct H8, H8. destruct H12. auto. destruct H8. auto. }
+    +
 Admitted.
+
+(* Lemma Cut_mult_assoc : forall (A B C : Q -> Prop) (x : Q),
+  Dedekind A -> Dedekind B -> Dedekind C ->
+ Cuteq (Cut_mult (Cut_mult A B) C) (Cut_mult A (Cut_mult B C)).
+Proof.
+  intros. split.
+  - repeat apply Cut_mult_assoc'; auto.
+  - intros. rewrite (Cut_mult_comm' A B).
+    rewrite Cut_mult_comm.
+    apply Cut_mult_assoc'. auto. auto. auto.
+    rewrite (Cut_mult_comm' C B). rewrite Cut_mult_comm. auto.
+Qed. *)
 
 Fact Qdiv2_opp : forall x : Q, (- x == - (x * / (2 # 1)) + - (x * / (2 # 1)))%Q.
 Proof.
@@ -765,20 +960,7 @@ Proof.
     apply Qle_lt_trans with (y:=x). auto. auto. auto.
 Qed.
 
-Lemma Cut_cut_opp_not : forall (A : Q -> Prop) (x : Q),
-  Dedekind A -> A x -> ~ Cut_opp A (- x).
-Proof.
-  unfold not. intros. destruct H1, H1. apply H2.
-  rewrite Qopp_involutive.
-  apply (Dedekind_properties2 _ H x).
-  split; auto.
-  rewrite Qplus_comm.
-  rewrite <- Qplus_le_l with (z:=(-x)).
-  rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
-  rewrite <- Qplus_le_r with (z:=x0).
-  rewrite Qplus_assoc. rewrite Qplus_opp_r.
-  repeat rewrite Qplus_0_r. apply Qlt_le_weak. auto.
-Qed.
+
 
 Theorem Dedekind_mult (A B : Q -> Prop) : 
 Dedekind A -> Dedekind B -> Dedekind (Cut_mult A B).
@@ -1125,6 +1307,90 @@ Definition Rmult (a b :Real) : Real :=
 Notation "A * B" := (Rmult A B) (at level 40, left associativity)
                        : R_scope.
 
+Lemma Cut_opp_eq :
+forall (A B : Q -> Prop), Dedekind A -> Dedekind B -> 
+Cuteq A B <-> Cuteq (Cut_opp A) (Cut_opp B).
+Proof.
+  intros. split.
+  - intros. hnf in *. intros. split.
+    + intros. hnf in *. destruct H2, H2.
+      exists x0. split;auto. hnf in *. intros. apply H3.
+      apply H1. auto.
+    + intros. hnf in *. destruct H2, H2.
+      exists x0. split;auto. hnf in *. intros. apply H3.
+      apply H1. auto.
+  - intros. hnf in *. intros. split.
+    + intros. apply Cut_opp_opp. auto. apply Cut_opp_opp in H2.
+      * destruct (H1 x). hnf in *. destruct H2, H2.
+      exists x0. split;auto. hnf in *. intros. apply H5.
+      apply H1. auto. * auto.
+    + intros. apply Cut_opp_opp. auto. apply Cut_opp_opp in H2.
+      * destruct (H1 x). hnf in *. destruct H2, H2.
+      exists x0. split;auto. hnf in *. intros. apply H5.
+      apply H1. auto. * auto.
+Qed.
+
+Lemma R_mult_comp1 : forall x x0 y y0 : Real, (x==y -> x0==y0 -> x*x0<=y*y0)%R.
+Proof.
+  intros.
+    unfold Rmult, Rle. destruct x, y, x0, y0. intros.
+    unfold Cut_mult in *.
+    assert(forall x : Q, Cut_opp A x <-> Cut_opp A0 x).
+    { rewrite <- (Cut_opp_eq A A0). split. apply H. apply H. auto. auto. }
+    assert(forall x : Q, Cut_opp A1 x <-> Cut_opp A2 x).
+    { rewrite <- (Cut_opp_eq A1 A2). split. apply H0. apply H0. auto. auto. }
+   destruct H5 as [?|[?|[?|[?|[]]]]].
+    + left. destruct H5. repeat split.
+      * unfold Req, Rle in H. apply H, H5.
+      * unfold Req, Rle in H0. apply H0, H5.
+      * destruct H8, H8. destruct H8 as [?[?[?[?]]]].
+        exists x0, x1. repeat split;auto.
+        { apply H. auto. }
+        { apply H0. auto. }
+    + right; left. destruct H5, H5. repeat split.
+      * unfold Req, Rle in H. apply H6, H5.
+      * apply H0, H9.
+      * destruct H8, H8. exists x0. split;auto. unfold not in *.
+        intros. apply H10. destruct H11, H11. destruct H11 as [?[?[?[?]]]].
+        exists x1, x2. repeat split;auto.
+        { apply H6, H13. }
+        { apply H0. auto. }
+    + right; right; left. destruct H5, H5. repeat split.
+      * apply H, H5.
+      * apply H7, H9.
+      * destruct H8, H8. exists x0. split;auto. unfold not in *.
+        intros. apply H10. destruct H11, H11. destruct H11 as [?[?[?[?]]]].
+        exists x1, x2. repeat split;auto.
+        { apply H. auto. }
+        { apply H7, H14. }
+    + right; right; right; left. destruct H5, H5. repeat split.
+      * apply H6; auto.
+      * apply H7; auto.
+      * destruct H8, H8. destruct H8 as [?[?[?[?]]]].
+        exists x0, x1. repeat split;auto.
+        { apply H6; auto. }
+        { apply H7; auto. }
+    + repeat right. destruct H5.
+      { destruct H5. split.
+        { left. unfold not in *. split.
+          { intros. apply H5, H. auto. }
+          { intros. apply H9, H6. auto. } }
+          auto. }
+      { destruct H5. split.
+        { right. unfold not in *. split.
+          { intros. apply H5, H0. auto. }
+          { intros. apply H9, H7. auto. } }
+          auto. }
+Qed.
+
+Instance R_mult_comp : Proper(Req ==> Req ==> Req) Rmult.
+Proof.
+  split.
+  - apply R_mult_comp1. auto. auto.
+  - apply R_mult_comp1. rewrite H. reflexivity.
+    rewrite H0. reflexivity.
+Qed.
+
 (** Third , we will define the plus operation of Set and Real
     and proof some theorem about it. *)
 Theorem Rmult_0 : forall a : Real, (a * Rzero == Rzero)%R.
@@ -1342,12 +1608,10 @@ Qed.
 
 Theorem Rmult_assoc : forall a b c : Real, (a * b * c == a * (b * c))%R.
 Proof.
-  intros. unfold Req, Rmult, Cut_mult, Rle. destruct a, b, c. split.
-  - intros. destruct H2 as [?|[?|[?|[?|?]]]].
-    + left. split.
-      * apply H2. unfold PP in *. destruct H2.
-        
-Admitted.
+  intros. unfold Req, Rmult, Rle. destruct a, b, c. split.
+  - intros. apply Cut_mult_assoc. auto. auto. auto. auto.
+  - intros. apply Cut_mult_assoc. auto. auto. auto. auto.
+Qed.
 
 Theorem Rmult_distr_l :
   forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
