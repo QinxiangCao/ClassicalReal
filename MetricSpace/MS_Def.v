@@ -346,7 +346,11 @@ Proof.
   +auto.
 Defined.
 
+Inductive ball {X : Type} {eq : relation X} {M : Metric eq eq} {HE : Equivalence eq} (a : X) (r : X) (x : X): Prop :=
+    | ball_intro (L : x0 < r) (H : dist a x < r) : ball a r x.
 
+Definition in_ball {X : Type} {eq : relation X} {M : Metric eq eq} {HE : Equivalence eq} (a : X) (x : X) : Prop :=
+    forall (eps : X) (y : X), ball a eps x -> ~ball a eps y -> (a < y -> x < y )/\ (y < a -> y < x).
 
 Definition leC {X : Type} {eq : relation X} {M : Metric eq eq} {HE : Equivalence eq} (x1 x2 : Cauchilize eq eq) : Prop :=
     match x1,   x2 with
@@ -356,19 +360,12 @@ Definition leC {X : Type} {eq : relation X} {M : Metric eq eq} {HE : Equivalence
     end.
 Notation " x1 <= x2" := (leC x1 x2) : leC.
 Instance leC_rewrite : forall (X : Type) (eq : relation X) (M : Metric eq eq) (HE : Equivalence eq),
-      Proper (equC ==> equC ==> iff) leC.
+      forall (a b : X), in_ball a b -> Proper (equC ==> equC ==> iff) leC.
 Proof.
     intros. hnf. intro x1. intro x2. hnf. intro Ex. intro y1. intro y2. intro Ey. split.
-    -unfold leC. destruct x1 as [x1Seq]. destruct y1 as [y1Seq]. intros. destruct H1.
-      +destruct H1 as [N]. destruct x2 as [x2Seq]. destruct y2 as [y2Seq].
-          left. exists N. intro n. intro a1. intro a2. intro leNn. intro Hx2. intro Hy2.
-          destruct H1 with (n := n).
-          
-
-
-
-
-  
+    -unfold leC. destruct x1 as [x1Seq]. destruct y1 as [y1Seq]. intros. destruct H2.
+      +destruct H2 as [N]. destruct x2 as [x2Seq]. destruct y2 as [y2Seq].
+          left. unfold equC in Ex, Ey. Admitted.
 
 Section leCModule.
 Variables X : Type.
@@ -380,16 +377,28 @@ Notation "a == b" := (eq a b)
 Notation "a != b" := (~eq a b)
     (at level 70, no associativity).
 
-
-(**
-Definition siCauchilize : Type :=(@Cauchilize A_ X_ ).
-Definition xsiCauchilize : Type :=(@Cauchilize X_ X_) .
-Definition biCauchilize: Type := @Cauchilize (@Cauchilize A_ X_) (@Cauchilize X_ X_). **)
-
-Theorem preOrder_trans : forall {A X : Type} (eq : relation X) (eqA : relation A) {Hpof : Pre_Order_Field eqA} {M : Metric eq eqA},
-    @Pre_Order_Field (Cauchilize eq eqA) (equC eq eqA).
+Theorem preOrder_trans : @Pre_Order_Field (Cauchilize eq eq) equC.
 Proof.
-  
+     split with (le := leC).
+     -intros. destruct a. destruct b. right. auto.
+     -destruct a as [a]. destruct b as [b]. destruct c as [c].
+       intros. destruct H2. destruct H3.
+            +destruct H2 as [N2]. destruct H3 as [N3].
+               assert((N2 <= N3)%nat \/ (N3 <= N2)%nat). apply le_one.
+               destruct H4.
+                   *left. exists N3. intro n. intro a1. intro a3. intros.
+                     assert(exists a2, b n a2). apply HCseq1. destruct H8 as [a2].
+                     destruct (H2 n a1 a2). apply le_lt_or_eq in H4. destruct H4. apply (lt_trans _ N3 _).
+                     auto. auto. rewrite H4. auto. auto. auto. apply lttr with (y := a2). auto. apply lt_intro.
+                     auto. auto. destruct (H3 n a2 a3). auto. auto. auto. apply lt_intro. auto. auto.
+                   *left. exists N2. intro n. intro a1. intro a3. intros.
+                     assert(exists a2, b n a2). apply HCseq1. destruct H8 as [a2].
+                     destruct (H2 n a1 a2). auto. auto. auto.
+                     apply lttr with (y := a2). auto. apply lt_intro.
+                     auto. auto. destruct (H3 n a2 a3). apply le_lt_or_eq in H4. destruct H4.
+                     apply (lt_trans _ N2 _). auto. auto. rewrite H4. auto. auto. auto. apply lt_intro.
+                     auto. auto.
+             +rewrite <- H3.
 
 (** warning : stop running !**)
 
