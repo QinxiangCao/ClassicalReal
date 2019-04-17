@@ -634,7 +634,7 @@ Qed.
 
 (* Every limit-not-0 Cauchy Sequence will not be 0 after a certain N *)
 Lemma limit_not_0_seq : forall A, Cauchy A -> limit_not_0 A ->
- exists (N:nat), forall n q, (n>N)%nat -> A n q -> ~(q == 0).
+ exists (N:nat), forall n, (n>N)%nat ->forall q, A n q -> ~(q == 0).
 Proof. intros. destruct H0 as [eps [Heps H0]].
   destruct (Cauchy_def _ H _ Heps) as [N' HN'].
   destruct (H0 N') as [nN' [HnN' H']].
@@ -777,7 +777,7 @@ Proof. intros. split.
   rewrite <- Qinv_involutive. rewrite E. apply Qinv_involutive.
 - intros. assert (E:/ p == / q). rewrite H1. reflexivity. rewrite <- E. auto.
 - intros.
-  assert (H0':(exists N', forall (n : nat) (q : Q), (n>N')%nat -> A n q -> ~ q == 0)). { apply limit_not_0_seq. auto. auto. }
+  assert (H0':(exists N', forall (n : nat), (n>N')%nat ->forall q, A n q -> ~ q == 0)). { apply limit_not_0_seq. auto. auto. }
   destruct H0' as [N' H0'].
   destruct (Cauchy_nonzero_pre A H H0) as [N0 [eps0 [Heps0 H']]].
   assert (Eeps: 0 < eps * eps0 * eps0). 
@@ -798,7 +798,7 @@ Proof. intros. split.
       assert (Em2N': (m2 > N')%nat) by omega.
       assert (E4:/Qabs (/ q1) <= /eps0).
       { apply (Qmult_le_l _ _ _ E2). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em1N' _ Hq1))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -806,7 +806,7 @@ Proof. intros. split.
         apply (H' m1). auto. omega. auto. }
       assert (E5:/Qabs (/ q2) <= /eps0).
       { apply (Qmult_le_l _ _ _ E3). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em2N' _ Hq2))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -860,7 +860,7 @@ Proof. intros. split.
       assert (Em2N': (m2 > N')%nat) by omega.
       assert (E4:/Qabs (/ q1) <= /eps0).
       { apply (Qmult_le_l _ _ _ E2). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em1N' _ Hq1))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -868,7 +868,7 @@ Proof. intros. split.
         apply (H' m1). auto. auto. }
       assert (E5:/Qabs (/ q2) <= /eps0).
       { apply (Qmult_le_l _ _ _ E3). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em2N' _ Hq2))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -924,7 +924,7 @@ Proof. intros. split.
       assert (Em2N': (m2 > N')%nat) by omega.
       assert (E4:/Qabs (/ q1) <= /eps0).
       { apply (Qmult_le_l _ _ _ E2). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em1N' _ Hq1))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -932,7 +932,7 @@ Proof. intros. split.
         apply (H' m1). auto. omega. auto. }
       assert (E5:/Qabs (/ q2) <= /eps0).
       { apply (Qmult_le_l _ _ _ E3). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em2N' _ Hq2))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -986,7 +986,7 @@ Proof. intros. split.
       assert (Em2N': (m2 > N')%nat) by omega.
       assert (E4:/Qabs (/ q1) <= /eps0).
       { apply (Qmult_le_l _ _ _ E2). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em1N' Hq1))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em1N' _ Hq1))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -994,7 +994,7 @@ Proof. intros. split.
         apply (H' m1). auto. auto. }
       assert (E5:/Qabs (/ q2) <= /eps0).
       { apply (Qmult_le_l _ _ _ E3). 
-        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ _ Em2N' Hq2))).
+        rewrite (Qmult_inv_r _ (Qnot_0_abs _ (H0' _ Em2N' _ Hq2))).
         rewrite Qmult_comm.
         apply (Qmult_le_l _ _ _ Heps0). rewrite Qmult_assoc.
         rewrite (Qmult_inv_r _ (Qlt_not_0 _ Heps0)).
@@ -1089,6 +1089,131 @@ Notation "/ x" := (Rinv x) : Real_scope.
 Definition Rdiv x y := Rmult x (Rinv y).
 
 Infix "/" := Rdiv : R_scope.
+
+Theorem take_max_N_3prop:
+forall N1 N2 N3 (P Q R:nat->Prop),
+ (forall n, (n>N1)%nat -> P n) -> (forall n ,(n>N2)%nat -> Q n) ->
+ (forall n, (n>N3)%nat -> R n) ->
+  exists N, forall n,(n>N)%nat -> P n /\  Q n /\ R n.
+Proof. intros N1 N2 N3 P Q R H1 H2 H3.
+  destruct (classic (N1>N2)%nat),(classic (N1>N3)%nat),(classic (N2>N3)%nat).
+  - exists N1. intros. split.
+    * auto.
+    * split. ** apply H2. omega.
+             ** apply H3. omega.
+  - exists N1. intros. split.
+    * auto.
+    * split. ** apply H2. omega.
+             ** apply H3. omega.
+  - exists O. split.
+    * omega.
+    * split. ** omega.
+             ** omega.
+  - exists N3. intros. split.
+    * apply H1. omega.
+    * split. ** apply H2. omega.
+             ** apply H3. omega.
+  - exists N2. intros. split.
+    * apply H1. omega.
+    * split. ** apply H2. omega.
+             ** apply H3. omega.
+  - exists O. split.
+    * intros. omega.
+    * split. ** omega.
+             ** omega.
+  - exists N2. intros. split.
+    * intros. apply H1. omega.
+    * split. ** apply H2. omega.
+             ** apply H3. omega.
+  - exists N3. intros. split.
+    * apply H1. omega.
+    * split. ** apply H2. omega.
+             ** apply H3. omega.
+Qed.
+
+
+Theorem Rinv_equiv: forall A B,
+((match A with exist _ A HA => A end) == (match B with exist _ B HB => B end))%R ->
+(Rinv A == Rinv B)%R.
+Proof. intros [[A HA1] HA2]. intros [[B HB1] HB2]. intros H. hnf in *.
+  apply limit_not_0_spec in HA2. apply limit_not_0_spec in HB2.
+  intros eps Heps.
+  destruct (Cauchy_nonzero_pre _ HA1 HA2) as [NA [Amin [HAmin HA3]]].
+  destruct (Cauchy_nonzero_pre _ HB1 HB2) as [NB [Bmin [HBmin HB3]]].
+  assert (Eeps: 0< eps*Amin*Bmin).
+  { rewrite <- (Qmult_0_l (Amin * Bmin)).
+    rewrite Qmult_assoc.
+   apply Qmult_lt_r. auto. apply Qmult_lt_r. auto. auto. }
+  destruct (H (eps*Amin*Bmin) Eeps) as [N HN]. clear H.
+  destruct (take_max_N_3prop NA NB N
+    (fun n => forall q : Q, A n q -> Amin <= Qabs q)
+    (fun n => forall q : Q, B n q -> Bmin <= Qabs q)
+    (fun m => forall q1 q2 : Q, A m q1 -> B m q2 -> Qabs (q1 - q2) < eps * Amin * Bmin)
+    HA3 HB3 HN) as [N0 H].
+  clear HA3 HB3 HN NA NB N.
+  apply (limit_not_0_seq A HA1) in HA2. destruct HA2 as [NA HA3].
+  apply (limit_not_0_seq B HB1) in HB2. destruct HB2 as [NB HB3].
+  destruct (take_max_N_3prop NA NB N0 _ _ _ HA3 HB3 H) as [N1 H0].
+  clear HA3 HB3 H NA NB N0.
+  exists N1. intros.
+  destruct (H0 _ H) as [E1 [E2 [E3 [E4 E5]]]]. clear H0.
+  assert (P1: Qabs ((/q2) - (/q1)) < eps * Amin * Bmin). { rewrite Qabs_Qminus. auto. }
+  assert (P2: q1 - q2 == (/q2 - /q1)*(q1)*q2).
+  { field. split. apply Qinv_not_0. auto. apply Qinv_not_0. auto. }
+  rewrite P2. rewrite <- Qmult_assoc. rewrite Qabs_Qmult.
+  assert (P3: q1 * q2 == / (/q1 * /q2)). 
+  { field. split. apply Qinv_not_0. auto. apply Qinv_not_0. auto. }
+  rewrite P3. rewrite Qabs_Qinv.
+  rewrite Qabs_Qmult. rewrite Qinv_mult_distr.
+  assert (P4: / Qabs(/q1) <= /Amin).
+  { apply (Qmult_le_r _ _ _ HAmin).
+    assert (Pt: Qabs (/ q1)>0).
+    { destruct ((proj1 (Qle_lteq _ _)) (Qabs_nonneg (/q1))).
+    - auto. - symmetry in H0. apply Qabs_0 in H0. apply E1 in H1. contradiction. }
+    apply (Qmult_le_l _ _ _ Pt).
+    assert (Pt2: Qabs (/ q1) * (/ Amin * Amin) == Qabs(/q1)). 
+    { field. intros C. rewrite C in HAmin. apply Qlt_irrefl in HAmin. auto. }
+    assert (Pt3: Qabs (/ q1) * (/ Qabs (/ q1) * Amin) == Amin).
+    { field. intros C. apply Qabs_0 in C. rewrite C in H1. apply E1 in H1.
+      apply H1. reflexivity. }
+    rewrite Pt2,Pt3. apply E3. auto. }
+  assert (P5: / Qabs(/q2) <= /Bmin).
+  { apply (Qmult_le_r _ _ _ HBmin).
+    assert (Pt: Qabs (/ q2)>0).
+    { destruct ((proj1 (Qle_lteq _ _)) (Qabs_nonneg (/q2))).
+    - auto. - symmetry in H0. apply Qabs_0 in H0. apply E2 in H2. contradiction. }
+    apply (Qmult_le_l _ _ _ Pt).
+    assert (Pt2: Qabs (/ q2) * (/ Bmin * Bmin) == Qabs(/q2)). 
+    { field. intros C. rewrite C in HBmin. apply Qlt_irrefl in HBmin. auto. }
+    assert (Pt3: Qabs (/ q2) * (/ Qabs (/ q2) * Bmin) == Bmin).
+    { field. intros C. apply Qabs_0 in C. rewrite C in H2. apply E2 in H2.
+      apply H2. reflexivity. }
+    rewrite Pt2,Pt3. apply E4. auto. }
+  assert (P6: eps == (eps * Amin * Bmin) * (/Amin * /Bmin)).
+  { field. split.
+    - intros C. rewrite C in HBmin. apply Qlt_irrefl in HBmin. contradiction.
+    - intros C. rewrite C in HAmin. apply Qlt_irrefl in HAmin. contradiction. }
+  rewrite P6.
+  apply (Qmult_lt_compat_trans_positive  (Qabs (/ q2 - / q1)) (eps * Amin * Bmin) ).
+  - apply Qabs_nonneg.
+  - rewrite <- (Qmult_0_r (/ (Qabs (/ q1)))).
+    apply Qmult_lt_l.
+    + apply Qinv_lt_0_compat.
+      destruct ((proj1 (Qle_lteq _ _)) (Qabs_nonneg (/q1))).
+      * auto. * symmetry in H0. apply Qabs_0 in H0. apply E1 in H1. contradiction.
+    + apply Qinv_lt_0_compat.
+      destruct ((proj1 (Qle_lteq _ _)) (Qabs_nonneg (/q2))).
+      * auto. * symmetry in H0. apply Qabs_0 in H0. apply E2 in H2. contradiction.
+  - auto.
+  - apply Qmult_le_compat_nonneg.
+    + apply Qlt_le_weak. apply Qinv_lt_0_compat.
+      destruct ((proj1 (Qle_lteq _ _)) (Qabs_nonneg (/q1))).
+      * auto. * symmetry in H0. apply Qabs_0 in H0. apply E1 in H1. contradiction.
+    + apply Qlt_le_weak. apply Qinv_lt_0_compat.
+      destruct ((proj1 (Qle_lteq _ _)) (Qabs_nonneg (/q2))).
+      * auto. * symmetry in H0. apply Qabs_0 in H0. apply E2 in H2. contradiction.
+    + auto. + auto.
+Qed. 
 
 Theorem Rmult_comm: forall A B,
   (A * B == B * A)%R.
