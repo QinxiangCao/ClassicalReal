@@ -291,7 +291,7 @@ Definition ctr {M : Metric eq eqA}  (a : A) (reflseq : seq)
 
 End ProofModule.
 
-Definition equC {A X : Type} (eq : relation X) (eqA : relation A) {M : Metric eq eqA} (x1 x2 : Cauchilize eq eqA):  Prop  :=
+Definition equC {A X : Type} {eq : relation X} {eqA : relation A} {M : Metric eq eqA} (x1 x2 : Cauchilize eq eqA):  Prop  :=
   match x1,   x2 with
     | con_intro _ _ cseq1 C1, con_intro _ _ cseq2 C2 =>
         (forall (eps : X), x0 < eps
@@ -303,15 +303,15 @@ Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
 
 Lemma refl_equC : forall {A X : Type} {eq : relation X} {eqA : relation A} {HE : Equivalence eq} {HEA : Equivalence eqA}
-      {M : Metric eq eqA} (x : @Cauchilize A X eq eqA M), equC  eq eqA x x.
+      {M : Metric eq eqA} (x : @Cauchilize A X eq eqA M), equC x x.
 Proof.
   intros. unfold equC. destruct x. intros. inversion H. apply HCA0 in H0.
   destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
   apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
 Qed.
 
-Theorem EquR_trans : forall {X A : Type} {eq : relation X} {eqA : relation A} {HE : Equivalence eq} {HEA : Equivalence eqA}
-{M : Metric eq eq}, Equivalence (equC eq eq).
+Instance EquR_trans : forall {X A : Type} {eq : relation X} {eqA : relation A} {HE : Equivalence eq} {HEA : Equivalence eqA}
+{M : Metric eq eqA}, Equivalence (equC).
 Proof.
   intros. split.
   -unfold Reflexive. apply refl_equC.
@@ -344,17 +344,43 @@ Proof.
             apply le_lt_eq in H14. destruct H14. apply lttr with (y := dist a1 a + dist a a2).
             auto. auto. auto. rewrite <-H14 in H15. auto.
   +auto.
-Qed.
+Defined.
 
 
-Definition leC {A X : Type} (eq : relation X) (eqA : relation A) {Hpof : Pre_Order_Field eqA} {M : Metric eq eqA} (x1 x2 : Cauchilize eq eqA) : Prop :=
+
+Definition leC {X : Type} {eq : relation X} {M : Metric eq eq} {HE : Equivalence eq} (x1 x2 : Cauchilize eq eq) : Prop :=
     match x1,   x2 with
     | con_intro _ _ cseq1 _, con_intro _ _ cseq2 _ =>
-         ((exists (N : nat), forall (n : nat) (a1 a2 : A), (N < n)%nat -> cseq1 n a1
-             -> cseq2 n a2 -> a1 <= a2) \/ equC eq eqA x1 x2)
+         (exists (N : nat), forall (n : nat) (a1 a2 : X), (N < n)%nat -> cseq1 n a1
+             -> cseq2 n a2 -> a1 < a2)\/ equC  x1 x2
     end.
-
 Notation " x1 <= x2" := (leC x1 x2) : leC.
+Instance leC_rewrite : forall (X : Type) (eq : relation X) (M : Metric eq eq) (HE : Equivalence eq),
+      Proper (equC ==> equC ==> iff) leC.
+Proof.
+    intros. hnf. intro x1. intro x2. hnf. intro Ex. intro y1. intro y2. intro Ey. split.
+    -unfold leC. destruct x1 as [x1Seq]. destruct y1 as [y1Seq]. intros. destruct H1.
+      +destruct H1 as [N]. destruct x2 as [x2Seq]. destruct y2 as [y2Seq].
+          left. exists N. intro n. intro a1. intro a2. intro leNn. intro Hx2. intro Hy2.
+          destruct H1 with (n := n).
+          
+
+
+
+
+  
+
+Section leCModule.
+Variables X : Type.
+Variables eq : relation X.
+Variables HE : Equivalence eq.
+Variables M : Metric eq eq.
+Notation "a == b" := (eq a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eq a b)
+    (at level 70, no associativity).
+
+
 (**
 Definition siCauchilize : Type :=(@Cauchilize A_ X_ ).
 Definition xsiCauchilize : Type :=(@Cauchilize X_ X_) .
