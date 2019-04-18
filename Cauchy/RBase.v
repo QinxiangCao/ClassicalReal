@@ -114,8 +114,10 @@ Proof. intros. split.
   - intros. intros. rewrite <- H0. symmetry. apply H.
   - intros. exists O. intros. rewrite H2,H3. unfold Qminus.
     rewrite Qplus_opp_r. apply H.
-
 Qed.
+
+Definition Real_of_Q (q:Q):Real:=
+ Real_intro (fun (n:nat) => (fun x => x == q)) (Real_has_Q q).
 
 Notation "a == b" := (Real_equiv a b) :Real_scope.
 
@@ -1039,7 +1041,7 @@ Proof. intros. split.
 Qed.
 
 Lemma limit_not_0_spec: forall x: Real,
-  (~ x == Rzero)%R <-> limit_not_0 match x with | Real_intro x0 _ => x0 end.
+  (~ x == Rzero)%R <-> limit_not_0_real x.
 Proof. intros. split.
 - intros. hnf. unfold Real_equiv in H. destruct x as [A HA]. unfold Rzero in *.
   apply not_all_ex_not in H. destruct H as [q Hq]. apply imply_to_and in Hq.
