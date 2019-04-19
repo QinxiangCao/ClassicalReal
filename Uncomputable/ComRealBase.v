@@ -12,6 +12,7 @@ From Coq Require Import Reals.
 Import ListNotations.
 
 Parameter TM : nat -> nat -> Prop.
+Parameter CR : 
 Definition Halting : Type := forall (i j : nat), {TM i j} + {~(TM i j)}.
 
 
@@ -27,4 +28,5 @@ Module Uncomputable_function.
   Admitted.
   (*Theorem lim_CN_NCN :*) 
 End Uncomputable_function.
+
 
