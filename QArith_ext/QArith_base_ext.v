@@ -195,3 +195,14 @@ Proof.
     rewrite H0. rewrite Qplus_lt_l. auto.
 Qed.
 
+Lemma Qlt_mult0 : forall x y : Q, 0 < x -> 0 < y -> 0 < x * y.
+Proof.
+  intros. rewrite <- (Qmult_0_r 0).
+ apply Qmult_lt_compat; try apply Qle_refl;try auto.
+Qed.
+
+Lemma Qmult_le_compat_l: forall x y z : Q, x <= y -> 0 <= z -> z * x <= z * y.
+Proof.
+  intros. rewrite Qmult_comm. rewrite (Qmult_comm z y). apply Qmult_le_compat_r. auto. auto.
+Qed.
+
