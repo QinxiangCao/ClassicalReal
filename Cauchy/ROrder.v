@@ -273,6 +273,9 @@ Proof. intros A H. intros C. rewrite C in H. hnf in H. unfold Rzero in H.
        apply Qle_not_lt in nonsense. contradiction.
 Qed.
 
+
+
+
 Theorem Real_positive_0_negative: forall A, 
  ( Rpositive A /\ ~(A==Rzero)%R  /\ ~ Rnegative A ) \/
  ( ~ Rpositive A /\ (A==Rzero)%R  /\ ~ Rnegative A ) \/
@@ -292,6 +295,17 @@ Proof. intros. assert (Case1: (A==Rzero)%R  \/ ~(A==Rzero)%R) by (apply classic)
      * split. apply Rnegative_not_zero. auto.
        auto.
 Qed.
+
+Lemma Rnot_positive: forall A, ~ (Rpositive A) -> (Rnegative A) \/ (A==0)%R.
+Proof. intros. destruct (classic (A==0)%R).
+  - right. auto.
+  - left. destruct (classic (Rnegative A)). auto.
+    destruct (Real_positive_0_negative A).
+    + destruct H2. contradiction.
+    + destruct H2. * destruct H2. destruct H3. contradiction.
+      * destruct H2. destruct H3. auto.
+Qed.
+
 
 Definition Rlt (a b:Real) : Prop :=
   Rpositive (Rminus b a).
@@ -462,10 +476,10 @@ Proof. hnf. intros. destruct x as [A HA].
 Qed.
 
 
-Theorem Rabs_zero: forall A, (A==0)%R -> (Rabs A == 0)%R.
-Proof. intros. rewrite H. hnf. intros. exists O. intros. unfold Cauchy_abs in *.
-  rewrite H3. assert (Et: q1 - 0 == q1) by ring. rewrite Et.
-  rewrite (H2 0). apply H0. reflexivity.
+Theorem Rabs_zero: (Rabs 0 == 0)%R.
+Proof. hnf. intros. exists O. intros. unfold Cauchy_abs in *.
+  rewrite H2. assert (Et: q1 - 0 == q1) by ring. rewrite Et.
+  rewrite (H1 0). apply H. reflexivity.
 Qed.
 
 
@@ -512,12 +526,17 @@ Qed.
 
 Definition Rle (a b:Real) : Prop :=
   (a < b)%R \/ (a == b)%R.
-
-
 Notation "a <= b" := (Rle a b):Real_scope.
+Definition Rgt (a b:Real) : Prop :=
+  (b < a)%R.
+Notation "a > b" := (Rgt a b):Real_scope.
+Definition Rge (a b:Real) : Prop :=
+  (b <= a)%R.
+Notation "a >= b" := (Rge a b):Real_scope.
 
-Theorem Rpositive_gt_0: forall x, Rpositive x -> (0<x)%R.
-Proof. intros. destruct x as [A HA]. hnf in *.
+Theorem Rpositive_gt_0: forall x, Rpositive x <-> (0<x)%R.
+Proof. intros. destruct x as [A HA]. split. 
+  hnf in *. intros.
   destruct H as [eps [Heps [N HN]]]. exists eps. split. auto.
   exists N. unfold Rminus. unfold Ropp. unfold Cauchy_opp.
   unfold Rzero. unfold Rplus. unfold CauchySeqPlus.
@@ -525,10 +544,18 @@ Proof. intros. destruct x as [A HA]. hnf in *.
   assert (E: q == qa). 
   { rewrite <- (Qplus_0_r qa). apply H0. auto. intros. rewrite H1. reflexivity. }
   rewrite E. apply (HN n). auto. auto.
+  intros. hnf in *.
+  destruct H as [eps [Heps [N HN]]]. exists eps. split. auto.
+  exists N. unfold Rminus in *. unfold Ropp in *. unfold Cauchy_opp in *.
+  unfold Rzero in *. unfold Rplus in *. unfold CauchySeqPlus in *.
+  intros. destruct (Cauchy_exists _ HA n) as [qa Hqa].
+  apply (HN n). auto. intros. rewrite (H2 0).
+  rewrite (Cauchy_unique _ HA _ _ _ H0 H1).
+  ring. ring.
 Qed.
 
-Theorem Rnegative_lt_0: forall x, Rnegative x -> (x<0)%R.
-Proof. intros. destruct x as [A HA]. hnf in *.
+Theorem Rnegative_lt_0: forall x, Rnegative x <-> (x<0)%R.
+Proof. intros. destruct x as [A HA]. split. hnf in *. intros.
   destruct H as [eps [Heps [N HN]]]. exists eps. split. auto.
   exists N. unfold Rminus. unfold Ropp in *. unfold Cauchy_opp in *.
   unfold Rzero. unfold Rplus. unfold CauchySeqPlus.
@@ -538,35 +565,16 @@ Proof. intros. destruct x as [A HA]. hnf in *.
     rewrite (Cauchy_unique _ HA _ _ _ Hqa H1). reflexivity. }
   rewrite E. apply (HN n). auto. intros. rewrite (Cauchy_unique _ HA _ _ _ Hqa H1).
   reflexivity.
+  intros. hnf in *.
+  destruct H as [eps [Heps [N HN]]]. exists eps. split. auto.
+  exists N. unfold Rminus in *. unfold Ropp in *. unfold Cauchy_opp in *.
+  unfold Rzero in *. unfold Rplus in *. unfold CauchySeqPlus in *.
+  intros. apply (HN n). auto. intros. rewrite H1.
+  destruct (Cauchy_exists _ HA n) as [qa Hqa].
+  rewrite (H0 qa). rewrite (H2 qa). ring. auto. auto.
 Qed.
 
-Theorem Ropp_involutive: forall x, (x == - - x)%R.
-Proof. intros. destruct x as [A HA]. hnf in *.
-  unfold Cauchy_opp. intros. exists O.
-  intros. assert (E: q2 == - - q1).
-    { apply H2. intros. rewrite (Cauchy_unique _ HA _ _ _ H1 H3). reflexivity. }
-  rewrite E. assert (Et: q1 - - - q1 == 0) by ring.
-  rewrite Et. apply H.
-Qed.
 
-Theorem Ropp_plus_distr: forall x y, (- (x + y) == - x + - y)%R.
-Proof. intros. destruct x as [A HA], y as [B HB].
-  hnf in *. unfold Cauchy_opp. unfold CauchySeqPlus.
-  intros. exists O. intros.
-  destruct (Cauchy_exists _ HA m) as [qa Hqa].
-  destruct (Cauchy_exists _ HB m) as [qb Hqb].
-  assert (E1: q1 == - (qa + qb)).
-  { apply H1. intros.
-    rewrite (Cauchy_unique _ HA _ _ _ Hqa H3).
-    rewrite (Cauchy_unique _ HB _ _ _ Hqb H4).
-    reflexivity. }
-  assert (E2: q2 == -qa + -qb).
-  { apply H2. intros. rewrite (Cauchy_unique _ HA _ _ _ Hqa H3). reflexivity.
-    intros. rewrite (Cauchy_unique _ HB _ _ _ Hqb H3). reflexivity. }
-  assert (E3: q1 - q2 == 0).
-  { rewrite E1. rewrite E2. ring. }
-  rewrite E3. apply H.
-Qed.
 
 Theorem Ropp_lt_compat: forall x y, (x<y)%R -> (-y < -x)%R.
 Proof. intros. 
@@ -588,13 +596,86 @@ Proof. hnf. unfold Cauchy_opp.
   apply H.
 Qed.
 
-Theorem Qabs_nonneg: forall x, (0 <= (Rabs x))%R.
+Theorem Rabs_nonneg: forall x, (0 <= (Rabs x))%R.
 Proof. intros. hnf in *.
   destruct (classic ((0 == x)%R)).
-  - right. rewrite <- H. symmetry. apply Rabs_zero. reflexivity.
+  - right. rewrite <- H. symmetry. apply Rabs_zero.
   - left. assert (E: ~(x == 0)%R). { intros C. rewrite C in H. apply H. reflexivity. }
     apply Real_not_zero_positive_or_negative in E. destruct E.
-    + rewrite (Rabs_positive _ H0). apply Rpositive_gt_0. auto.
+    + rewrite (Rabs_positive _ H0). apply Rpositive_gt_0 in H0. auto.
     + rewrite (Rabs_negative _ H0). rewrite (Ropp_involutive 0).
       apply Ropp_lt_compat. rewrite <- Rzero_opp_zero. apply Rnegative_lt_0. auto.
 Qed.
+
+
+Theorem Rplus_lt_compat: forall x y z, (x<y <-> x+z < y+z)%R.
+Proof. intros. unfold Rlt in *.
+  assert (E: (y + z - (x + z) == y - x)%R).
+  { unfold Rminus. rewrite (Ropp_plus_distr x z).
+    rewrite (Rplus_assoc). rewrite (Rplus_comm (-x) (-z)). 
+    rewrite <- (Rplus_assoc z (-z)). rewrite Rplus_opp_r.
+    rewrite Rplus_0_l. reflexivity. }
+  rewrite E. split. auto. auto.
+Qed.
+
+
+Theorem Rnot_lt (x y:Real): (~(x<y) -> (x==y)\/(x>y))%R.
+Proof. intros. unfold Rlt in *. apply Rnot_positive in H.
+  destruct H.
+  - right. apply Rnegative_lt_0 in H. apply (Rplus_lt_compat _ 0 x) in H.
+    rewrite Rplus_0_l in H. unfold Rminus in H. rewrite Rplus_assoc in H.
+    rewrite (Rplus_comm _ x) in H. rewrite (Rplus_opp_r) in H. rewrite Rplus_0_r in H.
+    auto.
+  - left. rewrite <- Rplus_0_l. rewrite <- H. unfold Rminus. rewrite Rplus_assoc.
+    rewrite (Rplus_comm _ x). rewrite Rplus_opp_r. rewrite Rplus_0_r. reflexivity.
+Qed.
+
+
+Theorem Rabs_lt_iff (x:Real)(y:Real): (y>0 -> ((Rabs x < y) <-> (-y<x /\ x<y)))%R.
+Proof. intros. split.
+  - intros. destruct (classic (0<x)%R).
+    + split. 
+       * apply (Rlt_trans _ 0). rewrite (Ropp_involutive 0). apply Ropp_lt_compat.
+         rewrite <- Rzero_opp_zero. auto. auto.
+       * rewrite Rabs_positive in H0. apply H0. apply Rpositive_gt_0. auto.
+    + split.
+       * apply Rnot_lt in H1. destruct H1.
+         ** rewrite <- H1. rewrite (Ropp_involutive 0). apply Ropp_lt_compat.
+            rewrite <- Rzero_opp_zero. auto.
+         ** rewrite Rabs_negative in H0. rewrite (Ropp_involutive x). apply Ropp_lt_compat.
+            auto. apply Rnegative_lt_0. auto.
+       * apply Rnot_lt in H1. destruct H1.
+         ** rewrite <- H1. auto.
+         ** apply (Rlt_trans _ 0). auto. auto.
+  - intros. destruct H0. destruct (classic (0<x)%R).
+    + rewrite Rabs_positive. auto. apply Rpositive_gt_0. auto.
+    + apply Rnot_lt in H2. destruct H2.
+      * rewrite <- H2. rewrite Rabs_zero. auto.
+      * rewrite Rabs_negative.  rewrite (Ropp_involutive y). apply Ropp_lt_compat. auto.
+        apply Rnegative_lt_0. auto.
+Qed.
+
+
+
+
+
+
+
+
+(*
+
+
+Definition SingletonSet2Element (A:{X: nat -> Real -> Prop| (forall n x1 x2, X n x1 ->
+ X n x2 -> x1 == x2) /\ (forall n, exists x, X n x) /\ forall n, Proper (Real_equiv ==> iff) (X n)
+ /\ (Cauchy_Criterion X)}%R
+) : Real.
+Admitted.
+Definition Rel2Func: {f:Real->Real->Prop|(forall x1 x2 y1 y2,
+ f x1 y1 -> f x2 y2 -> x1 == x2 -> y1 == y2)
+/\ (forall x, exists y, f x y)
+/\ (Proper (Real_equiv ==> Real_equiv ==> iff) f)}%R ->
+(Real -> Real).
+
+
+*)
+

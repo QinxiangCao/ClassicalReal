@@ -12,6 +12,38 @@ From CReal Require Import QArith_ext.QArith_base_ext.
 From Coq Require Import Classes.Morphisms.
 
 
+
+Lemma Qinv_inject (x y:Q): ~(x==0) -> ~(y==0) -> ((x == y) <-> (/x == /y)).
+Proof. split.
+  - intros. rewrite H1. reflexivity.
+  - intros. rewrite <- (Qmult_inj_r _ _ (/x * /y)).
+    rewrite Qmult_assoc. rewrite (Qmult_inv_r _ H). rewrite Qmult_1_l.
+    rewrite (Qmult_comm (/x)). rewrite Qmult_assoc. rewrite (Qmult_inv_r _ H0).
+    rewrite Qmult_1_l. symmetry. apply H1.
+    intros C. apply Qmult_integral in C. destruct C.
+    * apply H. rewrite <- Qinv_involutive. rewrite H2. reflexivity.
+    * apply H0. rewrite <- Qinv_involutive. rewrite H2. reflexivity.
+Qed.
+
+Lemma Qinv_lt_compat (x y:Q): (x>0) -> (y>0) -> ((/x < /y) -> (x > y)).
+Proof. intros. assert (E: x*y>0). { rewrite <- (Qmult_0_r x). apply Qmult_lt_l. auto. auto. } 
+    apply (Qmult_lt_compat_r _ _ _ E) in H1.
+    assert (E1: / x * (x * y) == y). { field. intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+    assert (E2: / y * (x * y) == x). { field. intros C. rewrite C in H0. apply Qlt_irrefl in H0. auto. }
+    rewrite <-E1. apply (Qlt_le_trans _ _ _ H1). rewrite E2. apply Qle_refl.
+Qed.
+
+Lemma Qinv_lt_compat2 (x y:Q): (x>0) -> (y>0) -> ((x < y) -> (/x > /y)).
+Proof. intros. assert (E: /x*/y>0). { rewrite <- (Qmult_0_r (/x)). apply Qmult_lt_l.
+    apply Qinv_lt_0_compat. auto. apply Qinv_lt_0_compat. auto. } 
+    apply (Qmult_lt_compat_r _ _ _ E) in H1.
+    assert (E1: x * (/ x * / y) == /y). { field. split. intros C. rewrite C in H0. apply Qlt_irrefl in H0. auto.
+                                                        intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+    assert (E2: y * (/ x * / y) == /x). { field. split. intros C. rewrite C in H. apply Qlt_irrefl in H. auto.
+                                                        intros C. rewrite C in H0. apply Qlt_irrefl in H0. auto. }
+    rewrite <-E1. apply (Qlt_le_trans _ _ _ H1). rewrite E2. apply Qle_refl.
+Qed.
+
 Class Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
   Cauchy_exists : forall (n:nat), exists (q:Q), (CSeq n q);
   Cauchy_unique : forall (n:nat) (q1 q2:Q),
@@ -116,7 +148,7 @@ Proof. intros. split.
     rewrite Qplus_opp_r. apply H.
 Qed.
 
-Definition Real_of_Q (q:Q):Real:=
+Definition inject_Q (q:Q):Real:=
  Real_intro (fun (n:nat) => (fun x => x == q)) (Real_has_Q q).
 
 Notation "a == b" := (Real_equiv a b) :Real_scope.
@@ -634,10 +666,16 @@ Proof. split.
  - intros. intros C. apply H0 in C. assert (T: 0 == 0) by reflexivity. apply C in T. destruct T.
 Qed.
 
+
+Definition limit_not_0_real (A:Real):Prop:=
+match A with
+| Real_intro CA HA => limit_not_0 CA
+end.
+
 (* Every limit-not-0 Cauchy Sequence will not be 0 after a certain N *)
-Lemma limit_not_0_seq : forall A, Cauchy A -> limit_not_0 A ->
+Lemma limit_not_0_seq : forall A (H:Cauchy A), limit_not_0_real (Real_intro A H) ->
  exists (N:nat), forall n, (n>N)%nat ->forall q, A n q -> ~(q == 0).
-Proof. intros. destruct H0 as [eps [Heps H0]].
+Proof. intros. hnf in H0. destruct H0 as [eps [Heps H0]].
   destruct (Cauchy_def _ H _ Heps) as [N' HN'].
   destruct (H0 N') as [nN' [HnN' H']].
   exists nN'. intros.
@@ -657,10 +695,6 @@ Proof. intros. destruct H0 as [eps [Heps H0]].
   intros C. rewrite C in E4. discriminate E4. 
 Qed.
 
-Definition limit_not_0_real (A:Real):Prop:=
-match A with
-| Real_intro CA HA => limit_not_0 CA
-end.
 
 
 (* Some helping lemmas in justifying Rinv *)
@@ -712,7 +746,7 @@ Proof. intros. induction N. destruct H0 as [N' H0].
         assert (E: lt N'1 N) by omega. contradiction.
 Qed.
 
-Lemma Cauchy_nonzero_pre: forall A , Cauchy A  -> limit_not_0 A
+Lemma Cauchy_nonzero_pre: forall A  (HA:Cauchy A),  limit_not_0_real (Real_intro A HA)
   -> exists (N:nat),
 ( exists (eps0:Q), eps0>0 /\ (forall (n:nat), (n>N)%nat -> forall(q:Q), A n q -> Qabs q >= eps0)). 
 Proof. intros A HA. intros H.  destruct (limit_not_0_seq _ HA H) as [N0 Hnot0].
@@ -770,7 +804,7 @@ destruct E as [N' [x [Hx H0]]].
 Qed.
 
 (* A Cauchy Sequence can have its inversion as long as its limit is not 0 *)
-Lemma Cauchy_inv_nonzero: forall A , Cauchy A -> limit_not_0 A 
+Lemma Cauchy_inv_nonzero: forall A  (H:Cauchy A) , limit_not_0_real (Real_intro A H) 
   -> Cauchy (fun (n:nat)(q:Q) => A n (/q)).
 Proof. intros. split.
 - intros. destruct (Cauchy_exists _ H n).
@@ -779,7 +813,7 @@ Proof. intros. split.
   rewrite <- Qinv_involutive. rewrite E. apply Qinv_involutive.
 - intros. assert (E:/ p == / q). rewrite H1. reflexivity. rewrite <- E. auto.
 - intros.
-  assert (H0':(exists N', forall (n : nat), (n>N')%nat ->forall q, A n q -> ~ q == 0)). { apply limit_not_0_seq. auto. auto. }
+  assert (H0':(exists N', forall (n : nat), (n>N')%nat ->forall q, A n q -> ~ q == 0)). { apply (limit_not_0_seq _ H). auto. }
   destruct H0' as [N' H0'].
   destruct (Cauchy_nonzero_pre A H H0) as [N0 [eps0 [Heps0 H']]].
   assert (Eeps: 0 < eps * eps0 * eps0). 
@@ -1263,7 +1297,7 @@ Proof. intros [A HA]. hnf. unfold CauchySeqMult.
 Qed.
 
 
-Theorem Rmult_inv_1: forall A:{A: Real | (~ A == Rzero)%R }, 
+Theorem Rmult_inv_r: forall A:{A: Real | (~ A == Rzero)%R }, 
 ((match A with | exist _ A0 _ => A0 end) * (Rinv A) == Rone)%R.
 Proof. intros [[A HA1] HA2]. hnf. apply limit_not_0_spec in HA2.
   apply (limit_not_0_seq _ HA1) in HA2. destruct HA2 as [N HA2].
@@ -1273,6 +1307,19 @@ Proof. intros [[A HA1] HA2]. hnf. apply limit_not_0_spec in HA2.
   rewrite Qmult_inv_r in E. rewrite H1,E. apply Heps.
   apply (HA2 m). auto. auto.
 Qed.
+
+Theorem Rmult_inv_r': forall (A: Real) (H: (~ A == Rzero)%R),
+(A * (Rinv (exist _ A H)) == Rone)%R.
+Proof. intros [A HA1] HA2. hnf. apply limit_not_0_spec in HA2.
+  apply (limit_not_0_seq _ HA1) in HA2. destruct HA2 as [N HA2].
+  intros eps Heps. exists N. intros. unfold CauchySeqMult in H0.
+  destruct (Cauchy_exists _ HA1 m) as [qm Hqm].
+  assert (E: q1 == qm * /qm). { apply H0. apply Hqm. rewrite Qinv_involutive. apply Hqm. }
+  rewrite Qmult_inv_r in E. rewrite H1,E. apply Heps.
+  apply (HA2 m). auto. auto.
+Qed.
+
+
 
 Theorem Rmult_plus_distr_r: forall A B C, (A*(B+C)==A*B+A*C)%R.
 Proof. intros [A HA] [B HB] [C HC] eps Heps. hnf. unfold CauchySeqMult. unfold CauchySeqPlus.
@@ -1318,6 +1365,250 @@ Qed.
 Instance Rmult_comp : Proper (Real_equiv ==> Real_equiv ==> Real_equiv) Rmult.
 Proof. hnf. intros. hnf. intros.
   apply Cauchy_Mult_equiv. auto. auto.
+Qed.
+
+
+
+Lemma Rplus_0_l : forall x, (0+x == x)%R.
+Proof. intros. rewrite Rplus_comm. apply Rplus_Zero.
+Qed.
+Lemma Rplus_0_r : forall x, (x+0 == x)%R.
+Proof. intros. apply Rplus_Zero.
+Qed.
+Theorem Ropp_involutive: forall x, (x == - - x)%R.
+Proof. intros. destruct x as [A HA]. hnf in *.
+  unfold Cauchy_opp. intros. exists O.
+  intros. assert (E: q2 == - - q1).
+    { apply H2. intros. rewrite (Cauchy_unique _ HA _ _ _ H1 H3). reflexivity. }
+  rewrite E. assert (Et: q1 - - - q1 == 0) by ring.
+  rewrite Et. apply H.
+Qed.
+
+Theorem Ropp_plus_distr: forall x y, (- (x + y) == - x + - y)%R.
+Proof. intros. destruct x as [A HA], y as [B HB].
+  hnf in *. unfold Cauchy_opp. unfold CauchySeqPlus.
+  intros. exists O. intros.
+  destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  assert (E1: q1 == - (qa + qb)).
+  { apply H1. intros.
+    rewrite (Cauchy_unique _ HA _ _ _ Hqa H3).
+    rewrite (Cauchy_unique _ HB _ _ _ Hqb H4).
+    reflexivity. }
+  assert (E2: q2 == -qa + -qb).
+  { apply H2. intros. rewrite (Cauchy_unique _ HA _ _ _ Hqa H3). reflexivity.
+    intros. rewrite (Cauchy_unique _ HB _ _ _ Hqb H3). reflexivity. }
+  assert (E3: q1 - q2 == 0).
+  { rewrite E1. rewrite E2. ring. }
+  rewrite E3. apply H.
+Qed.
+
+
+Lemma Rplus_inj_r (x y z: Real):
+  (x + z == y + z)%R <-> (x == y)%R.
+Proof. intros. split.
+  - intros. assert (E: (x == x + 0)%R). { rewrite Rplus_0_r. reflexivity. }
+    rewrite E. rewrite <- (Rplus_opp_r z). rewrite <- Rplus_assoc.
+    rewrite H. rewrite Rplus_assoc. rewrite Rplus_opp_r. rewrite Rplus_0_r. reflexivity.
+  - intros. rewrite H. reflexivity.
+Qed.
+
+Lemma Rplus_inj_l (x y z: Real):
+  (z + x == z + y)%R <-> (x == y)%R.
+Proof. intros. split.
+  - intros. rewrite Rplus_comm in H. rewrite (Rplus_comm z y) in H.
+    apply (proj1 (Rplus_inj_r x y z)). auto.
+  - intros. rewrite H. reflexivity.
+Qed.
+
+Lemma Rmult_0_l : forall x , (0*x == 0)%R.
+Proof. intros. destruct x. hnf.
+  intros. exists O. intros. unfold CauchySeqMult in *.
+  destruct (Cauchy_exists _ H m) as [qa Hqa].
+  rewrite (H2 _ _ H3 Hqa). rewrite H3. assert (E: 0*qa-0==0) by ring.
+  rewrite E. apply H0.
+Qed.
+
+Lemma Rmult_0_r : forall x , (x*0 == 0)%R.
+Proof. intros. rewrite Rmult_comm. apply Rmult_0_l.
+Qed.
+
+Lemma Rmult_1_l : forall n, (1*n == n)%R.
+Proof. intros. rewrite Rmult_comm. apply Rmult_1_r.
+Qed.
+
+Theorem Rmult_plus_distr_l : forall x y z, ((x+y)*z==(x*z)+(y*z))%R.
+Proof. intros. rewrite Rmult_comm.
+  rewrite Rmult_plus_distr_r. rewrite Rmult_comm. rewrite (Rmult_comm z y).
+  reflexivity.
+Qed.
+
+Theorem Rmult_integral : forall x y, (x*y==0)%R -> (x==0)%R \/ (y==0)%R.
+Proof. intros.
+  destruct (classic (x==0)%R).
+  - left. apply H0.
+  - right. rewrite <- Rmult_1_l. rewrite <- (Rmult_inv_r' x H0).
+    rewrite (Rmult_comm x). rewrite Rmult_assoc. rewrite H. rewrite Rmult_0_r.
+    reflexivity.
+Qed.
+
+Theorem Rmult_integral_l : forall x y, ~ (x == 0)%R -> (x*y == 0)%R -> (y == 0)%R.
+Proof. intros. apply Rmult_integral in H0. destruct H0.
+  - contradiction.
+  - auto.
+Qed.
+
+Lemma inject_Q_plus (x y: Q): (inject_Q (x + y) == inject_Q x + inject_Q y)%R.
+Proof. hnf. intros. exists O.
+  intros. unfold CauchySeqPlus in *. rewrite (H2 x y). rewrite H1.
+  assert (E:x + y - (x + y) == 0) by ring. rewrite E. apply H. reflexivity. reflexivity.
+Qed.
+
+Lemma inject_Q_mult (x y: Q): (inject_Q (x * y) == inject_Q x * inject_Q y)%R.
+Proof. hnf. intros. exists O.
+  intros. unfold CauchySeqMult in *. rewrite (H2 x y). rewrite H1.
+  assert (E:x * y - (x * y) == 0) by ring. rewrite E. apply H. reflexivity. reflexivity.
+Qed.
+Lemma inject_Q_opp (x: Q): (inject_Q (- x) == - inject_Q x)%R.
+Proof. hnf. intros. exists O.
+  intros. unfold Cauchy_opp in *. rewrite (H2 x). rewrite H1.
+  assert (E:- x - - x == 0) by ring. rewrite E. apply H. reflexivity.
+Qed.
+
+
+Lemma take_max_N_0423:
+forall N1 N2 N3 (P:nat->nat->Prop) (Q R:nat->Prop),
+ (forall n1 n2, (n1>N1)%nat -> (n2>N1)%nat -> P n1 n2) -> (forall n ,(n>N2)%nat -> Q n) ->
+ (forall n, (n>N3)%nat -> R n) ->
+  exists N, (forall n1 n2,(n1>N)%nat -> (n2>N)%nat -> P n1 n2) /\ (forall n, (n>N)%nat-> Q n /\ R n).
+Proof. intros. destruct (classic (lt N1 N2)), (classic (lt N2 N3)), (classic (lt N1 N3)).
+- exists N3. split. intros. apply H. omega. omega.
+  intros. split. apply H0. omega. apply H1. omega.
+- omega. 
+- exists N2. split. intros. apply H. omega. omega.
+  intros. split. apply H0. omega. apply H1. omega.
+- exists N2. split. intros. apply H. omega. omega.
+  intros. split. apply H0. omega. apply H1. omega.
+- exists N3. split. intros. apply H. omega. omega.
+  intros. split. apply H0. omega. apply H1. omega.
+- exists N1. split. intros. apply H. omega. omega.
+  intros. split. apply H0. omega. apply H1. omega.
+- omega.
+- exists N1. split. intros. apply H. omega. omega.
+  intros. split. apply H0. omega. apply H1. omega.
+Qed.
+
+Lemma Rmult_nonzero (x y:Real): ~(x==0)%R->~(y==0)%R->~(x*y==0)%R.
+Proof.
+  intros. intros C. apply Rmult_integral in C. destruct C.
+  - contradiction.
+  - contradiction.
+Qed.
+
+
+Lemma Qinv_mult_distr : forall p q (Hp:~(p==0)%R)(Hq:~(q==0)%R), 
+ (/ (exist _ (p * q) (Rmult_nonzero _ _ Hp Hq)) == /(exist _ p Hp) * /(exist _ q Hq))%R.
+Proof. intros. destruct p as [A HA]. destruct q as [B HB].
+  hnf. unfold CauchySeqMult. intros. exists O.
+  intros. destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  assert (E1: /q1 == qa * qb). { apply H1. auto. auto. }
+  assert (E2: / q2 == qa * qb).
+  { rewrite <- (Qinv_involutive qa). rewrite <- (Qinv_involutive qb).
+    rewrite <- Qinv_mult_distr. 
+    rewrite <- Qinv_involutive in Hqa.
+    rewrite <- Qinv_involutive in Hqb.
+    rewrite (H2 _ _ Hqa Hqb). reflexivity. }
+  rewrite <- (Qinv_involutive q1), <- (Qinv_involutive q2).
+  rewrite E1. rewrite E2.
+  assert (Et: / (qa * qb) - / (qa * qb) == 0) by ring.
+  rewrite Et. apply H.
+Qed.
+
+
+
+Theorem Rdiv_mult_l : forall x y (H:~(y == 0)%R), ((x * y)*/(exist _ y H) == x)%R.
+Proof. intros. destruct x as [A HA], y as [B HB].
+  hnf. intros. unfold CauchySeqMult.
+  apply (limit_not_0_spec) in H. apply limit_not_0_seq in H.
+  destruct H as [N HN].
+  exists N.
+  intros. destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  assert (E: q1 == qa * qb * (/qb)). { apply H1.
+  - intros. rewrite (Cauchy_unique _ HA _ _ _ Hqa H3).
+    rewrite (Cauchy_unique _ HB _ _ _ Hqb H4).
+    reflexivity.
+  - intros. rewrite Qinv_involutive. apply Hqb. }
+  rewrite E. rewrite <- Qmult_assoc. rewrite Qmult_inv_r.
+  rewrite Qmult_1_r. rewrite (Cauchy_unique _ HA _ _ _ Hqa H2).
+  assert (Et: q2 - q2 == 0) by ring. rewrite Et. apply H0.
+  apply (HN m). auto. auto.
+Qed.
+
+Theorem Rmult_div_r : forall x y (H:~ (y == 0)%R) , (y*(x*/(exist _ y H)) == x)%R.
+Proof. intros. rewrite Rmult_comm. rewrite Rmult_assoc.
+  rewrite (Rmult_comm _ y). rewrite <- Rmult_assoc. apply Rdiv_mult_l.
+Qed.
+
+Lemma Rmult_inj_r_suff: forall x y z, (x == y)%R -> (x * z == y * z )%R.
+Proof. intros. rewrite H. reflexivity.
+Qed.
+
+Lemma Rmult_inj_r (x y z: Real): (~ z == 0 -> (x * z == y * z <-> x == y))%R.
+Proof. intros. split.
+  - intros. apply (Rmult_inj_r_suff _ _ (/ (exist _ z H))) in H0.
+    rewrite (Rdiv_mult_l x z) in H0. rewrite (Rdiv_mult_l y z) in H0. apply H0.
+  - intros. apply Rmult_inj_r_suff. auto.
+Qed.
+
+
+
+Lemma Rmult_inj_l (x y z: Real): (~ z == 0 -> (z * x == z * y <-> x == y))%R.
+Proof. intros. split.
+  - intros. apply (Rmult_inj_r _ _ z). apply H. rewrite Rmult_comm. rewrite (Rmult_comm y z).
+    apply H0.
+  - intros. rewrite H0. reflexivity.
+Qed.
+
+
+Lemma Rinv_nonzero (x:Real)(H:~(x==0)%R): ~(Rinv (exist _ x H) == 0)%R.
+Proof. 
+(*  destruct x as [A HA].
+
+  apply limit_not_0_spec. hnf.
+  apply limit_not_0_spec in H. 
+  assert (H1: limit_not_0_real (Real_intro A HA)) by auto.
+  apply limit_not_0_seq in H1. hnf in *.
+
+  destruct H as [eps [Heps H]].
+  exists (/(eps+eps)).
+  split. { apply Qinv_lt_0_compat. rewrite <- Qplus_0_r.
+   apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
+  destruct (Cauchy_def _ HA eps Heps) as [N1 HN1].
+  intros. destruct (H N) as [N2 HN2]. clear H.
+  destruct H1 as [N3 HN3]. destruct HN2 as [HN2N HN2].
+  destruct (classic (lt N1 N2)),(classic (lt N3 N2)).
+  - exists N2. split. omega. intros.
+    assert (E1: eps < Qabs (/q)). { apply HN2. auto. }
+    rewrite <- (Qinv_involutive (Qabs q)).
+    apply Qinv_lt_compat2. { apply Qinv_lt_0_compat.
+    destruct ((proj1 (Qle_lteq 0 (Qabs q))) (Qabs_nonneg q)).
+    auto. symmetry in H2. apply Qabs_0 in H2. 
+    assert (E:~/q==0). { apply (HN3 N2). auto. auto. }
+    rewrite H2 in E. destruct E. reflexivity. }
+    { rewrite <- Qplus_0_r.
+    apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
+*)
+
+Admitted.
+
+Lemma Rinv_involutive (x:Real)(H:~(x==0)%R):
+ (/ (exist _ (Rinv (exist _ x H)) (Rinv_nonzero _ H)) == x)%R.
+Proof. destruct x as [A HA]. hnf.
+  intros. exists O. intros. rewrite <- (Cauchy_unique _ HA _ _ _ H2 H3).
+  rewrite Qinv_involutive. assert(E:q1 - q1==0) by ring.
+  rewrite E. apply H0.
 Qed.
 
 
