@@ -370,6 +370,25 @@ Class PropBucket {X : Type} {eq : relation X} {M : Metric eq eq} {HE : Equivalen
 }. 
 Theorem leC_to_be_finished : forall (X : Type) (eq : relation X) (M : Metric eq eq) (HE : Equivalence eq) (a b c d : Cauchilize eq eq), equC a b -> equC c d -> leC a c -> leC b d .
 Proof.
+  intros.
+  destruct (classic (equC a c)).
+  + admit. (* obvious *)
+  + unfold equC in H2.
+    destruct a as [a ?], c as [c ?].
+    simpl in H1.
+    destruct H1; [tauto |].
+(*
+    A < C
+    dist (A, C) > eps
+    dist (A, B) < eps/5
+    dist (C, D) < eps/5
+    -----------------
+    dist (B, D) > eps/5   /\  B < D
+  -- Qinxiang
+*)
+   
+    apply not_all_ex_not in H2.
+    destruct H2 as [eps ?].
   Admitted.
 
 Instance leC_rewrite : forall (X : Type) (eq : relation X) (M : Metric eq eq) (HE : Equivalence eq),
