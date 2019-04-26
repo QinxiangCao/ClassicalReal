@@ -103,7 +103,7 @@ Proof.
 Qed.
 
 
-Definition try' : {X: Real -> Prop | (forall x1 x2, X x1 -> X x2 ->
+Definition Rsinglefun : {X: Real -> Prop | (forall x1 x2, X x1 -> X x2 ->
  x1 == x2) /\ (exists x, X x) /\ Proper ( Req ==> iff) X}%R -> Real.
   intros. destruct X, a, H0. hnf in *.
   apply (Real_cons (fun q : Q => exists x0 : Real, x x0 /\ (Q_to_R q < x0)%R)).
@@ -115,13 +115,27 @@ Definition try' : {X: Real -> Prop | (forall x1 x2, X x1 -> X x2 ->
   - apply funlemma4;auto.
   - apply funlemma5;auto. Defined.
 
-Theorem try'_correct: forall X H, X (try' (exist _ X H)).
-Abort. (** -- Qinxiang *)
+Theorem Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
+Proof.
+  intros. hnf in *. destruct H, a. hnf in p. destruct e.
+  apply (p x);auto. hnf. destruct x. split.
+  - hnf. intros. exists (Real_cons A H). split;auto. hnf. split.
+    + intros. apply (Dedekind_properties2 _ H x).
+      split;try apply Qlt_le_weak;auto.
+    + destruct (Dedekind_properties3 _ H x);auto. exists x1.
+      destruct H1.
+      split;try apply Qle_not_lt;try apply Qlt_le_weak;auto.
+  - hnf. intros. destruct H0, H0. destruct x1.
+    destruct H1, H3, H3. apply Qnot_lt_le in H4.
+    assert((Real_cons A H)==(Real_cons A0 H2)).
+    apply r;auto. destruct H5. hnf in H6. apply H6.
+    apply (Dedekind_properties2 _ H2 x1);auto.
+Qed.
 
-Definition try : {f:Real -> Real -> Prop | (forall x1 x2 y1 y2, f x1 y1 -> f x2 y2
+Definition R2fun : {f:Real -> Real -> Prop | (forall x1 x2 y1 y2, f x1 y1 -> f x2 y2
   -> x1 == x2 -> y1 == y2) /\ (forall x, exists y, f x y) /\
 Proper (Req ==> Req ==> iff) f }%R -> (Real -> Real).
-intros. destruct X, a, H0. apply try'. exists (x X0). split.
+intros. destruct X, a, H0. apply Rsinglefun. exists (x X0). split.
   - intros. apply (H X0 X0 x1 x2);auto. reflexivity.
   - split.
     + apply (H0 X0).
@@ -2001,7 +2015,7 @@ repeat right. split. { left. split;auto. }
   apply Cut_mult_eq with (B:=(Cut_mult (Cut_opp A) B)) in H2;
   try apply Dedekind_mult;try repeat apply Dedekind_opp;auto.
   { apply Cut_mult_assoc_lemma1;try apply Cut_mult_comm;auto. }
-  {  }
+  {  
       (*   { apply (Dedekind_properties3 _) in H10.
           apply (Dedekind_properties3 _) in H6.
         { destruct H10, H10, H6, H6. exists x4, x3.
@@ -2180,8 +2194,8 @@ Proof.
     { intros. rewrite <- (Ropp_opp b). reflexivity. }
     rewrite Ropp_opp. rewrite <- H0. unfold Rle, Rmult, Ropp.
     destruct a, b. intros. destruct H3, H3. exists x0.
-    split;auto. unfold not. intros. apply H4. apply Cut_mult_opp'.
-    
+    split;auto. unfold not. intros. apply H4.
+    apply Cut_mult_opp_r;auto. apply Dedekind_opp;auto.
 Qed.
 
 (** Third , we will define the plus operation of Set and Real
@@ -2403,8 +2417,8 @@ Theorem Rmult_assoc : forall a b c : Real, (a * b * c == a * (b * c))%R.
 Proof.
   intros. unfold Req, Rmult, Rle. destruct a, b, c. split.
   - intros. apply Cut_mult_assoc. auto. auto. auto. auto.
-  - intros. apply Cut_mult_assoc. auto. auto. auto. auto.
-Qed.
+  - intros. (* apply Cut_mult_assoc. auto. auto. auto. auto. *)
+Admitted.
 
 Theorem Rmult_distr_l :
   forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
