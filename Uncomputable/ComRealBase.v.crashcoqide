@@ -1,0 +1,40 @@
+(** Uncomputable in the definition of Real function **)
+Set Warnings "-notation-overridden,-parsing".
+From Coq Require Import Bool.Bool.
+From Coq Require Import Logic.Classical.
+From Coq Require Import Init.Nat.
+From Coq Require Import Arith.Arith.
+From Coq Require Import Arith.EqNat.
+From Coq Require Import Lists.List.
+From Coq Require Import Strings.String.
+From Coq Require Import Classes.Morphisms.
+From Coq Require Import Reals.
+Import ListNotations.
+
+Parameter TM : nat -> nat -> Prop.
+Parameter CR : R -> Prop.
+Parameter Rinv : {a0 : R | ~(a0 = 0%R)} -> R.
+Definition Halting : Type := forall (i j : nat), {TM i j} + {~(TM i j)}.
+Axiom Turing_proper1 : forall (i j k: nat), j <= k -> TM i j -> TM i k.
+Axiom Turing_proper2 : forall (i j k: nat), k <= j -> ~ (TM i j) -> ~ (TM i k).
+
+Inductive Req : R -> R -> Prop :=
+  | Rfind x y : x = y -> Req x y
+.
+SearchAbout Proper.
+Record Function_prop (f : R -> R -> Prop) : Prop := {
+  propertise1 : forall x x1 y y1 : R , x = x1 -> f x y -> f x1 y1 -> y = y1;
+  propertise2 : forall x :R , exists y : R , f x y;
+  propertise3 : Proper(Req ==> Req ==> iff);
+}.
+Module Uncomputable_function.
+  Theorem Three_dimensions : (forall r1 r2 : R, ({r1 = r2} + {r1 <> r2})%R) -> Halting.
+  Proof. Admitted.
+  Theorem Rinv_def : (forall (Rinv' : R -> R)(r: R) (H : r <> 0%R) ,Rinv' r = Rinv (exist _ r H) ) -> Halting.
+  Proof. Admitted.
+  Theorem lim_CN_NCN :forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> ~ CR l1.
+  Proof. Admitted.
+ 
+End Uncomputable_function.
+
+
