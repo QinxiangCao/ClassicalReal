@@ -14,7 +14,7 @@ Local Open Scope nat_scope.
 Local Open Scope R_scope.
 
 Module Type Vir_Real.
-  Parameter Real : Set.
+  Parameter Real : Type.
   Parameter Rplus : Real -> Real -> Real.
   Parameter Rminus : Real -> Real -> Real.
   Parameter Rmult : Real -> Real -> Real.
@@ -33,6 +33,7 @@ Module Type Vir_Real.
   Infix ">" := Rgt : R_scope.
   Parameter Rinv : {a0 : Real | ~(a0 = R0)} -> Real.
   Parameter Rlim : (nat -> Real) -> Real -> Prop.
+  (** Add Real_equiv and Proper.   -- Qinxiang *)
 End Vir_Real.
 
 
@@ -40,6 +41,7 @@ Parameter TM : nat -> nat -> Prop.
 Definition Halting : Type := forall (i j : nat), {TM i j} + {~(TM i j)}.
 Axiom Turing_proper1 : forall (i j k: nat), (j <= k)%nat -> TM i j -> TM i k.
 Axiom Turing_proper2 : forall (i j k: nat), (k <= j)%nat -> ~ (TM i j) -> ~ (TM i k).
+(** 2 can be proved from 1.     -- Qinxiang *)
 
 Definition Req (r1 r2 : R) : Prop := r1 = r2.
 
@@ -79,7 +81,9 @@ Module Uncomputable_function.
   Parameter CR : R -> Prop.
   Theorem Three_dimensions : (forall r1 r2 : R, ({r1 = r2} + {r1 <> r2})%R) -> Halting.
   Proof. Admitted.
-  (** This theorem also proves the uncomputability of Rmax Rmin Rabs Rdist*)  
+  (** This theorem also proves the uncomputability of Rmax Rmin Rabs Rdist*)
+  (** Rmax Rmin Rabs Rdist are actually computable. Defined in an incorrect way in std. -- Qinxiang *)
+  (** Derive other two_dimensions and three dimensions from it. -- Qinxiang *)
   Theorem Rinv_def : (forall (Rinv' : R -> R)(r: R) (H : r <> 0%R) ,Rinv' r = Rinv (exist _ r H) ) -> Halting.
   Proof. Admitted.
   Theorem Rpow_def : (forall (Rpow' : R -> nat -> R)(r: R)(H : r <> 0%R) ,Rpow' r 0%nat = Rpow (exist _ r H) 0%nat ) -> Halting.
