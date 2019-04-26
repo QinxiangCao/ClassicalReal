@@ -115,6 +115,9 @@ Definition try' : {X: Real -> Prop | (forall x1 x2, X x1 -> X x2 ->
   - apply funlemma4;auto.
   - apply funlemma5;auto. Defined.
 
+Theorem try'_correct: forall X H, X (try' (exist _ X H)).
+Abort. (** -- Qinxiang *)
+
 Definition try : {f:Real -> Real -> Prop | (forall x1 x2 y1 y2, f x1 y1 -> f x2 y2
   -> x1 == x2 -> y1 == y2) /\ (forall x, exists y, f x y) /\
 Proper (Req ==> Req ==> iff) f }%R -> (Real -> Real).
