@@ -1952,7 +1952,53 @@ repeat right. split. { left. split;auto. }
   - destruct HA as [?|[]].
 { destruct HB as [?|[]].
 { apply Cut_mult_assoc_lemma3;auto. }
-{  }
+{ assert(HB:Dedekind (Cut_opp B)).
+  { apply Dedekind_opp. auto. }
+  assert(HC:Dedekind (Cut_opp C)).
+  { apply Dedekind_opp. auto. }
+  apply Cut_opp_opp;try apply Dedekind_mult;auto.
+  apply Cut_mult_opp_opp_r;auto.
+  apply Cut_mult_opp_r;try apply Dedekind_opp;auto.
+  apply Cut_mult_eq with (B:=(Cut_mult (Cut_opp B) (Cut_opp C)));
+  try apply Dedekind_mult;try repeat apply Dedekind_opp;auto.
+  { intros. rewrite <- Cut_mult_opp_r;auto.
+    rewrite <- Cut_mult_opp_opp_l;auto. reflexivity. }
+  apply Cut_opp_opp in H2;try apply Dedekind_mult;auto.
+  apply Cut_mult_opp_opp_l in H2;auto.
+  apply Cut_mult_opp_r in H2;try apply Dedekind_opp;auto.
+  apply Cut_mult_comm in H2.
+  apply Cut_mult_eq with (B:=(Cut_mult A (Cut_opp B))) in H2;
+  try apply Dedekind_mult;try repeat apply Dedekind_opp;auto.
+  { apply Cut_mult_assoc_lemma1;try apply Cut_mult_comm;auto. }
+  { intros. rewrite <- Cut_mult_opp_r;auto. reflexivity. } }
+{ clear H3. destruct H4. repeat right. split. { right. apply Cut_mult0_trans; auto;left;split;auto. }
+  assert(~ Cut_mult A B 0 /\ ~ Cut_opp (Cut_mult A B) 0).
+  { apply Cut_mult0_trans; auto;right;split;auto. } destruct H5.
+  destruct H2 as [?|[?|[?|[?|[]]]]].
+  { destruct H2, H2, H5. auto. }
+  { destruct H2, H2, H6. auto. }
+  { destruct H2, H2, H5. auto. }
+  { destruct H2, H2, H6. auto. }
+  { apply H7. } } }
+{ destruct HB as [?|[]].
+{ assert(HA:Dedekind (Cut_opp A)).
+  { apply Dedekind_opp. auto. }
+  assert(HC:Dedekind (Cut_opp C)).
+  { apply Dedekind_opp. auto. }
+  apply Cut_opp_opp;try apply Dedekind_mult;auto.
+  apply Cut_mult_opp_opp_r;auto.
+  apply Cut_mult_opp_l;try apply Dedekind_opp;auto.
+  apply Cut_mult_eq with (B:=(Cut_mult B (Cut_opp C)));
+  try apply Dedekind_mult;try repeat apply Dedekind_opp;auto.
+  { intros. rewrite <- Cut_mult_opp_r;auto. reflexivity. }
+  apply Cut_opp_opp in H2;try apply Dedekind_mult;auto.
+  apply Cut_mult_opp_opp_l in H2;auto.
+  apply Cut_mult_opp_r in H2;try apply Dedekind_opp;auto.
+  apply Cut_mult_comm in H2.
+  apply Cut_mult_eq with (B:=(Cut_mult (Cut_opp A) B)) in H2;
+  try apply Dedekind_mult;try repeat apply Dedekind_opp;auto.
+  { apply Cut_mult_assoc_lemma1;try apply Cut_mult_comm;auto. }
+  {  }
       (*   { apply (Dedekind_properties3 _) in H10.
           apply (Dedekind_properties3 _) in H6.
         { destruct H10, H10, H6, H6. exists x4, x3.
