@@ -206,3 +206,15 @@ Proof.
   intros. rewrite Qmult_comm. rewrite (Qmult_comm z y). apply Qmult_le_compat_r. auto. auto.
 Qed.
 
+Lemma Qdiv_lt : forall x y : Q , x > 0 -> x < y -> /y < /x.
+Proof.
+  intros.
+  assert(forall x y, x > 0 -> x < y -> / y < / x).
+  { intros. assert(y0>0).
+    { apply Qlt_trans with (y:=x0);auto. } apply Qlt_shift_inv_l;auto.
+    rewrite <- (Qmult_inv_r y0). { rewrite Qmult_comm.
+    apply Qmult_lt_compat_r with (z:=/y0);auto.
+    apply Qinv_lt_0_compat;auto. } unfold not.
+    intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto. } auto.
+Qed.
+
