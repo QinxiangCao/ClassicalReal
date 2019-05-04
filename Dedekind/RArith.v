@@ -2382,9 +2382,84 @@ Proof.
     apply Rle_refl.
 Qed.
 
+Lemma Dedekind_up : forall (A : Q -> Prop)(x1 x2:Q), Dedekind A ->
+  A x1 -> A x2 -> exists x : Q, A x /\ x1<x /\ x2<x.
+Proof.
+  intros. apply (Dedekind_properties3 _ H) in H0.
+  apply (Dedekind_properties3 _ H) in H1. destruct H0, H0, H1, H1.
+  assert (x0 > x\/~x0 > x). apply classic. destruct H4.
+  - exists x0. repeat split;auto.
+    apply Qlt_trans with (y:=x);auto.
+  - apply Qnot_lt_le in H4. exists x. repeat split;auto.
+    apply Qlt_le_trans with (y:=x0);auto.
+Qed.
+
 Theorem Rmult_distr_l :
   forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
 Proof.
+  intros. split.
+- destruct a, b, c. rename A0 into B. rename A1 into C. hnf. intros. unfold Cut_plus_Cut in H2.
+  assert(HC:C 0 \/ Cut_opp C 0 \/ (~ C 0/\~ Cut_opp C 0)).
+  { apply Cut_mult_situation1. }
+  assert(HA:A 0 \/ Cut_opp A 0 \/ (~ A 0/\~ Cut_opp A 0)).
+  { apply Cut_mult_situation1. }
+  assert(HB:B 0 \/ Cut_opp B 0 \/ (~ B 0/\~ Cut_opp B 0)).
+  { apply Cut_mult_situation1. }
+  destruct HC as [HC|[HC|[HC]]].
+{ destruct HA as [HA|[HA|[HA]]].
+{ destruct HB as [HB|[HB|[HB]]].
+{ destruct H2 as [?|[?|[?|[]]]].
+  + destruct H2, H2, H4, H4, H3, H3.
+    destruct H4 as [?[]]. destruct H3 as [?[?[?[]]]].
+    destruct H9, H9. destruct H9 as [?[]].
+  assert(H':Dedekind (Cut_plus_Cut (Cut_mult A B) (Cut_mult A C))).
+  { apply Dedekind_plus; apply Dedekind_mult;auto. }
+    pose proof (Dedekind_up B 0 x4). destruct H13;auto. destruct H13 as [?[]].
+    pose proof (Dedekind_up C 0 x5). destruct H16;auto. destruct H16 as [?[]].
+    apply (Dedekind_properties2 _ H' (x2*(x6+x7)));split;
+    try apply Qle_trans with (y:=x2*x3);auto;try apply Qlt_le_weak;
+    try apply Qmult_lt_l;auto;try rewrite <- H12;try apply Qplus_lt_le_compat;
+    try apply Qlt_le_weak;auto.
+    exists (x2*x6), (x2*x7).
+    repeat split;try rewrite <- H12;try rewrite Qmult_plus_distr_r;try reflexivity;
+    left;repeat split;auto.
+    * exists x2, x6. repeat split;auto;apply Qle_refl.
+    * exists x2, x7. repeat split;auto;apply Qle_refl.
+  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
+    destruct H;auto.
+  + destruct H2, H2, H4, H4, H5. exists 0, (-x0). repeat split;auto.
+    apply (Dedekind_properties2 _ H1 0);split;auto.
+    rewrite Qopp_le_compat_iff. rewrite Qopp_involutive;apply Qlt_le_weak;auto.
+  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
+    destruct H;auto.
+  + destruct H2, H2, H2, H2;auto. exists 0, 0. repeat split;auto. }
+{ destruct H2 as [?|[?|[?|[]]]].
+  + destruct H2, H2, H4, H4, H3, H3.
+    destruct H4 as [?[]]. destruct H3 as [?[?[?[]]]].
+    destruct H9, H9. destruct H9 as [?[]].
+  assert(H':Dedekind (Cut_plus_Cut (Cut_mult A B) (Cut_mult A C))).
+  { apply Dedekind_plus; apply Dedekind_mult;auto. } hnf.
+    assert(BN:Dedekind (Cut_opp B)). { apply Dedekind_opp;auto. }
+   (*  pose proof (Dedekind_up (Cut_opp B) 0 0). destruct H13;auto. destruct H13 as [?[]].
+    pose proof (Dedekind_up C 0 x5). destruct H16;auto. destruct H16 as [?[]].
+    assert(x4<(-x6)). { apply Qlt_trans with (y:=0). }
+    apply (Dedekind_properties2 _ H' (x2*(x6+x7)));split;
+    try apply Qle_trans with (y:=x2*x3);auto;try apply Qlt_le_weak;
+    try apply Qmult_lt_l;auto;try rewrite <- H12;try apply Qplus_lt_le_compat;
+    try apply Qlt_le_weak;auto.
+    exists (x2*x6), (x2*x7).
+    repeat split;try rewrite <- H12;try rewrite Qmult_plus_distr_r;try reflexivity.
+    right;right;left;repeat split;auto.
+    * exists x2, x6. repeat split;auto;apply Qle_refl.
+    * exists x2, x7. repeat split;auto;apply Qle_refl.
+  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
+    destruct H;auto.
+  + destruct H2, H2, H4, H4, H5. exists 0, (-x0). repeat split;auto.
+    apply (Dedekind_properties2 _ H1 0);split;auto.
+    rewrite Qopp_le_compat_iff. rewrite Qopp_involutive;apply Qlt_le_weak;auto.
+  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
+    destruct H;auto.
+  + destruct H2, H2, H2, H2;auto. exists 0, 0. repeat split;auto. } *)
 Admitted.
 
 Definition Cut_inv (A : Q -> Prop) : Q -> Prop :=
