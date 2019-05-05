@@ -1,4 +1,5 @@
 From Coq Require Import Arith.Arith.
+From Coq Require Import Init.Nat.
 From Coq Require Import Arith.EqNat.
 From Coq Require Import omega.Omega.
 From Coq Require Import Lists.List.
@@ -6,6 +7,7 @@ From Coq Require Import Strings.String.
 From Coq Require Import QArith.QArith_base.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
+From Coq Require Import QArith.Qround.
 From Coq Require Import Logic.Classical.
 From Coq Require Import Classes.Equivalence.
 From CReal Require Import QArith_ext.QArith_base_ext.
@@ -423,6 +425,10 @@ Proof. split.
   unfold Rlt in H1. rewrite <- E1. apply H1.
 Qed.
 
+Lemma Rlt_mult_l: forall (A B C:Real),  (Rpositive C) ->(A < B)%R -> (C*A< C*B)%R.
+Proof. intros. rewrite (Rmult_comm C A). rewrite (Rmult_comm C B). apply Rlt_mult_r.
+  auto. auto.
+Qed.
 
 Definition Cauchy_abs (A : nat -> Q -> Prop): (nat -> Q -> Prop) :=
     fun (n:nat) (q:Q) =>
@@ -652,30 +658,364 @@ Proof. intros. split.
     + apply Rnot_lt in H2. destruct H2.
       * rewrite <- H2. rewrite Rabs_zero. auto.
       * rewrite Rabs_negative.  rewrite (Ropp_involutive y). apply Ropp_lt_compat. auto.
-        apply Rnegative_lt_0. auto.
+        apply Rnegative_lt_0. auto. 
+Qed.
+
+Lemma Rpositive_Ropp (A:Real): Rpositive A -> Rnegative (Ropp A).
+Proof. intros. destruct A as [A HA]. hnf in *. unfold Ropp.
+  unfold Cauchy_opp. destruct H as [eps [Heps [N H]]].
+  exists eps. split. auto. exists N. intros.
+  apply (H _ H0). destruct (Cauchy_exists _ HA n) as [qa Hqa].
+  assert (E: q == qa). { rewrite <- (Qopp_involutive qa). apply H1.
+  intros. rewrite (Cauchy_unique _ HA _ _ _ Hqa H2). reflexivity. }
+  rewrite E. auto.
+Qed.
+
+Lemma Rnegative_Ropp (A:Real): Rnegative A -> Rpositive (Ropp A).
+Proof. intros. destruct A as [A HA]. auto.
+Qed.
+
+Theorem Rabs_Ropp (A:Real): (Rabs A == Rabs (- A))%R.
+Proof. intros. destruct (classic (A == 0)%R).
+  - rewrite H. rewrite <- Rzero_opp_zero. reflexivity.
+  - apply Real_not_zero_positive_or_negative in H. destruct H.
+    + rewrite (Rabs_positive _ H). apply Rpositive_Ropp in H. rewrite Rabs_negative.
+      rewrite <- Ropp_involutive. reflexivity. auto.
+    + rewrite (Rabs_negative _ H). apply Rnegative_Ropp in H. rewrite Rabs_positive.
+      reflexivity. auto.
+Qed.
+
+Lemma Ropp_mult_distr : forall A B, (- (A * B) == (- A) * B)%R.
+Proof. intros. destruct A as [A HA],B as [B HB]. hnf. intros. 
+  exists O. intros. unfold Cauchy_opp in *. unfold CauchySeqMult in *.
+  destruct (Cauchy_exists _ HA m) as [qa Hqa].
+  destruct (Cauchy_exists _ HB m) as [qb Hqb].
+  assert (E1: q1 == - (qa*qb)). { apply H1. intros.
+    rewrite (Cauchy_unique _ HA _ _ _ Hqa H3).
+    rewrite (Cauchy_unique _ HB _ _ _ Hqb H4).
+    reflexivity. }
+  assert (E2: q2 == - qa*qb). { apply H2. intros. 
+    rewrite (Cauchy_unique _ HA _ _ _ Hqa H3). reflexivity.
+    auto. }
+  assert (E3: q1 - q2 == 0). { rewrite E1. rewrite E2. ring. }
+  rewrite E3. apply H.
+Qed.
+
+Theorem Rabs_Rmult (A B:Real): (Rabs (A*B) == (Rabs A)*(Rabs B))%R.
+Proof. intros. destruct (classic (A == 0)%R),(classic (B == 0)%R).
+  - rewrite H. rewrite Rabs_zero. rewrite Rmult_0_l. rewrite Rmult_0_l. apply Rabs_zero.
+  - rewrite H. rewrite Rabs_zero. rewrite Rmult_0_l. rewrite Rmult_0_l. apply Rabs_zero.
+  - rewrite H0. rewrite Rabs_zero. rewrite Rmult_0_r. rewrite Rmult_0_r. apply Rabs_zero.
+  - apply Real_not_zero_positive_or_negative in H.
+    apply Real_not_zero_positive_or_negative in H0. destruct H,H0.
+    + assert (E: Rpositive (A*B)%R).
+      { apply Rpositive_gt_0. rewrite <- (Rmult_0_r A). apply (Rlt_mult_l). auto.
+        apply Rpositive_gt_0 in H0. auto. }
+      rewrite Rabs_positive. rewrite Rabs_positive. rewrite Rabs_positive.
+      reflexivity. auto. auto. auto.
+    + assert (E: Rnegative (A*B)%R).
+      { apply Rnegative_lt_0. rewrite <- (Rmult_0_r A). apply (Rlt_mult_l). auto.
+        apply Rnegative_lt_0 in H0. auto. }
+      rewrite Rabs_negative. rewrite Rabs_positive. rewrite Rabs_negative.
+      rewrite (Rmult_comm A (-B)%R). rewrite <- Ropp_mult_distr.
+      rewrite (Rmult_comm). reflexivity.
+      auto. auto. auto.
+    + assert (E: Rnegative (A*B)%R).
+      { apply Rnegative_lt_0. rewrite <- (Rmult_0_l B). apply (Rlt_mult_r). auto.
+        apply Rnegative_lt_0 in H. auto. }
+      rewrite Rabs_negative. rewrite Rabs_negative. rewrite Rabs_positive.
+      rewrite <- Ropp_mult_distr. reflexivity.
+      auto. auto. auto.
+    + assert (E: Rpositive (A*B)%R).
+      { apply Rpositive_gt_0. rewrite Ropp_involutive. 
+        rewrite (Ropp_involutive (A*B)%R). apply Ropp_lt_compat.
+        rewrite Ropp_mult_distr. rewrite Rmult_comm. rewrite (Ropp_involutive (B*-A)%R).
+        apply Ropp_lt_compat. rewrite Ropp_mult_distr. apply Rnegative_Ropp in H.
+        apply Rnegative_Ropp in H0. rewrite <- (Rmult_0_r (-B)). apply (Rlt_mult_l). auto.
+        apply Rpositive_gt_0 in H. auto. }
+        rewrite Rabs_positive. rewrite Rabs_negative. rewrite Rabs_negative.
+        rewrite <- Ropp_mult_distr. rewrite (Rmult_comm A (-B)). rewrite <- Ropp_mult_distr.
+        rewrite <- Ropp_involutive. rewrite Rmult_comm.
+        reflexivity. auto. auto. auto.
 Qed.
 
 
+Theorem Rabs_triangle (A B:Real): (Rabs (A+B) <= Rabs A + Rabs B)%R.
+Proof. intros. unfold Rle. Admitted.
 
-
-
-
-
-
-(*
-
-
-Definition SingletonSet2Element (A:{X: nat -> Real -> Prop| (forall n x1 x2, X n x1 ->
- X n x2 -> x1 == x2) /\ (forall n, exists x, X n x) /\ forall n, Proper (Real_equiv ==> iff) (X n)
- /\ (Cauchy_Criterion X)}%R
-) : Real.
+Theorem Rnot_le_lt: forall A B, (~(A<=B) <-> (A >B))%R.
 Admitted.
-Definition Rel2Func: {f:Real->Real->Prop|(forall x1 x2 y1 y2,
- f x1 y1 -> f x2 y2 -> x1 == x2 -> y1 == y2)
-/\ (forall x, exists y, f x y)
-/\ (Proper (Real_equiv ==> Real_equiv ==> iff) f)}%R ->
-(Real -> Real).
+Theorem Rnot_lt_le: forall A B, (~(A<B)<->(A>=B))%R.
+Admitted.
 
 
-*)
+
+
+
+
+
+
+
+
+
+
+(** ---------- Single2Element Function ----------------*)
+
+
+(** trying to define Rfloor *)
+
+Class Rfloor (IsRfloor: Real -> Z -> Prop) : Prop := {
+  Rfloor_exists : forall A, exists (z:Z), (IsRfloor A z);
+  Rfloor_unique : forall A (z1 z2:Z),
+      (IsRfloor A z1) -> (IsRfloor A z2) -> z1 = z2;
+  Rfloor_proper: forall A (z1 z2:Z), z1=z2 -> (IsRfloor A z1 <-> IsRfloor A z2);
+  Rfloor_def : forall (A:Real) (z:Z),
+      (IsRfloor A z) -> exists N, forall n, (n>N)%nat -> 
+    forall q, (match A with Real_intro A0 _ => A0 end) n q -> (z#1 <= q /\ q < (z + 1)#1); }.
+
+
+
+(** the following proofs are based on an undefined Rfloor function 'int_of_R' *)
+
+Definition int_of_R (A:Real):Z .
+Admitted.
+
+Theorem int_of_R_prop:forall A, ((inject_Q (inject_Z (int_of_R A))) <= A)%R /\
+            ((inject_Q (inject_Z (int_of_R A) + 1)) > A)%R.
+Proof. intros. split.
+Admitted.
+
+Instance int_of_R_comp: Proper (Real_equiv ==> Z.eq) int_of_R.
+Admitted.
+
+(** Some helping lemmas (easy to prove or some might need correction(cases about 0) *)
+Lemma Qle_lt_minus (a b c d:Q): a <= b -> c < d -> a - d < b - c.
+Admitted.
+Lemma Qdiv_lt_compat (a b c :Q): c> 0 ->a < b ->  a/c < b/c.
+Admitted.
+Lemma Qdiv_le_compat (a b c :Q):  c> 0 ->a <= b -> a/c <= b/c.
+Admitted.
+Lemma Qinject_nat_pos: forall m, 0 < inject_Z (Z.of_nat m).
+Admitted.
+
+Lemma inject_Z_nonzero: forall n, ~ inject_Z (Z.of_nat n) == 0.
+Admitted.
+
+
+Instance inject_Q_comp: Proper (Qeq ==>Real_equiv) inject_Q.
+Admitted.
+Lemma inject_Q_nonzero: forall q, ~ q == 0 -> ~ (inject_Q q == 0)%R.
+Admitted.
+
+
+
+Lemma Inject_1: forall x, Z.pos (Pos.of_nat x) = Z.of_nat x.
+Admitted.
+
+Lemma inject_Q_inv: forall q (H:~q==0) , (inject_Q (/q) == 
+    / exist (fun a0 : Real => ~ a0 == 0) (inject_Q q) (inject_Q_nonzero _ H))%R.
+Admitted.
+
+Lemma inject_of_nat_equiv:forall n, Z.of_nat n # Pos.of_nat n == 1.
+Admitted.
+
+Lemma Rlt_mult_compat_r:
+  forall A B C : Real, Rpositive C -> (A*C < B*C)%R -> (A < B )%R.
+Admitted.
+
+Lemma Rlt_plus_compat_r:
+  forall A B C : Real, (A+C < B+C)%R -> (A < B )%R.
+Admitted.
+
+Lemma Rle_mult_compat_r:
+  forall A B C : Real, Rpositive C -> (A*C <= B*C)%R -> (A <= B )%R.
+Admitted.
+
+Lemma Rle_plus_compat_r:
+  forall A B C : Real, (A+C <= B+C)%R -> (A <= B )%R.
+Admitted.
+
+Lemma inject_Q_pos: forall q, q>0 -> Rpositive (inject_Q q).
+Admitted.
+Instance Rle_comp: Proper (Real_equiv ==> Real_equiv ==> iff) Rle.
+Admitted.
+
+
+
+
+(** Single Element Set to Element Function *)
+(** A rough proof about the function. The 'admit' part will be repeated *)
+Definition SingletonSet2Element : {X: Real -> Prop|(exists x, X x) /\ (forall x1 x2, X x1 ->
+ X x2 -> x1 == x2) /\ Proper (Real_equiv ==> iff) (X)
+ }%R -> Real.
+
+Proof. intros. destruct X as [S [H1 [H2 H3]]].
+  apply (Real_intro (fun n q => exists A, S A /\ 
+        q == (int_of_R (A * (inject_Q (inject_Z (Z.of_nat (n)%nat))))) # (Pos.of_nat (n)%nat))).
+
+split.
+- intros. destruct H1 as [A0 HA0].
+  exists (int_of_R (A0 * inject_Q (inject_Z (Z.of_nat (n)))) # Pos.of_nat (n)).
+  exists A0. split. auto. reflexivity.
+- intros. destruct H as[A1 [SHA1 HA1]]. destruct H0 as [A2 [SHA2 HA2]].
+  rewrite HA1,HA2. rewrite (H2 _ _ SHA1 SHA2). reflexivity.
+- intros. destruct H0 as [A [SHA HA]]. exists A. split. auto. 
+  rewrite <- H. auto.
+- intros. exists (Z.to_nat (1 + (Qceiling (1/eps)))).
+  intros. destruct H5 as [A1 [HA1 Hq1]].
+  destruct H6 as [A2 [HA2 Hq2]].
+  rewrite <- (H2 _ _ HA1 HA2) in Hq2.
+  assert (E1: - (1/(inject_Z (Z.of_nat m1))) < (q1 - q2)
+            /\ q1 - q2 < 1/(inject_Z (Z.of_nat m2))).
+  { destruct (int_of_R_prop (A1 * inject_Q (inject_Z (Z.of_nat m1)))) as [P1 P2].
+  assert (Et1: (inject_Q q1 > (A1 - (inject_Q (1#Pos.of_nat m1))))%R).
+  { unfold Rgt. rewrite Hq1. rewrite <- (Rmult_1_r A1).
+    rewrite <- (Rmult_inv_r' _ (inject_Q_nonzero _ (inject_Z_nonzero m1))).
+  assert (Et2: ((inject_Q (1 # Pos.of_nat m1)) == /
+  exist (fun a0 : Real => ~ a0 == 0) (inject_Q (inject_Z (Z.of_nat m1)))
+    (inject_Q_nonzero (inject_Z (Z.of_nat m1)) (inject_Z_nonzero m1)))%R).
+  { rewrite Qmake_Qdiv. unfold Qdiv. rewrite inject_Q_mult.
+    assert (Ett: (inject_Q (inject_Z 1) == 1)%R). { reflexivity. }
+    rewrite Ett. rewrite Rmult_1_l. rewrite Inject_1.
+    rewrite <- inject_Q_inv. reflexivity. }
+  remember (/ exist (fun a0 : Real => ~ a0 == 0) (inject_Q (inject_Z (Z.of_nat m1)))
+    (inject_Q_nonzero (inject_Z (Z.of_nat m1)) (inject_Z_nonzero m1)))%R as Rden.
+  rewrite Et2. clear HeqRden.
+  assert (Et3: ((inject_Q (inject_Z (Z.of_nat m1)) * Rden) == 1)%R).
+    { rewrite <- Et2. rewrite <- inject_Q_mult.
+      assert(Et: inject_Z (Z.of_nat m1) * (1 # Pos.of_nat m1) == 1).
+      { rewrite Qmake_Qdiv. unfold Qdiv. rewrite (Qmult_comm (inject_Z 1)).
+        rewrite Qmult_assoc. 
+        assert (Et': inject_Z (Z.of_nat m1) * / inject_Z (Z.pos (Pos.of_nat m1)) ==
+                      inject_Z (Z.of_nat m1)  / inject_Z (Z.pos (Pos.of_nat m1))) by reflexivity.
+      rewrite Et'. rewrite <- Qmake_Qdiv. rewrite inject_of_nat_equiv. reflexivity. }
+  rewrite Et. reflexivity. }
+  rewrite Et3. rewrite Rmult_1_r.
+  rewrite Qmake_Qdiv. apply (Rlt_mult_compat_r _ _ (inject_Q (inject_Z (Z.pos (Pos.of_nat m1))))).
+  assert (Et4: (inject_Z (Z.pos (Pos.of_nat m1)) > 0)).
+    { rewrite Inject_1. apply Qinject_nat_pos. }
+  apply inject_Q_pos. auto. rewrite <- inject_Q_mult.
+  assert (Et5: inject_Z (int_of_R (A1 * inject_Q (inject_Z (Z.of_nat m1)))) /
+    inject_Z (Z.pos (Pos.of_nat m1)) * inject_Z (Z.pos (Pos.of_nat m1)) == 
+    inject_Z (int_of_R (A1 * inject_Q (inject_Z (Z.of_nat m1))))).
+    { field. rewrite Inject_1. apply inject_Z_nonzero. }
+  rewrite Et5. unfold Rminus. rewrite Rmult_plus_distr_l.
+  assert (Et6: (Rden * inject_Q (inject_Z (Z.pos (Pos.of_nat m1))) == 1)%R).
+    { rewrite <- Et2. rewrite <- inject_Q_mult.
+      rewrite Qmake_Qdiv. unfold Qdiv. rewrite <- Qmult_assoc.
+      rewrite (Qmult_comm (/ inject_Z (Z.pos (Pos.of_nat m1)))).
+      rewrite Qmult_inv_r. reflexivity. rewrite Inject_1. apply inject_Z_nonzero. }
+  rewrite <- Ropp_mult_distr. rewrite Et6.
+  apply (Rlt_plus_compat_r _ _ 1%R).
+  assert (Et7: (1 == (inject_Q 1))%R) by reflexivity.
+  rewrite Rplus_assoc. rewrite (Rplus_comm (-(1))%R).
+  rewrite Rplus_opp_r. rewrite Rplus_0_r. rewrite Et7.
+  rewrite <- inject_Q_plus. rewrite Inject_1. auto. }
+  assert (Et2: (inject_Q q1 <= A1 )%R).
+  { rewrite Hq1. rewrite <- (Rmult_1_r A1).
+    rewrite <- (Rmult_inv_r' _ (inject_Q_nonzero _ (inject_Z_nonzero m1))).
+  assert (Et2: ((inject_Q (1 # Pos.of_nat m1)) == /
+  exist (fun a0 : Real => ~ a0 == 0) (inject_Q (inject_Z (Z.of_nat m1)))
+    (inject_Q_nonzero (inject_Z (Z.of_nat m1)) (inject_Z_nonzero m1)))%R).
+  { rewrite Qmake_Qdiv. unfold Qdiv. rewrite inject_Q_mult.
+    assert (Ett: (inject_Q (inject_Z 1) == 1)%R). { reflexivity. }
+    rewrite Ett. rewrite Rmult_1_l. rewrite Inject_1.
+    rewrite <- inject_Q_inv. reflexivity. } 
+  remember (/ exist (fun a0 : Real => ~ a0 == 0) (inject_Q (inject_Z (Z.of_nat m1)))
+    (inject_Q_nonzero (inject_Z (Z.of_nat m1)) (inject_Z_nonzero m1)))%R as Rden.
+  clear HeqRden.
+  assert (Et3: ((inject_Q (inject_Z (Z.of_nat m1)) * Rden) == 1)%R).
+    { rewrite <- Et2. rewrite <- inject_Q_mult.
+      assert(Et: inject_Z (Z.of_nat m1) * (1 # Pos.of_nat m1) == 1).
+      { rewrite Qmake_Qdiv. unfold Qdiv. rewrite (Qmult_comm (inject_Z 1)).
+        rewrite Qmult_assoc. 
+        assert (Et': inject_Z (Z.of_nat m1) * / inject_Z (Z.pos (Pos.of_nat m1)) ==
+                      inject_Z (Z.of_nat m1)  / inject_Z (Z.pos (Pos.of_nat m1))) by reflexivity.
+      rewrite Et'. rewrite <- Qmake_Qdiv. rewrite inject_of_nat_equiv. reflexivity. }
+  rewrite Et. reflexivity. }
+  rewrite Et3. rewrite Rmult_1_r.
+  rewrite Qmake_Qdiv. apply (Rle_mult_compat_r _ _ (inject_Q (inject_Z (Z.pos (Pos.of_nat m1))))).
+  assert (Et4: (inject_Z (Z.pos (Pos.of_nat m1)) > 0)).
+    { rewrite Inject_1. apply Qinject_nat_pos. }
+  apply inject_Q_pos. auto. rewrite <- inject_Q_mult.
+  assert (Et5: inject_Z (int_of_R (A1 * inject_Q (inject_Z (Z.of_nat m1)))) /
+    inject_Z (Z.pos (Pos.of_nat m1)) * inject_Z (Z.pos (Pos.of_nat m1)) == 
+    inject_Z (int_of_R (A1 * inject_Q (inject_Z (Z.of_nat m1))))).
+    { field. rewrite Inject_1. apply inject_Z_nonzero. }
+  rewrite Et5. rewrite Inject_1. auto. }
+  destruct (int_of_R_prop (A2 * inject_Q (inject_Z (Z.of_nat m2)))) as [P3 P4].
+  admit. }
+
+  assert (E2: eps > 1 / inject_Z (Z.of_nat (m2 - 1))).
+  { apply Qlt_shift_div_r. apply Qinject_nat_pos.
+    apply (Qmult_lt_l _ _ _ (Qinv_lt_0_compat _ H)).
+    assert (Et: / eps * (eps * inject_Z (Z.of_nat (m2-1))) == inject_Z (Z.of_nat (m2-1))).
+      { field. intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+    rewrite Et. rewrite Qmult_1_r.
+    assert (Et1: / eps <= inject_Z (Qceiling (1 / eps))).
+      { assert (Et0: / eps == 1 / eps). { field.
+        intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+        rewrite Et0. apply Qle_ceiling. }
+    apply (Qle_lt_trans _ _ _ Et1).
+    assert (Et2:(Qceiling (1 / eps) < Z.of_nat (m2 - 1))%Z).
+      { admit. }
+    admit. }
+
+  assert (E3: eps > 1 / inject_Z (Z.of_nat (m1 - 1))).
+  { apply Qlt_shift_div_r. apply Qinject_nat_pos.
+    apply (Qmult_lt_l _ _ _ (Qinv_lt_0_compat _ H)).
+    assert (Et: / eps * (eps * inject_Z (Z.of_nat (m1-1))) == inject_Z (Z.of_nat (m1-1))).
+      { field. intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+    rewrite Et. rewrite Qmult_1_r.
+    assert (Et1: / eps <= inject_Z (Qceiling (1 / eps))).
+      { assert (Et0: / eps == 1 / eps). { field.
+        intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+        rewrite Et0. apply Qle_ceiling. }
+    apply (Qle_lt_trans _ _ _ Et1).
+    assert (Et2:(Qceiling (1 / eps) < Z.of_nat (m1 - 1))%Z).
+      { admit. }
+    admit. }
+
+  destruct E1 as [E0 E1].
+
+  assert (E4: Qabs(q1 - q2) <=  (1 / inject_Z (Z.of_nat m1))
+              \/ Qabs (q1 - q2) <= (1 / inject_Z (Z.of_nat m2))).
+  { destruct (classic (1/(inject_Z (Z.of_nat m1)) < (1/inject_Z (Z.of_nat m2)))).
+    - right. apply Qabs_Qle_condition. split.
+      + apply (Qle_trans _  (-(1 / inject_Z (Z.of_nat (m1))))).
+        apply Qopp_le_compat. apply Qlt_le_weak. auto.
+        apply Qlt_le_weak. auto.
+
+      + apply Qlt_le_weak. auto.
+    - left. apply Qabs_Qle_condition. apply Qnot_lt_le in H5. split.
+      + apply Qlt_le_weak. auto.
+      + apply (Qle_trans _  ((1 / inject_Z (Z.of_nat (m2))))).
+        apply Qlt_le_weak. auto. auto. }
+
+  assert (E5: 1 / inject_Z (Z.of_nat m1) < 1 / inject_Z (Z.of_nat (m1 - 1))).
+    { apply (Qmult_lt_r _ _ (inject_Z (Z.of_nat m1))). apply Qinject_nat_pos.
+      unfold Qdiv. rewrite <- Qmult_assoc. rewrite (Qmult_comm  (/ inject_Z (Z.of_nat m1) )).
+      rewrite Qmult_inv_r. rewrite Qmult_1_r.
+      apply (Qmult_lt_r _ _ (inject_Z (Z.of_nat (m1-1)))). apply Qinject_nat_pos.
+      rewrite Qmult_1_l. rewrite Qmult_1_l.
+      rewrite Qmult_comm. rewrite Qmult_assoc. rewrite Qmult_inv_r.
+      rewrite Qmult_1_l. admit. apply inject_Z_nonzero. apply inject_Z_nonzero. }
+
+  assert (E6: 1 / inject_Z (Z.of_nat m2) < 1 / inject_Z (Z.of_nat (m2 - 1))).
+    { apply (Qmult_lt_r _ _ (inject_Z (Z.of_nat m2))). apply Qinject_nat_pos.
+      unfold Qdiv. rewrite <- Qmult_assoc. rewrite (Qmult_comm  (/ inject_Z (Z.of_nat m2) )).
+      rewrite Qmult_inv_r. rewrite Qmult_1_r.
+      apply (Qmult_lt_r _ _ (inject_Z (Z.of_nat (m2-1)))). apply Qinject_nat_pos.
+      rewrite Qmult_1_l. rewrite Qmult_1_l.
+      rewrite Qmult_comm. rewrite Qmult_assoc. rewrite Qmult_inv_r.
+      rewrite Qmult_1_l. admit. apply inject_Z_nonzero. apply inject_Z_nonzero. }
+
+  destruct E4.
+  * apply (Qle_lt_trans _ _ _ H5). apply (Qlt_trans _ _ _ E5).
+    auto.
+  * apply (Qle_lt_trans _ _ _ H5). apply (Qlt_trans _ _ _ E6).
+    auto.
+
+Admitted.
+
 
