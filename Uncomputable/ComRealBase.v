@@ -12,7 +12,6 @@ From Coq Require Import Reals.
 Import ListNotations.
 Local Open Scope nat_scope.
 Local Open Scope R_scope.
-
 Module Type Vir_Real.
   Parameter Real : Type.
   Parameter Rplus : Real -> Real -> Real.
@@ -32,10 +31,11 @@ Module Type Vir_Real.
   Infix ">=" := Rge : Real_scope.
   Infix ">" := Rgt : R_scope.
   Parameter Rinv : {a0 : Real | ~(a0 = R0)} -> Real.
+  Parameter Rpow : {a0 : Real | ~(a0 = R0)} -> nat ->Real. 
   Parameter Rlim : (nat -> Real) -> Real -> Prop.
-  Definition Reqb (x y : R) : Prop := x <= y /\ y <= x.
-  Parameter Reqb_refl : forall (x : R) , Reqb x x.
-  Theorem Proper_Reqb : forall (x : R),Proper Reqb x.
+  Definition Reqb (x y : Real) : Prop := Rle x y /\ Rle y x.
+  Parameter Reqb_refl : forall (x : Real) , Reqb x x.
+  Theorem Proper_Reqb : forall (x : Real),Proper Reqb x.
   Proof.
     intros.
     unfold Proper.
@@ -68,6 +68,62 @@ Proof.
     intros. apply H. apply Bin_R_pro2. unfold not in *. apply H0.
   - unfold not in *. intros. rewrite Bin_R_pro2 in H0.
     apply H0. apply H.
+Qed.
+
+Axiom Bin_R_pro3  : forall (r1 r2 : R) , r1 = r2 <-> (forall (j : nat) , Bin_R r1 j = Bin_R r2 j).
+Axiom Bin_R_pro3' : forall (r1 r2 : R) , r1 < r2 <-> 
+                    exists (j : nat), (Bin_R r1 j < Bin_R r2 j)%nat /\ 
+                                      (forall (k : nat) , (k <= j)%nat -> (Bin_R r1 k = Bin_R r2 k)%nat).
+
+Theorem Bin_R_pro3'' : forall (r1 r2 : R) , r1 > r2 <-> 
+                    exists (j : nat), (Bin_R r1 j > Bin_R r2 j)%nat /\ 
+                                      (forall (k : nat) , (k <= j)%nat -> (Bin_R r1 k = Bin_R r2 k)%nat).
+Proof.
+  intros.
+  pose proof (Bin_R_pro3' r2 r1).
+  split.
+  - intros.
+    apply H in H0.
+    inversion H0.
+    exists x.
+    split.
+    + apply H1.
+    + intros. destruct H1.
+      symmetry.
+      apply (H3 k H2).
+  - intros.
+    apply H.
+    inversion H0.
+    exists x.
+    split.
+    + apply H1.
+    + intros. destruct H1.
+      symmetry.
+      apply (H3 k H2).
+Qed.
+
+Theorem Bin_R_pro3_ge : forall (r1 r2 : R) , r1 >= r2 -> 
+                    exists (j : nat), (Bin_R r1 j >= Bin_R r2 j)%nat /\ 
+                                      (forall (k : nat) , (k <= j)%nat -> (Bin_R r1 k = Bin_R r2 k)%nat).
+Proof.
+  intros.
+  intros.
+  inversion H.
+  - pose proof (Bin_R_pro3'' r1 r2).
+    rewrite H1 in H0.
+    inversion H0.
+    exists x.
+    clear H1. clear H0.
+    destruct H2.
+    split.
+    + apply Nat.lt_le_incl. apply H0.
+    + intros. apply (H1 k H2).
+  - pose proof (Bin_R_pro3 r1 r2).
+    rewrite H1 in H0.
+    exists 10%nat.
+    split. 
+    + apply Nat.eq_le_incl. symmetry. apply (H0 10%nat).
+    + intros. apply (H0 k).
 Qed.
 
 Axiom R_is_TMR : forall (n:nat) (r:R) , TMR n r <-> (forall (j : nat), TM n j -> Bin_R r j = 1%nat) /\ (forall (j:nat) , ~TM n j -> Bin_R r j = 0%nat).
@@ -120,6 +176,7 @@ Proof.
   discriminate H4.
 Qed.
 
+Axiom TM_ex_TMR : forall n : nat , exists (r : R) , TMR n r.
 Axiom R_only_TMR : forall (n1 n2 : nat) (r : R) , TMR n1 r -> (n1 = n2 <-> TMR n2 r).
 Axiom only_R_TMR : forall (n : nat) (r1 r2 : R) , TMR n r1 -> (r1 = r2 <-> TMR n r2).
 Theorem diffR_diffTMR : forall (n1 n2 : nat) (r1 r2 : R) , TMR n1 r1 -> TMR n2 r2 -> (r1 <> r2 <-> n1 <> n2).
@@ -164,6 +221,17 @@ Record Single_function_prop(f : R -> Prop) : Prop := {
   Propertise3 : Proper(Req ==> iff) f;
 }.
 
+Theorem TMR_obey_Single_function_prop : forall (n : nat) , Single_function_prop (TMR n).
+Proof.
+  intros.
+  split.
+  - apply only_R_TMR.
+  - apply TM_ex_TMR.
+  - split ; intros. 
+    + apply (only_R_TMR n x y) ; auto.
+    + apply (only_R_TMR n y x) ; auto.
+Qed.
+
 Axiom Lemma1 : forall (f : R -> Prop) , (exists x0 , f x0) -> R.
 
 Definition G_signle_exists : {f : R -> Prop | Single_function_prop f} -> R.
@@ -182,71 +250,68 @@ Definition G_function_exists : {f : R -> R -> Prop | Function_prop f} -> (R -> R
   auto.
 Defined.
 
-Module Uncomputable_function .
-  Parameter Rinv : {a0 : R | ~(a0 = 0)%R} -> R.
-  Parameter Rpow : {a0 : R | ~(a0 = 0)%R} -> nat -> R. 
+Module Uncomputable_function.
+  Parameter Rinv : {a0 : R | ~(a0 = 0)} -> R.
+  Parameter Rpow : {a0 : R | ~(a0 = 0)} -> nat ->R. 
   Parameter CR : R -> Prop.
-  Axiom R_ex_TMR : forall r : R , (exists (n : nat) , TMR n r).
   
-  Theorem P_AND_NP : forall P : Prop, {P} + {~ P} -> Halting.
-  Proof. Admitted.
+  Theorem Two_dimensions : (forall r1 r2 : R, {r1 = r2} + {r1 <> r2}) -> Halting.
+  Proof.
+    unfold Halting.
+    intros.
+  Admitted.
   
-  Theorem P_AND_NP' : (forall P : Prop, {P} + {~ P}) -> Halting.
-  Proof. Admitted.
-
-  Theorem Three_dimensions : forall r1 r2 : R, ({r1 = r2} + {r1 > r2} + {r1 < r2})%R -> Halting.
+  Theorem Up_R : (forall (r : R), exists (z : Z) , up r = z) -> Halting.
   Proof.
     intros.
-    pose proof R_ex_TMR r1.
-    pose proof R_ex_TMR r2.
+    apply Two_dimensions.
+    intros.
+    pose proof H r1.
+    pose proof H r2.
     
   Admitted.
-
-  Theorem Three_dimensions' : (forall r1 r2 : R, ({r1 = r2} + {r1 > r2} + {r1 < r2})%R) -> Halting.
+  (** This theorem also proves the uncomputability of Int_part frac_part *)
+  
+  Theorem P_OR_NP : (forall P : Prop, {P} + {~ P}) -> Halting.
   Proof. 
     intros.
+    apply Two_dimensions.
+    intros.
+    apply X with (P := r1 = r2).
   Admitted.
 
-  Theorem Two_dimensions : forall r1 r2 : R, ({r1 = r2} + {r1 <> r2})%R -> Halting.
-  Proof. intros. apply P_AND_NP in H. auto. Qed.
-
-  Theorem Two_dimensions' : (forall r1 r2 : R, ({r1 = r2} + {r1 <> r2})%R) -> Halting.
-  Proof. intros. Admitted.
-
-  Theorem Two_dimensions2 : forall r1 r2 : R, ({r1 >= r2} + {r1 < r2})%R -> Halting.
+  Theorem Three_dimensions : (forall r1 r2 : R, {r1 = r2} + {r1 > r2} + {r1 < r2}) -> Halting.
   Proof. 
-     intros. 
-     apply (Three_dimensions r1 r2).
-     destruct H.
-     - unfold Rge in *.
-  Admitted. 
-
-  Theorem Two_dimensions2' : (forall r1 r2 : R, ({r1 >= r2} + {r1 < r2})%R) -> Halting.
+    intros.
+    apply Two_dimensions.
+    intros.
+    pose proof (H r1 r2).
+    clear H.
+    destruct H0 ; auto.
+    - destruct s ; auto.
+      apply Rgt_not_eq in r ; auto.
+    - apply Rlt_not_eq in r ; auto.
+  Admitted.
+  
+  Theorem Two_dimensions2 : (forall r1 r2 : R, {r1 >= r2} + {r1 < r2}) -> Halting.
   Proof. 
-     intros. 
-     apply Three_dimensions'.
-  Admitted. 
+    intros.
+    apply Three_dimensions.
+    intros.
+    pose proof (H r1 r2).
+    destruct H0 ; auto.
+    apply Rge_le in r. apply Rle_lt_or_eq_dec in r.
+    left. destruct r ; auto.
+  Admitted.
+  
   (** This theorem also proves the uncomputability of Rmax Rmin Rabs Rdist*)
   (** Rmax Rmin Rabs Rdist are actually computable. Defined in an incorrect way in std. -- Qinxiang *)
 
-  Theorem Rinv_def : forall (Rinv' : R -> R)(r: R) (H : r <> 0%R) ,Rinv' r = Rinv (exist _ r H) -> Halting.
+  Theorem Rinv_def : forall (Rinv' : R -> R)(r: R) (H : r <> 0) ,Rinv' r = Rinv (exist _ r H) -> Halting.
   Proof.  intros. Admitted.
-  Theorem Rpow_def : forall (Rpow' : R -> nat -> R)(r: R)(H : r <> 0%R) ,Rpow' r 0%nat = Rpow (exist _ r H) 0%nat -> Halting.
+  Theorem Rpow_def : forall (Rpow' : R -> nat -> R)(r: R)(H : r <> 0) ,Rpow' r 0%nat = Rpow (exist _ r H) 0%nat -> Halting.
   Proof.  intros. Admitted.
   (** This theorem also proves the problem in the definition of powRZ *)
-  Theorem Up_R : forall (r : R)(z : Z), up r = z -> Halting.
-  Proof.  
-    intros.
-    pose proof R_ex_TMR (IZR (up r)).
-    pose proof R_ex_TMR (IZR z).
-    assert (H' : IZR (up r) = IZR z).
-    { apply Rle_le_eq.
-      split ; apply IZR_le ; rewrite H ; apply Z.le_refl.
-    }
-    apply (Three_dimensions (IZR (up r)) (IZR z)).
-    left. left. apply H'.
-  Admitted.
-  (** This theorem also proves the uncomputability of Int_part frac_part *)
   Theorem lim_CN_NCN :forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> ~ CR l1.
   Proof. Admitted.
   
