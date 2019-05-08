@@ -2394,6 +2394,48 @@ Proof.
     apply Qlt_le_trans with (y:=x0);auto.
 Qed.
 
+Lemma distr_lemma1 : forall (A B : Q -> Prop), Dedekind A -> Dedekind B -> 
+ forall x2, (B x2 -> exists x1 : Q, A x1/\
+  Cut_mult A B (x1*x2)).
+Proof.
+Admitted.
+
+Lemma Cut_mult_distr_PP :
+  forall (A B C : Q -> Prop)(x : Q)(DA : Dedekind A)(DB: Dedekind B)(DC:Dedekind C),
+   A 0 -> B 0 -> C 0 ->
+  Cut_mult A (Cut_plus_Cut B C) x <-> Cut_plus_Cut (Cut_mult A B) (Cut_mult A C) x
+.
+Proof.
+  intros. split.
+  - intros.
+destruct H2 as [?|[?|[?|[]]]].
+  + destruct H2, H2, H4, H4, H3, H3.
+    destruct H4 as [?[]]. destruct H3 as [?[?[?[]]]].
+    destruct H9, H9. destruct H9 as [?[]].
+  assert(H':Dedekind (Cut_plus_Cut (Cut_mult A B) (Cut_mult A C))).
+  { apply Dedekind_plus; apply Dedekind_mult;auto. }
+    pose proof (Dedekind_up B 0 x4). destruct H13;auto. destruct H13 as [?[]].
+    pose proof (Dedekind_up C 0 x5). destruct H16;auto. destruct H16 as [?[]].
+    apply (Dedekind_properties2 _ H' (x2*(x6+x7)));split;
+    try apply Qle_trans with (y:=x2*x3);auto;try apply Qlt_le_weak;
+    try apply Qmult_lt_l;auto;try rewrite <- H12;try apply Qplus_lt_le_compat;
+    try apply Qlt_le_weak;auto.
+    exists (x2*x6), (x2*x7).
+    repeat split;try rewrite <- H12;try rewrite Qmult_plus_distr_r;try reflexivity;
+    left;repeat split;auto.
+    * exists x2, x6. repeat split;auto;apply Qle_refl.
+    * exists x2, x7. repeat split;auto;apply Qle_refl.
+  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
+    destruct H;auto.
+  + destruct H2, H2, H4, H4, H5. exists 0, (-x0). repeat split;auto.
+    apply (Dedekind_properties2 _ DC 0);split;auto.
+    rewrite Qopp_le_compat_iff. rewrite Qopp_involutive;apply Qlt_le_weak;auto.
+  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
+    destruct H;auto.
+  + destruct H2, H2, H2, H2;auto. exists 0, 0. repeat split;auto.
+  - intros.
+Admitted.
+
 Theorem Rmult_distr_l :
   forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
 Proof.
@@ -2440,6 +2482,13 @@ Proof.
   assert(H':Dedekind (Cut_plus_Cut (Cut_mult A B) (Cut_mult A C))).
   { apply Dedekind_plus; apply Dedekind_mult;auto. } hnf.
     assert(BN:Dedekind (Cut_opp B)). { apply Dedekind_opp;auto. }
+    pose proof (distr_lemma1 A B H H0 x4 H9). destruct H13, H13.
+    pose proof (Dedekind_up C 0 x5). destruct H15;auto. destruct H15 as [?[]].
+    pose proof (Dedekind_up A 0 x6). destruct H18;auto. destruct H18 as [?[]].
+  exists (x6*x4), (x2*x7). assert(HAB:Dedekind (Cut_mult A B)).
+  { apply Dedekind_mult;auto. }(*  apply (Dedekind_properties2 _ HAB (x6*x4)) in H14. *) repeat split;auto;try left;try repeat split;auto.
+  exists x2, x7. repeat split;auto. apply Qle_refl. 
+   (*需要涉及到多处取两者最大值*)
    (*  pose proof (Dedekind_up (Cut_opp B) 0 0). destruct H13;auto. destruct H13 as [?[]].
     pose proof (Dedekind_up C 0 x5). destruct H16;auto. destruct H16 as [?[]].
     assert(x4<(-x6)). { apply Qlt_trans with (y:=0). }
