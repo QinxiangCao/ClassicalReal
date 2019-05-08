@@ -551,7 +551,7 @@ Variables X : Type.
 Variables eq : relation X.
 Variables HE : Equivalence eq.
 Variables M : Metric eq eq.
-Variables HP : PropBucket.
+Variables HPB :PropBucket.
 Notation "a == b" := (eq a b)
     (at level 70, no associativity).
 Notation "a != b" := (~eq a b)
@@ -579,6 +579,104 @@ Proof.
                                     apply HCseq1. destruct H8 as [a]. apply lttr with (y := a).
                                     auto. apply H2 with (n := n). auto. auto. auto. apply H3 with (n := n). apply le_lt_or_eq in H4. destruct H4. apply lt_trans with (p := n) in H4. auto. auto. rewrite H4. auto. auto. auto. }
      -intros. rewrite <- H. rewrite <- H0. auto.
+     -intros. destruct (classic (equC a b)). {left. unfold leC. destruct a. destruct b. left. auto. }
+           {unfold not in H. destruct a. destruct b. unfold equC in H. apply not_all_ex_not in H.
+           destruct H as [eps]. apply not_all_ex_not in H. destruct H as [Heps0].
+           assert(forall N : nat, ~( forall n : nat,  (N < n)%nat -> forall a1 a2 : X, Cseq n a1 -> 
+            Cseq0 n a2 -> eps > dist a1 a2)).
+            intros. unfold not. intros. unfold not in H. apply H. exists N. auto.
+            destruct (division_of_eps _ _ _ eps) as [eps1]. auto. destruct H3 as [eps2].
+            destruct H3 as [Heps1 [Heps2 Hepseq ]]. assert(forall eps : X,
+       eps > x0 -> exists N : nat, forall m n : nat, (N < m)%nat /\ (N < n)%nat -> forall a b : X,
+         Cseq0 m a /\ Cseq0 n b -> eps > dist a b). apply HCA.
+         assert(forall eps : X,eps > x0 -> exists N : nat, 
+         forall m n : nat, (N < m)%nat /\ (N < n)%nat -> forall a b : X,
+         Cseq m a /\ Cseq n b -> eps > dist a b). apply HCA.
+         destruct H3 with (eps := eps1) as [N5]. auto. destruct H4 with (eps := eps2) as [N6].
+         auto. destruct (always_greater N5 N6) as [G0]. destruct H7. 
+         assert(~ (forall n : nat, (G0 < n)%nat -> forall a1 a2 : X,  Cseq n a1 ->
+      Cseq0 n a2 -> eps > dist a1 a2)). auto.
+      apply not_all_ex_not in H9. destruct H9 as [N9]. apply not_all_ex_not in H9.
+      destruct H9 as [N10]. apply not_all_ex_not in H9. destruct H9 as [pin].
+      apply not_all_ex_not in H9. destruct H9 as [pin0]. apply not_all_ex_not in H9.
+      destruct H9 as [Hpin]. apply not_all_ex_not in H9. destruct H9 as [Hpin0].
+      apply lt_not in H9. assert(~ pin == pin0). unfold not. intros. apply mre in H10.
+      rewrite H10 in H9. assert(~(x0 >= eps)). apply le_not. auto. auto. unfold not in H11.
+      apply H11. auto. assert(pin < pin0 \/ pin > pin0). apply ltor. auto. auto.
+      destruct H11. {left. unfold leC. right. exists N9. intro n. intro float. intro float0.
+      intros. destruct H6 with (m := N9) (a := pin) (n := n) (b := float). split.
+      apply (lt_trans _ G0 _). auto. auto. apply (lt_trans _ G0 _). auto. apply (lt_trans _ N9 _).
+      auto. auto. split. auto. auto. destruct H5 with (m := N9) (a := pin0) (n := n) (b := float0).
+      split. apply (lt_trans _ G0 _). auto. auto. apply (lt_trans _ G0 _). auto.
+      apply (lt_trans _ N9 _). auto. auto. split. auto. auto.
+      assert(ball pin eps2 float). {apply ball_intro. auto. apply lt_intro. auto. auto. }
+      assert(ball pin0 eps1 float0). {apply ball_intro. auto. apply lt_intro. auto. auto. }
+      assert(~ball pin eps2 pin0). {unfold not. intros. inversion H17. assert(eps > eps2).
+      apply lt_div with (b := eps1). auto. rewrite pfc. auto. auto. auto.
+      assert(dist pin pin0 > dist pin pin0). apply le_lt_eq in H9. destruct H9.
+      apply lttr with (y := eps). auto.
+      apply lttr with (y := eps2). auto. auto. auto. auto.
+      rewrite H9 in H19. apply lttr with (y := eps2). auto. auto. auto. apply lt_not in H20.
+      destruct H20. auto. apply pofr. reflexivity. }
+      assert(~ball pin0 eps1 float). {unfold not. intros. inversion H18.
+          assert(eps1 < dist pin0 float). {assert(exists id_pin_float, dist pin float + id_pin_float == x0).
+          apply pfi. destruct H20 as [id_pin_float]. assert(exists ieps2, eps2 + ieps2 == x0).
+          apply pfi. destruct H21 as [ieps2]. assert(id_pin_float > ieps2).
+           apply lt_inv with (y := eps2) (x := dist pin float). auto. auto. auto. apply lt_intro.
+           auto. auto.
+          assert(dist pin0 float + dist pin float >= dist pin pin0). rewrite pfc. rewrite (msy pin0 _). apply mtr.
+          assert(dist pin0 float + dist pin float + id_pin_float >= dist pin pin0 + id_pin_float).
+          apply le_two_plus_two. auto. auto. apply pofr. reflexivity. rewrite pfa in H24.
+          rewrite H20 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
+          assert(dist pin0 float > eps + ieps2). apply le_lt_eq in H24. destruct H24.
+          apply lttr with (y := dist pin pin0 + id_pin_float). auto. apply le_lt_eq in H9.
+          destruct H9. apply lt_two_plus_two. auto. auto. auto. rewrite H9.
+          rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt. auto. auto. auto.
+          rewrite <- H24. apply le_lt_eq in H9. destruct H9. apply lt_two_plus_two.
+          auto. auto. auto. rewrite H9. rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt.
+          auto. auto. rewrite <-Hepseq in H25. rewrite pfa in H25. rewrite H21 in H25.
+          rewrite pfc in H25. rewrite pfz in H25. auto. }
+          assert(~(dist pin0 float > eps1 /\ dist pin0 float < eps1)). apply lt_not_and.
+          destruct H21. split. auto. auto. }
+       assert(pin0 > float). apply inBall1 with (a := pin) (eps0 := eps2). auto. auto. auto.
+       apply inBall2 with (a := pin0) (eps0 := eps1). auto. auto. auto. }
+       {right. unfold leC. right. exists N9. intro n. intro float0. intro float.
+      intros. destruct H6 with (m := N9) (a := pin) (n := n) (b := float). split.
+      apply (lt_trans _ G0 _). auto. auto. apply (lt_trans _ G0 _). auto. apply (lt_trans _ N9 _).
+      auto. auto. split. auto. auto. destruct H5 with (m := N9) (a := pin0) (n := n) (b := float0).
+      split. apply (lt_trans _ G0 _). auto. auto. apply (lt_trans _ G0 _). auto.
+      apply (lt_trans _ N9 _). auto. auto. split. auto. auto.
+      assert(ball pin eps2 float). {apply ball_intro. auto. apply lt_intro. auto. auto. }
+      assert(ball pin0 eps1 float0). {apply ball_intro. auto. apply lt_intro. auto. auto. }
+      assert(~ball pin eps2 pin0). {unfold not. intros. inversion H17. assert(eps > eps2).
+      apply lt_div with (b := eps1). auto. rewrite pfc. auto. auto. auto.
+      assert(dist pin pin0 > dist pin pin0). apply le_lt_eq in H9. destruct H9.
+      apply lttr with (y := eps). auto.
+      apply lttr with (y := eps2). auto. auto. auto. auto.
+      rewrite H9 in H19. apply lttr with (y := eps2). auto. auto. auto. apply lt_not in H20.
+      destruct H20. auto. apply pofr. reflexivity. }
+      assert(~ball pin0 eps1 float). {unfold not. intros. inversion H18.
+          assert(eps1 < dist pin0 float). {assert(exists id_pin_float, dist pin float + id_pin_float == x0).
+          apply pfi. destruct H20 as [id_pin_float]. assert(exists ieps2, eps2 + ieps2 == x0).
+          apply pfi. destruct H21 as [ieps2]. assert(id_pin_float > ieps2).
+           apply lt_inv with (y := eps2) (x := dist pin float). auto. auto. auto. apply lt_intro.
+           auto. auto.
+          assert(dist pin0 float + dist pin float >= dist pin pin0). rewrite pfc. rewrite (msy pin0 _). apply mtr.
+          assert(dist pin0 float + dist pin float + id_pin_float >= dist pin pin0 + id_pin_float).
+          apply le_two_plus_two. auto. auto. apply pofr. reflexivity. rewrite pfa in H24.
+          rewrite H20 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
+          assert(dist pin0 float > eps + ieps2). apply le_lt_eq in H24. destruct H24.
+          apply lttr with (y := dist pin pin0 + id_pin_float). auto. apply le_lt_eq in H9.
+          destruct H9. apply lt_two_plus_two. auto. auto. auto. rewrite H9.
+          rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt. auto. auto. auto.
+          rewrite <- H24. apply le_lt_eq in H9. destruct H9. apply lt_two_plus_two.
+          auto. auto. auto. rewrite H9. rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt.
+          auto. auto. rewrite <-Hepseq in H25. rewrite pfa in H25. rewrite H21 in H25.
+          rewrite pfc in H25. rewrite pfz in H25. auto. }
+          assert(~(dist pin0 float > eps1 /\ dist pin0 float < eps1)). apply lt_not_and.
+          destruct H21. split. auto. auto. }
+       assert(float > pin0). apply inBall2 with (a := pin) (eps0 := eps2). auto. auto. auto.
+       apply inBall1 with (a := pin0) (eps0 := eps1). auto. auto. auto. } auto. }
      -intros. destruct a. destruct b. destruct H. destruct H0.
        +auto.
        +auto.
