@@ -12,6 +12,7 @@ From CReal Require Import Dedekind.RBase.
 From CReal Require Import Dedekind.ROrder.
 From CReal Require Import QArith_ext.QArith_base_ext.
 From CReal Require Import QArith_ext.Inject_lemmas.
+From Coq Require Import QArith.Qfield.
 Import ListNotations.
 
 Lemma PPNN : forall P :Prop, P -> ~ ~ P.
@@ -452,6 +453,11 @@ Definition Ropp (a : Real) : Real :=
   end.
 
 Notation " - a" := (Ropp a) : R_scope.
+
+Definition Rminus (a b : Real) : Real := (a + (- b))%R.
+
+Notation "A - B" := (Rminus A B) (at level 50, left associativity)
+                       : R_scope.
 
 Instance Ropp_comp : Proper(Req ==> Req)Ropp.
 Proof.
@@ -2394,11 +2400,11 @@ Proof.
     apply Qlt_le_trans with (y:=x0);auto.
 Qed.
 
-Lemma distr_lemma1 : forall (A B : Q -> Prop), Dedekind A -> Dedekind B -> 
+(* Lemma distr_lemma1 : forall (A B : Q -> Prop), Dedekind A -> Dedekind B -> 
  forall x2, (B x2 -> exists x1 : Q, A x1/\
   Cut_mult A B (x1*x2)).
 Proof.
-Admitted.
+Admitted. (*wrong*) *)
 
 Lemma Cut_mult_distr_PP :
   forall (A B C : Q -> Prop)(x : Q)(DA : Dedekind A)(DB: Dedekind B)(DC:Dedekind C),
@@ -2408,7 +2414,7 @@ Lemma Cut_mult_distr_PP :
 Proof.
   intros. split.
   - intros.
-destruct H2 as [?|[?|[?|[]]]].
+  destruct H2 as [?|[?|[?|[]]]].
   + destruct H2, H2, H4, H4, H3, H3.
     destruct H4 as [?[]]. destruct H3 as [?[?[?[]]]].
     destruct H9, H9. destruct H9 as [?[]].
@@ -2433,8 +2439,111 @@ destruct H2 as [?|[?|[?|[]]]].
   + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
     destruct H;auto.
   + destruct H2, H2, H2, H2;auto. exists 0, 0. repeat split;auto.
-  - intros.
-Admitted.
+  - intros. destruct H2, H2. destruct H2 as [?[]].
+    pose proof (Cut_cut_opp_not A 0 DA H). rename H5 into AN.
+    pose proof (Cut_cut_opp_not C 0 DC H1). rename H5 into CN.
+    pose proof (Cut_cut_opp_not B 0 DB H0). rename H5 into BN.
+    destruct H2 as [?|[?|[?|[]]]].
+  + destruct H2, H5, H5. destruct H5 as [?[?[?[]]]].
+    destruct H3 as [?|[?|[?|[]]]].
+  { destruct H3, H10, H10.
+    destruct H10 as [?[?[?[]]]].
+    left. pose proof (Dedekind_plus B C DB DC). repeat split;auto.
+    { apply (Dedekind_properties2 _ H15 (x3+x5)). split.
+    { exists x3, x5. repeat split;auto. } 
+    { apply Qlt_le_weak. rewrite <- Qplus_0_r.
+      apply Qplus_lt_le_compat;auto;apply Qlt_le_weak;auto. } }
+    pose proof (Dedekind_up A x2 x4 DA H7 H12). destruct H16 as [?[?[]]].
+    exists x6, (x3+x5). repeat split.
+  * apply Qlt_trans with (y:=x2);auto.
+  * rewrite <- Qplus_0_r.
+    apply Qplus_lt_le_compat;auto;apply Qlt_le_weak;auto.
+  * auto.
+  * exists x3,x5. repeat split;auto.
+  * rewrite <- H4. rewrite Qmult_plus_distr_r. apply Qplus_le_compat.
+    { apply Qle_trans with (y:=x2*x3);auto;apply Qmult_le_compat_r;
+      apply Qlt_le_weak;auto. }
+    { apply Qle_trans with (y:=x4*x5);auto;apply Qmult_le_compat_r;
+      apply Qlt_le_weak;auto. } }
+  { destruct H3, H3, AN;auto. }
+  { destruct H3, H3, CN;auto. }
+  { destruct H3, H3, AN;auto. }
+  { destruct H3, H3, H3, H3;auto. }
+  + destruct H2, H2, AN;auto.
+  + destruct H2, H2, BN;auto.
+  + destruct H2, H2, AN;auto.
+  + destruct H2, H2, H2, H2;auto.
+Qed.
+
+Lemma Rover0 : forall (A : Q -> Prop) (H:Dedekind A),
+  (Rzero < Real_cons A H)%R -> A 0.
+Proof.
+  intros. destruct H0, H1, H1.
+  apply ( Dedekind_properties2 _ H x). split;auto.
+  apply Qnot_lt_le;auto.
+Qed.
+
+Lemma Rmult_distr_l_PPP : forall a b c : Real, (Rzero < a)%R -> (Rzero < b)%R -> 
+  (Rzero < c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros.
+  destruct a, b, c.
+  pose proof (Rover0 A H2 H).
+  pose proof (Rover0 A0 H3 H0).
+  pose proof (Rover0 A1 H4 H1).
+  hnf;split;hnf;intros.
+  - apply Cut_mult_distr_PP;auto.
+  - apply Cut_mult_distr_PP;auto.
+Qed.
+
+Lemma Cut_plus_exists : forall (A B : Q -> Prop)(x y : Q), Dedekind A -> Dedekind B
+  -> Cut_plus_Cut A B x -> A y -> exists z : Q, B z/\z+y=x.
+Proof.
+  intros. destruct H1 as [?[?[?[]]]]. exists
+Qed.
+
+Theorem Rplus_lt_r: forall x y z : Real, (z + x < z + y <-> x < y)%R.
+Proof.
+  intros.
+  destruct x, y, z. hnf. split.
+  - intros. hnf in *. destruct H2, H3, H3. split.
+    + intros.
+    destruct (Dedekind_properties1 _ H).
+    destruct (Dedekind_properties1 _ H0).
+    destruct (Dedekind_properties1 _ H1).
+    destruct H6, H8, H10.
+    assert(Cut_plus_Cut A1 A (x3+x0)). exists x3, x0. repeat split;auto.
+    apply H2 in H12. destruct H12, H12.
+Qed.
+
+Theorem Ropp_lt_compat: forall p q : Real, (p < q -> - q < - p)%R.
+Proof.
+  intros. destruct p, q. hnf. destruct H, H2, H2. split.
+  - intros. destruct H4, H4. exists x1. auto.
+  - Search Real. destruct (Dedekind_properties1 _ H0). destruct H5.
+    exists (- x0 - 1). split.
+    + exists 1. split;try reflexivity. rewrite <- Qplus_opp_assoc.
+   assert(- (- x0 - 1 + 1) == x0)%Q. field.
+   rewrite H6. auto.
+    + hnf. intros. destruct H6.
+   assert(- (- x0 - 1 + 1) == x0)%Q. field.
+Qed.
+
+Lemma Rmult_distr_l_PNP : forall a b c : Real, (Rzero < a)%R -> (b < Rzero)%R -> 
+ (Rzero < b + c)%R -> (Rzero < c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros. assert(c == b + c - b)%R. { unfold Rminus.
+  rewrite Rplus_comm. rewrite <- Rplus_assoc.
+  rewrite (Rplus_comm (-b)%R b). rewrite Rplus_opp.
+  rewrite Rplus_comm. rewrite Rplus_O_r. reflexivity. }
+  rewrite H3. rewrite (Rmult_distr_l_PPP a (b+c)(-b))%R;auto.
+  - rewrite <- Cut_mult_opp.
+    rewrite (Rplus_comm (a*b) (a * (b + c) + - (a * b)))%R.
+    rewrite Rplus_assoc. rewrite (Rplus_comm (-(a*b)) (a*b))%R.
+    rewrite Rplus_opp. rewrite Rplus_O_r. rewrite <- H3. reflexivity.
+  - 
+Qed.
+
 
 Theorem Rmult_distr_l :
   forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
@@ -2450,31 +2559,10 @@ Proof.
   destruct HC as [HC|[HC|[HC]]].
 { destruct HA as [HA|[HA|[HA]]].
 { destruct HB as [HB|[HB|[HB]]].
-{ destruct H2 as [?|[?|[?|[]]]].
-  + destruct H2, H2, H4, H4, H3, H3.
-    destruct H4 as [?[]]. destruct H3 as [?[?[?[]]]].
-    destruct H9, H9. destruct H9 as [?[]].
-  assert(H':Dedekind (Cut_plus_Cut (Cut_mult A B) (Cut_mult A C))).
-  { apply Dedekind_plus; apply Dedekind_mult;auto. }
-    pose proof (Dedekind_up B 0 x4). destruct H13;auto. destruct H13 as [?[]].
-    pose proof (Dedekind_up C 0 x5). destruct H16;auto. destruct H16 as [?[]].
-    apply (Dedekind_properties2 _ H' (x2*(x6+x7)));split;
-    try apply Qle_trans with (y:=x2*x3);auto;try apply Qlt_le_weak;
-    try apply Qmult_lt_l;auto;try rewrite <- H12;try apply Qplus_lt_le_compat;
-    try apply Qlt_le_weak;auto.
-    exists (x2*x6), (x2*x7).
-    repeat split;try rewrite <- H12;try rewrite Qmult_plus_distr_r;try reflexivity;
-    left;repeat split;auto.
-    * exists x2, x6. repeat split;auto;apply Qle_refl.
-    * exists x2, x7. repeat split;auto;apply Qle_refl.
-  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
-    destruct H;auto.
-  + destruct H2, H2, H4, H4, H5. exists 0, (-x0). repeat split;auto.
-    apply (Dedekind_properties2 _ H1 0);split;auto.
-    rewrite Qopp_le_compat_iff. rewrite Qopp_involutive;apply Qlt_le_weak;auto.
-  + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
-    destruct H;auto.
-  + destruct H2, H2, H2, H2;auto. exists 0, 0. repeat split;auto. }
+{ apply Cut_mult_distr_PP;auto. }
+{  }
+
+
 { destruct H2 as [?|[?|[?|[]]]].
   + destruct H2, H2, H4, H4, H3, H3.
     destruct H4 as [?[]]. destruct H3 as [?[?[?[]]]].
