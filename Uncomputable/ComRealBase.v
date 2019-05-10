@@ -373,7 +373,7 @@ Module Type Vir_R.
   Proof.  intros. Admitted.
   (** This theorem also proves the problem in the definition of powRZ *)
 
-  Parameter Un_cv : nat -> R -> R -> Prop. (** the limitation of a list of Real Number *)
+  Parameter Un_cv : (nat -> R) -> R -> Prop. (** the limitation of a list of Real Number *)
   
   Theorem lim_CN_NCN :forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> ~ CR l1.
   Proof. Admitted.
@@ -381,8 +381,8 @@ Module Type Vir_R.
 End Vir_R.
 
 
-Module Uncomputable_function <: Vir_R.
-
-End Uncomputable_function.
+(** Module Uncomputable_function <: Vir_R.
+  
+End Uncomputable_function. *)
 
 
