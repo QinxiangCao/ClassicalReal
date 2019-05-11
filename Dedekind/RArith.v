@@ -244,7 +244,7 @@ Proof.
   repeat destruct H7 ; destruct H8; exists x0;exists x1; split; auto.
 Qed.
 
-Theorem Rplus_O_r : forall a : Real, (a + Rzero)%R == a.
+Theorem Rplus_0_r : forall a : Real, (a + Rzero)%R == a.
 Proof.
   intros.
   destruct a.
@@ -744,7 +744,7 @@ Proof.
   }
   rewrite H' in H. rewrite <- Rplus_comm in H. 
   rewrite <- Rplus_comm with (a := c) in H.
-  repeat rewrite Rplus_O_r in H.
+  repeat rewrite Rplus_0_r in H.
   auto.
 Qed.
 
@@ -2496,10 +2496,26 @@ Proof.
   - apply Cut_mult_distr_PP;auto.
 Qed.
 
-Lemma Cut_plus_exists : forall (A B : Q -> Prop)(x y : Q), Dedekind A -> Dedekind B
+(* Lemma Cut_plus_exists : forall (A B : Q -> Prop)(x y : Q), Dedekind A -> Dedekind B
   -> Cut_plus_Cut A B x -> A y -> exists z : Q, B z/\z+y=x.
 Proof.
-  intros. destruct H1 as [?[?[?[]]]]. exists
+  intros. destruct H1 as [?[?[?[]]]].  exists
+Qed. *)
+
+Lemma not_imply_to_or : forall P Q : Prop, ~(P->Q)->P/\~Q.
+Proof.
+  intros. split.
+  - pose proof classic P. destruct H0.
+    + auto.
+    + destruct H. intros. destruct H0. auto.
+  - hnf. intros. auto.
+Qed.
+
+Theorem Dedekind_lt_bin : forall (A B : Q -> Prop)(x : Q),Dedekind A ->
+Dedekind B -> A x -> ~ B x -> (forall x1 : Q, B x1 -> A x1).
+Proof.
+  intros. apply (Dedekind_properties2 _ _ x).
+  pose proof Dedekind_le B x x1 H0 H2 H3. apply Qlt_le_weak in H4. auto.
 Qed.
 
 Theorem Rplus_lt_r: forall x y z : Real, (z + x < z + y <-> x < y)%R.
@@ -2507,26 +2523,50 @@ Proof.
   intros.
   destruct x, y, z. hnf. split.
   - intros. hnf in *. destruct H2, H3, H3. split.
-    + intros.
-    destruct (Dedekind_properties1 _ H).
-    destruct (Dedekind_properties1 _ H0).
-    destruct (Dedekind_properties1 _ H1).
-    destruct H6, H8, H10.
-    assert(Cut_plus_Cut A1 A (x3+x0)). exists x3, x0. repeat split;auto.
-    apply H2 in H12. destruct H12, H12.
+    + rewrite <- (not_exists_not_dist Q) in *. hnf.
+      intros. destruct H4, H5. destruct H3 as [?[?[?[]]]].
+      apply not_imply_to_or in H4. destruct H4.
+      exists x1, x2. repeat split;auto.
+      apply (Dedekind_lt_bin A A0 x0);auto.
+    + apply not_all_not_ex. hnf in *. intros. destruct H4.
+      destruct H3 as [?[?[?[]]]].
+      pose proof H5 x1. apply not_and_or in H7. destruct H7.
+      * destruct H7;auto.
+      * apply NNPP in H7. exists x0, x1. auto.
+  - intros. hnf in *. destruct H2, H3, H3. split.
+    + intros. destruct H5 as [?[?[?[]]]]. exists x1, x2;auto.
+    + destruct (Dedekind_properties1 _ H1), H5.
+      apply (Dedekind_properties3 _ H0) in H3. destruct H3, H3.
+      pose proof Dedekind1_strong A1 H1 (x1 - x). destruct H8.
+      { unfold Qminus. rewrite <- Qlt_minus_iff. auto. }
+      destruct H8. exists (x2+x1). split.
+      * exists x2, x1. repeat split;auto.
+      * hnf. intros. destruct H10 as [?[?[?[]]]].
+        pose proof Dedekind_le A1 (x2+(x1-x)) x3 H1 H9 H10.
+        unfold Qminus in *. rewrite Qplus_assoc in H13. rewrite <- H12 in H13.
+        rewrite <- Qplus_lt_l with (z:=x) in H13. rewrite <- Qplus_assoc in H13.
+        rewrite (Qplus_comm (-x) x) in H13. rewrite Qplus_opp_r in H13.
+        rewrite Qplus_0_r in H13. rewrite Qplus_lt_r with (z:=x3) in H13.
+        pose proof Dedekind_le A x x4 H H4 H11.
+        apply Qlt_not_le in H13. destruct H13. apply Qlt_le_weak;auto.
+Qed.
+
+Theorem Rplus_lt_l: forall x y z : Real, (x + z < y + z <-> x < y)%R.
+Proof.
+  intros. rewrite Rplus_comm. rewrite (Rplus_comm y z). apply Rplus_lt_r.
+Qed.
+
+Theorem Rplus_0_l : forall a : Real, (Rzero + a == a)%R.
+Proof.
+  intros. rewrite Rplus_comm. apply Rplus_0_r.
 Qed.
 
 Theorem Ropp_lt_compat: forall p q : Real, (p < q -> - q < - p)%R.
 Proof.
-  intros. destruct p, q. hnf. destruct H, H2, H2. split.
-  - intros. destruct H4, H4. exists x1. auto.
-  - Search Real. destruct (Dedekind_properties1 _ H0). destruct H5.
-    exists (- x0 - 1). split.
-    + exists 1. split;try reflexivity. rewrite <- Qplus_opp_assoc.
-   assert(- (- x0 - 1 + 1) == x0)%Q. field.
-   rewrite H6. auto.
-    + hnf. intros. destruct H6.
-   assert(- (- x0 - 1 + 1) == x0)%Q. field.
+  intros. rewrite <- Rplus_lt_r with (z:=p). rewrite Rplus_opp.
+  rewrite <- Rplus_lt_l with (z:=q). rewrite Rplus_assoc.
+  rewrite (Rplus_comm (-q) q)%R. rewrite Rplus_opp.
+  rewrite Rplus_0_r. rewrite Rplus_0_l. auto.
 Qed.
 
 Lemma Rmult_distr_l_PNP : forall a b c : Real, (Rzero < a)%R -> (b < Rzero)%R -> 
@@ -2535,13 +2575,56 @@ Proof.
   intros. assert(c == b + c - b)%R. { unfold Rminus.
   rewrite Rplus_comm. rewrite <- Rplus_assoc.
   rewrite (Rplus_comm (-b)%R b). rewrite Rplus_opp.
-  rewrite Rplus_comm. rewrite Rplus_O_r. reflexivity. }
+  rewrite Rplus_comm. rewrite Rplus_0_r. reflexivity. }
   rewrite H3. rewrite (Rmult_distr_l_PPP a (b+c)(-b))%R;auto.
   - rewrite <- Cut_mult_opp.
     rewrite (Rplus_comm (a*b) (a * (b + c) + - (a * b)))%R.
     rewrite Rplus_assoc. rewrite (Rplus_comm (-(a*b)) (a*b))%R.
-    rewrite Rplus_opp. rewrite Rplus_O_r. rewrite <- H3. reflexivity.
-  - 
+    rewrite Rplus_opp. rewrite Rplus_0_r. rewrite <- H3. reflexivity.
+  - rewrite <- Rplus_lt_r with (z:=b). rewrite Rplus_0_r.
+    rewrite Rplus_opp. auto.
+Qed.
+
+Theorem Rle_lt_eq : forall x y : Real, (x <= y <-> (x == y\/x<y))%R.
+Proof.
+  intros. assert(x<y\/~x<y)%R. apply classic. split.
+  - destruct H.
+    + auto.
+    + apply Rnot_lt_le in H.
+      left. apply Rle_antisym;auto.
+  - intros. destruct H0.
+    + rewrite H0. apply Rle_refl.
+    + apply Rlt_le_weak;auto.
+Qed.
+
+Theorem Rplus_le_r: forall x y z : Real, (z + x <= z + y <-> x <= y)%R.
+Proof.
+  intros. rewrite Rle_lt_eq. rewrite Rle_lt_eq. split.
+  - intros. destruct H.
+    + left. apply (Rplus_compat_l z);auto.
+    + right. rewrite <- Rplus_lt_r. apply H.
+  - intros. destruct H.
+    + rewrite H. left. reflexivity.
+    + right. rewrite Rplus_lt_r. auto.
+Qed.
+
+Theorem Rplus_inj_r: forall x y z : Real, (x + z == y + z <-> x == y)%R.
+Proof.
+  intros. split.
+  - rewrite Rplus_comm. rewrite (Rplus_comm y z). apply Rplus_compat_l.
+  - intros. rewrite H. reflexivity.
+Qed.
+
+Theorem Rplus_inj_l: forall x y z : Real, (z + x == z + y <-> x == y)%R.
+Proof.
+  intros. rewrite Rplus_comm. rewrite (Rplus_comm z y).
+  apply Rplus_inj_r.
+Qed.
+
+Theorem Rplus_le_l: forall x y z : Real, (x + z <= y + z <-> x <= y)%R.
+Proof.
+  intros. rewrite Rplus_comm. rewrite (Rplus_comm y z).
+  apply Rplus_le_r.
 Qed.
 
 
