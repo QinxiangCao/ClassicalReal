@@ -2142,7 +2142,7 @@ Proof.
   - intros. apply Cut_opp_opp. auto. auto.
 Qed.
 
-Lemma Cut_mult_opp : forall a b : Real, (- (a * b) == a * (-b))%R.
+Lemma Rmult_opp_r : forall a b : Real, (- (a * b) == a * (-b))%R.
 Proof.
   intros. assert(forall a b : Real, (- (a * b) <= a * - b)%R).
   { intros. unfold Rle, Rmult, Ropp. destruct a0, b0. intros. apply Cut_mult_opp'. auto. auto. auto. }
@@ -2158,7 +2158,7 @@ Qed.
 
 (** Third , we will define the plus operation of Set and Real
     and proof some theorem about it. *)
-Theorem Rmult_0 : forall a : Real, (a * Rzero == Rzero)%R.
+Theorem Rmult_0_r : forall a : Real, (a * Rzero == Rzero)%R.
 Proof.
   intros. unfold Rmult. destruct a. unfold Rzero.
   unfold Cut_mult, Req. split.
@@ -2201,7 +2201,14 @@ Proof.
     rewrite H2. auto.
 Qed.
 
-Theorem Rmult_1 : forall a : Real, (a * Rone == a)%R.
+
+Lemma Rzero_opp : (Rzero == - Rzero)%R.
+Proof.
+  apply (Rplus_compat_l Rzero). rewrite Rplus_opp.
+  rewrite Rplus_0_r. reflexivity.
+Qed.
+
+Theorem Rmult_1_r : forall a : Real, (a * Rone == a)%R.
 Proof.
   intros. unfold Rmult, Req, Rone. destruct a.
   unfold Cut_mult. split.
@@ -2371,6 +2378,16 @@ Proof.
   - intros. apply Cut_mult_comm. auto.
 Qed.
 
+Theorem Rmult_0_l : forall a : Real, (Rzero * a == Rzero)%R.
+Proof.
+  intros. rewrite Rmult_comm. apply Rmult_0_r.
+Qed.
+
+Theorem Rmult_1_l : forall a : Real, (Rone * a == a)%R.
+Proof.
+  intros. rewrite Rmult_comm. apply Rmult_1_r.
+Qed.
+
 Theorem Rmult_assoc_lemma : forall a b c : Real, (a * b * c <= a * (b * c))%R.
 Proof.
   intros. unfold Req, Rmult, Rle. destruct a, b, c.
@@ -2483,25 +2500,6 @@ Proof.
   apply Qnot_lt_le;auto.
 Qed.
 
-Lemma Rmult_distr_l_PPP : forall a b c : Real, (Rzero < a)%R -> (Rzero < b)%R -> 
-  (Rzero < c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
-Proof.
-  intros.
-  destruct a, b, c.
-  pose proof (Rover0 A H2 H).
-  pose proof (Rover0 A0 H3 H0).
-  pose proof (Rover0 A1 H4 H1).
-  hnf;split;hnf;intros.
-  - apply Cut_mult_distr_PP;auto.
-  - apply Cut_mult_distr_PP;auto.
-Qed.
-
-(* Lemma Cut_plus_exists : forall (A B : Q -> Prop)(x y : Q), Dedekind A -> Dedekind B
-  -> Cut_plus_Cut A B x -> A y -> exists z : Q, B z/\z+y=x.
-Proof.
-  intros. destruct H1 as [?[?[?[]]]].  exists
-Qed. *)
-
 Lemma not_imply_to_or : forall P Q : Prop, ~(P->Q)->P/\~Q.
 Proof.
   intros. split.
@@ -2569,22 +2567,6 @@ Proof.
   rewrite Rplus_0_r. rewrite Rplus_0_l. auto.
 Qed.
 
-Lemma Rmult_distr_l_PNP : forall a b c : Real, (Rzero < a)%R -> (b < Rzero)%R -> 
- (Rzero < b + c)%R -> (Rzero < c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
-Proof.
-  intros. assert(c == b + c - b)%R. { unfold Rminus.
-  rewrite Rplus_comm. rewrite <- Rplus_assoc.
-  rewrite (Rplus_comm (-b)%R b). rewrite Rplus_opp.
-  rewrite Rplus_comm. rewrite Rplus_0_r. reflexivity. }
-  rewrite H3. rewrite (Rmult_distr_l_PPP a (b+c)(-b))%R;auto.
-  - rewrite <- Cut_mult_opp.
-    rewrite (Rplus_comm (a*b) (a * (b + c) + - (a * b)))%R.
-    rewrite Rplus_assoc. rewrite (Rplus_comm (-(a*b)) (a*b))%R.
-    rewrite Rplus_opp. rewrite Rplus_0_r. rewrite <- H3. reflexivity.
-  - rewrite <- Rplus_lt_r with (z:=b). rewrite Rplus_0_r.
-    rewrite Rplus_opp. auto.
-Qed.
-
 Theorem Rle_lt_eq : forall x y : Real, (x <= y <-> (x == y\/x<y))%R.
 Proof.
   intros. assert(x<y\/~x<y)%R. apply classic. split.
@@ -2627,8 +2609,146 @@ Proof.
   apply Rplus_le_r.
 Qed.
 
+Theorem R_three_dis : forall x y : Real, (x<y\/x==y\/y<x)%R.
+Proof.
+  intros. pose proof classic (x<y)%R. destruct H.
+  - auto.
+  - pose proof classic (y<x)%R. destruct H0.
+    + auto.
+    + apply Rnot_lt_le in H. apply Rnot_lt_le in H0.
+      right. left. split;auto.
+Qed.
+
+Lemma Rplus_opp_bin : forall b c : Real, (Rzero == b + c -> (-b) == c)%R.
+Proof.
+  intros. rewrite <- Rplus_inj_l with (z:=b). rewrite Rplus_opp. auto.
+Qed.
+
+Lemma Rmult_distr_l_PPP : forall a b c : Real, (Rzero < a)%R -> (Rzero < b)%R -> 
+  (Rzero < c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros.
+  destruct a, b, c.
+  pose proof (Rover0 A H2 H).
+  pose proof (Rover0 A0 H3 H0).
+  pose proof (Rover0 A1 H4 H1).
+  hnf;split;hnf;intros.
+  - apply Cut_mult_distr_PP;auto.
+  - apply Cut_mult_distr_PP;auto.
+Qed.
+
+Lemma Rmult_distr_l_PPE : forall a b c : Real, (Rzero < a)%R -> (Rzero < b)%R -> 
+  (Rzero == c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros. rewrite <- H1. rewrite Rmult_0_r. rewrite Rplus_0_r.
+  rewrite Rplus_0_r. reflexivity.
+Qed.
+
+Lemma Rmult_distr_l_PNP : forall a b c : Real, (Rzero < a)%R -> (b < Rzero)%R -> 
+ (Rzero < b + c)%R -> (Rzero < c)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros. assert(c == b + c - b)%R. { unfold Rminus.
+  rewrite Rplus_comm. rewrite <- Rplus_assoc.
+  rewrite (Rplus_comm (-b)%R b). rewrite Rplus_opp.
+  rewrite Rplus_comm. rewrite Rplus_0_r. reflexivity. }
+  rewrite H3. rewrite (Rmult_distr_l_PPP a (b+c)(-b))%R;auto.
+  - rewrite <- Rmult_opp_r.
+    rewrite (Rplus_comm (a*b) (a * (b + c) + - (a * b)))%R.
+    rewrite Rplus_assoc. rewrite (Rplus_comm (-(a*b)) (a*b))%R.
+    rewrite Rplus_opp. rewrite Rplus_0_r. rewrite <- H3. reflexivity.
+  - rewrite <- Rplus_lt_r with (z:=b). rewrite Rplus_0_r.
+    rewrite Rplus_opp. auto.
+Qed.
+
+Lemma Rmult_distr_l_PPN : forall a b c : Real, (Rzero < a)%R -> (Rzero < b)%R -> 
+ (Rzero < b + c)%R -> (c < Rzero)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros. assert(b == b + c - c)%R. { unfold Rminus.
+  rewrite -> Rplus_assoc. rewrite Rplus_opp.
+  rewrite Rplus_0_r. reflexivity. }
+  rewrite H3. rewrite (Rmult_distr_l_PPP a (b+c)(-c))%R;auto.
+  - rewrite <- Rmult_opp_r.
+    rewrite Rplus_assoc. rewrite (Rplus_comm (-(a*c)) (a*c))%R.
+    rewrite Rplus_opp. rewrite Rplus_0_r. rewrite <- H3. reflexivity.
+  - rewrite <- Rplus_lt_r with (z:=c). rewrite Rplus_0_r.
+    rewrite Rplus_opp. auto.
+Qed.
+
+Lemma Rmult_distr_l_PNN : forall a b c : Real, (Rzero < a)%R -> (b < Rzero)%R -> 
+ (c < Rzero)%R -> (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros.
+  apply Ropp_lt_compat in H0. rewrite <- Rzero_opp in H0.
+  apply Ropp_lt_compat in H1. rewrite <- Rzero_opp in H1.
+  rewrite (Ropp_opp b). rewrite (Ropp_opp c).
+  rewrite <- Rmult_opp_r. rewrite <- (Rmult_opp_r a (- c))%R.
+  rewrite <- Rplus_inj_l with (z:=(a*-b)%R).
+  rewrite <- Rplus_assoc. rewrite Rplus_opp. rewrite Rplus_0_l.
+  rewrite <- Rplus_inj_l with (z:=(a*-c)%R).
+  rewrite <- Rplus_assoc. rewrite Rplus_opp.
+  rewrite <- Rmult_distr_l_PPP;auto.
+  assert(--b+--c==-(-b+-c))%R.
+  { rewrite <- Rplus_inj_l with (z:=(-b+-c)%R). rewrite Rplus_opp.
+    rewrite Rplus_assoc. rewrite (Rplus_comm (--b)%R).
+    rewrite <- (Rplus_assoc (-c)%R). rewrite Rplus_opp.
+    rewrite Rplus_0_l. rewrite Rplus_opp. reflexivity. }
+  rewrite H2. rewrite <- Rmult_opp_r. rewrite (Rplus_comm (-c)%R).
+  rewrite Rplus_opp. reflexivity.
+Qed.
 
 Theorem Rmult_distr_l :
+  forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
+Proof.
+  intros.
+  pose proof R_three_dis Rzero a.
+  pose proof R_three_dis Rzero b.
+  pose proof R_three_dis Rzero c.
+  destruct H as [?|[]];destruct H0 as [?|[]];destruct H1 as [?|[]];
+  try rewrite <- H;try rewrite Rmult_0_l;try rewrite Rmult_0_l;
+    try rewrite Rmult_0_l;try rewrite Rplus_0_r;try reflexivity;
+ try rewrite <- H0;try rewrite Rmult_0_r;try rewrite Rplus_0_l;
+   try rewrite Rplus_0_l;try reflexivity;
+ try rewrite <- H1;try rewrite Rmult_0_r;try rewrite Rplus_0_r;
+   try rewrite Rplus_0_r;try reflexivity.
+  - apply Rmult_distr_l_PPP;auto.
+  - pose proof R_three_dis Rzero (b+c)%R. destruct H2 as [?|[]].
+    + apply Rmult_distr_l_PPN;auto.
+    + rewrite <- H2. apply Rplus_opp_bin in H2.
+      rewrite <- H2. rewrite <- Rmult_opp_r. rewrite Rplus_opp.
+      apply Rmult_0_r.
+    + assert(c == b + c - b)%R. { unfold Rminus.
+      rewrite Rplus_comm. rewrite <- Rplus_assoc.
+      rewrite (Rplus_comm (-b)%R b). rewrite Rplus_opp.
+      rewrite Rplus_comm. rewrite Rplus_0_r. reflexivity. }
+      rewrite H3. unfold Rminus.
+      apply Ropp_lt_compat in H0. rewrite <- Rzero_opp in H0.
+      rewrite (Rmult_distr_l_PNN a (b+c))%R;auto.
+      rewrite Rplus_comm with (b:=(a*-b)%R).
+      rewrite <- Rmult_opp_r. rewrite <- Rplus_assoc with (a:=(a*b)%R).
+      rewrite Rplus_opp. rewrite Rplus_0_l.
+      rewrite <- H3. reflexivity.
+  - pose proof R_three_dis Rzero (b+c)%R. destruct H2 as [?|[]].
+    + apply Rmult_distr_l_PNP;auto.
+    + rewrite <- H2. apply Rplus_opp_bin in H2.
+      rewrite <- H2. rewrite <- Rmult_opp_r. rewrite Rplus_opp.
+      apply Rmult_0_r.
+    + rewrite Rplus_comm in *. rewrite (Rplus_comm (a*b)%R).
+      assert(b == c + b - c)%R. { unfold Rminus.
+      rewrite Rplus_comm. rewrite <- Rplus_assoc.
+      rewrite (Rplus_comm (-c)%R c). rewrite Rplus_opp.
+      rewrite Rplus_comm. rewrite Rplus_0_r. reflexivity. }
+      rewrite H3. unfold Rminus.
+      apply Ropp_lt_compat in H1. rewrite <- Rzero_opp in H1.
+      rewrite (Rmult_distr_l_PNN a (c+b))%R;auto.
+      rewrite Rplus_comm with (b:=(a*-c)%R).
+      rewrite <- Rmult_opp_r. rewrite <- Rplus_assoc with (a:=(a*c)%R).
+      rewrite Rplus_opp. rewrite Rplus_0_l.
+      rewrite <- H3. reflexivity.
+  - apply Rmult_distr_l_PNN;auto.
+  - 
+
+Admitted.
+(* Theorem Rmult_distr_l :
   forall a b c : Real, (a * (b + c) == (a * b) + (a * c))%R.
 Proof.
   intros. split.
@@ -2680,7 +2800,7 @@ Proof.
   + destruct H2, H2. apply (Cut_cut_opp_not A 0) in H;auto;
     destruct H;auto.
   + destruct H2, H2, H2, H2;auto. exists 0, 0. repeat split;auto. } *)
-Admitted.
+Admitted. *)
 
 Definition Cut_inv (A : Q -> Prop) : Q -> Prop :=
   (fun x => (A 0 /\ (x <= 0 \/ exists r : Q, (r > 0 /\ ~ (A (/x + -r)))))
