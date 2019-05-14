@@ -557,6 +557,7 @@ Notation "a == b" := (eq a b)
 Notation "a != b" := (~eq a b)
     (at level 70, no associativity).
 
+
 Theorem preOrder_trans : @Pre_Order_Field (Cauchilize eq eq) equC.
 Proof.
      split with (le := leC).
@@ -689,7 +690,8 @@ Proof.
           apply lt_trans with (p := n) in H3. auto. auto. rewrite H3. 
           auto. auto. auto. assert (a1 < a2). apply H0 with (n := n). 
           auto. auto. auto. assert (a1 > a2 -> a2 > a1 -> False). intros. inversion H10.
-          inversion H11. assert(a1 == a2). apply pore. auto. auto. assert(a1 == a2 /\ ~(a1 == a2)). split. auto. auto. apply PNP in H13. destruct H13. apply H10 in H8.
+          inversion H11. assert(a1 == a2). apply pore. auto. auto. assert(a1 == a2 /\ ~(a1 == a2)). 
+          split. auto. auto. apply PNP in H13. destruct H13. apply H10 in H8.
            destruct H8. auto. }
            {exists n1. intros. assert(a1 > a2). apply H with (n := n). auto. auto. auto.
             assert(a2 > a1). apply H0 with (n := n). apply le_lt_or_eq in H3. destruct H3.
@@ -699,9 +701,29 @@ Proof.
            destruct H8. auto. }
 Qed.
 End leCModule.
-Definition plusSeq {X : Type} {eq : relation X} {H : Plus_Field eq}  :=
-    forall (seq1 seq2 : seq), (exists (pseq : seq), forall n a b, seq1 n a -> seq2 n b -> pseq n (a + b)) .
 
+Definition plusSeq{X : Type} {HP : Plus_Field eq} (eq : relation X) (seq1 seq2 pseq : seq) : Prop :=
+  (forall (n : nat) (a b : X), seq1 n a -> seq2 n b -> pseq n (a + b)) /\ 
+  (forall (n : nat) (a b : X) ,~eq a b -> pseq n a -> ~(pseq n b)) /\
+  (forall (n : nat) (a b: X) , eq a b -> pseq n a -> pseq n b).
+
+Theorem plus_Cauchy_seq : forall (X : Type) (eq : relation X) (M : Metric eq eq) (seq1 seq2 pseq : seq)
+  (HPS : @plusSeq X mof eq seq1 seq2 pseq),
+        CauchySeq eq eq seq2 -> CauchySeq eq eq seq1 -> CauchySeq eq eq pseq.
+Proof.
+
+Qed.
+
+
+
+
+Class PlusPropBucket {X : Type} {eq : relation X} {H : Metric eq eq} :={
+    H : forall a b c : X, dist (a + c) (b + c) = dist a b;}.
+
+
+
+
+dist an + bn , an + bm + dist an + bm, am + bm = dist bn bm + dist an am.
 
 
 
@@ -709,10 +731,7 @@ Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
   Admitted.
 
-
-
-
-Theorem Cauchilized_x_can_be_divided_by_2 :
+Theorem Cauchilized_eps_division :
     forall (X : Type) (x : Cauchilize X X), (exists x1, leC (x1 + x1) x) .
 Proof.
     Admitted.
