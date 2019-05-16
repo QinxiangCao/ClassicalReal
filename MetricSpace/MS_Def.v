@@ -702,15 +702,16 @@ Proof.
 Qed.
 End leCModule.
 
-Definition plusSeq{X : Type} {HP : Plus_Field eq} (eq : relation X) (seq1 seq2 pseq : seq) : Prop :=
+Definition plusSeq{X : Type}  (eq : relation X) {HP : Plus_Field eq} (seq1 seq2 pseq : seq) : Prop :=
   (forall (n : nat) (a b : X), seq1 n a -> seq2 n b -> pseq n (a + b)) /\ 
   (forall (n : nat) (a b : X) ,~eq a b -> pseq n a -> ~(pseq n b)) /\
   (forall (n : nat) (a b: X) , eq a b -> pseq n a -> pseq n b).
 
 Theorem plus_Cauchy_seq : forall (X : Type) (eq : relation X) (M : Metric eq eq) (seq1 seq2 pseq : seq)
-  (HPS : @plusSeq X mof eq seq1 seq2 pseq),
+  (HPS : @plusSeq X eq  mof seq1 seq2 pseq),
         CauchySeq eq eq seq2 -> CauchySeq eq eq seq1 -> CauchySeq eq eq pseq.
 Proof.
+    intros. split. -intros. inversion HPS. 
 
 Qed.
 
