@@ -12,38 +12,6 @@ From CReal Require Import QArith_ext.QArith_base_ext.
 From Coq Require Import Classes.Morphisms.
 
 
-
-Lemma Qinv_inject (x y:Q): ~(x==0) -> ~(y==0) -> ((x == y) <-> (/x == /y)).
-Proof. split.
-  - intros. rewrite H1. reflexivity.
-  - intros. rewrite <- (Qmult_inj_r _ _ (/x * /y)).
-    rewrite Qmult_assoc. rewrite (Qmult_inv_r _ H). rewrite Qmult_1_l.
-    rewrite (Qmult_comm (/x)). rewrite Qmult_assoc. rewrite (Qmult_inv_r _ H0).
-    rewrite Qmult_1_l. symmetry. apply H1.
-    intros C. apply Qmult_integral in C. destruct C.
-    * apply H. rewrite <- Qinv_involutive. rewrite H2. reflexivity.
-    * apply H0. rewrite <- Qinv_involutive. rewrite H2. reflexivity.
-Qed.
-
-Lemma Qinv_lt_compat (x y:Q): (x>0) -> (y>0) -> ((/x < /y) -> (x > y)).
-Proof. intros. assert (E: x*y>0). { rewrite <- (Qmult_0_r x). apply Qmult_lt_l. auto. auto. } 
-    apply (Qmult_lt_compat_r _ _ _ E) in H1.
-    assert (E1: / x * (x * y) == y). { field. intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
-    assert (E2: / y * (x * y) == x). { field. intros C. rewrite C in H0. apply Qlt_irrefl in H0. auto. }
-    rewrite <-E1. apply (Qlt_le_trans _ _ _ H1). rewrite E2. apply Qle_refl.
-Qed.
-
-Lemma Qinv_lt_compat2 (x y:Q): (x>0) -> (y>0) -> ((x < y) -> (/x > /y)).
-Proof. intros. assert (E: /x*/y>0). { rewrite <- (Qmult_0_r (/x)). apply Qmult_lt_l.
-    apply Qinv_lt_0_compat. auto. apply Qinv_lt_0_compat. auto. } 
-    apply (Qmult_lt_compat_r _ _ _ E) in H1.
-    assert (E1: x * (/ x * / y) == /y). { field. split. intros C. rewrite C in H0. apply Qlt_irrefl in H0. auto.
-                                                        intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
-    assert (E2: y * (/ x * / y) == /x). { field. split. intros C. rewrite C in H. apply Qlt_irrefl in H. auto.
-                                                        intros C. rewrite C in H0. apply Qlt_irrefl in H0. auto. }
-    rewrite <-E1. apply (Qlt_le_trans _ _ _ H1). rewrite E2. apply Qle_refl.
-Qed.
-
 Class Cauchy (CSeq : nat -> Q -> Prop) : Prop := {
   Cauchy_exists : forall (n:nat), exists (q:Q), (CSeq n q);
   Cauchy_unique : forall (n:nat) (q1 q2:Q),
@@ -1506,7 +1474,7 @@ Proof.
 Qed.
 
 
-Lemma Qinv_mult_distr : forall p q (Hp:~(p==0)%R)(Hq:~(q==0)%R), 
+Lemma Rinv_mult_distr : forall p q (Hp:~(p==0)%R)(Hq:~(q==0)%R), 
  (/ (exist _ (p * q) (Rmult_nonzero _ _ Hp Hq)) == /(exist _ p Hp) * /(exist _ q Hq))%R.
 Proof. intros. destruct p as [A HA]. destruct q as [B HB].
   hnf. unfold CauchySeqMult. intros. exists O.
@@ -1573,36 +1541,31 @@ Qed.
 
 
 Lemma Rinv_nonzero (x:Real)(H:~(x==0)%R): ~(Rinv (exist _ x H) == 0)%R.
-Proof. 
-(*  destruct x as [A HA].
-
+Proof. destruct x as [A HA].
   apply limit_not_0_spec. hnf.
-  apply limit_not_0_spec in H. 
-  assert (H1: limit_not_0_real (Real_intro A HA)) by auto.
-  apply limit_not_0_seq in H1. hnf in *.
-
-  destruct H as [eps [Heps H]].
-  exists (/(eps+eps)).
-  split. { apply Qinv_lt_0_compat. rewrite <- Qplus_0_r.
-   apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
-  destruct (Cauchy_def _ HA eps Heps) as [N1 HN1].
-  intros. destruct (H N) as [N2 HN2]. clear H.
-  destruct H1 as [N3 HN3]. destruct HN2 as [HN2N HN2].
-  destruct (classic (lt N1 N2)),(classic (lt N3 N2)).
-  - exists N2. split. omega. intros.
-    assert (E1: eps < Qabs (/q)). { apply HN2. auto. }
-    rewrite <- (Qinv_involutive (Qabs q)).
-    apply Qinv_lt_compat2. { apply Qinv_lt_0_compat.
-    destruct ((proj1 (Qle_lteq 0 (Qabs q))) (Qabs_nonneg q)).
-    auto. symmetry in H2. apply Qabs_0 in H2. 
-    assert (E:~/q==0). { apply (HN3 N2). auto. auto. }
-    rewrite H2 in E. destruct E. reflexivity. }
-    { rewrite <- Qplus_0_r.
-    apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
-*)
-
-Admitted.
-
+  assert (H1: limit_not_0_real (Real_intro A HA)). { apply limit_not_0_spec. auto. }
+  destruct (CauchySeqBounded _ HA) as [M [HM H2]].
+  apply limit_not_0_seq in H1. destruct H1 as [N HN].
+  exists (/M). split.
+  - apply Qinv_lt_0_compat. auto.
+  - intros. destruct (classic (N0 < N)%nat).
+    + exists (S N). split. omega. intros. apply (Qmult_lt_l _ _ _ HM).
+      rewrite Qmult_inv_r. apply (Qmult_lt_r _ _ (/ (Qabs q))).
+      rewrite <- Qabs_Qinv. apply Qnot_0_abs_pos. apply (HN (S N)). omega. auto.
+      rewrite Qmult_1_l. rewrite <- Qmult_assoc. rewrite Qmult_inv_r.
+      rewrite Qmult_1_r. rewrite <- Qabs_Qinv. apply (H2 (S N)). auto.
+      apply Qnot_0_abs. intros C. assert (foo: ~ / q == 0). { apply (HN (S N)). auto. auto. }
+      rewrite C in foo. apply foo. reflexivity. intros C. rewrite C in HM.
+      apply Qlt_irrefl in HM. auto.
+    + exists (S N0). split. omega. intros. apply (Qmult_lt_l _ _ _ HM).
+      rewrite Qmult_inv_r. apply (Qmult_lt_r _ _ (/ (Qabs q))).
+      rewrite <- Qabs_Qinv. apply Qnot_0_abs_pos. apply (HN (S N0)). omega. auto.
+      rewrite Qmult_1_l. rewrite <- Qmult_assoc. rewrite Qmult_inv_r.
+      rewrite Qmult_1_r. rewrite <- Qabs_Qinv. apply (H2 (S N0)). auto.
+      apply Qnot_0_abs. intros C. assert (foo: ~ / q == 0). { apply (HN (S N0)). omega. auto. }
+      rewrite C in foo. apply foo. reflexivity. intros C. rewrite C in HM.
+      apply Qlt_irrefl in HM. auto.
+Qed.
 Lemma Rinv_involutive (x:Real)(H:~(x==0)%R):
  (/ (exist _ (Rinv (exist _ x H)) (Rinv_nonzero _ H)) == x)%R.
 Proof. destruct x as [A HA]. hnf.
