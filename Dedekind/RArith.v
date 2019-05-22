@@ -2834,31 +2834,305 @@ Proof.
 Qed.
 
 Definition Cut_inv (A : Q -> Prop) : Q -> Prop :=
-  (fun x => (A 0 /\ (x <= 0 \/ exists r : Q, (r > 0 /\ ~ (A (/x + -r)))))
+  (fun x => (A 0 /\ (x <= 0 \/ (x > 0 /\ exists r : Q, (r > 0 /\ ~ (A (/x + -r))))))
            \/ (Cut_opp A 0 /\ x < 0 /\ exists r : Q, (r > 0 /\ ~ (A (/x + -r))))
            \/ (~ A 0 /\ ~ Cut_opp A 0/\ False ))
 .
 
-Theorem Dedekind_inv : forall A : Q -> Prop , Dedekind A -> Dedekind (Cut_inv A).
+Lemma Qmult_opp_assoc : forall x y : Q, (-x*-y==x*y)%Q.
+Proof.
+  intros. Search Qmult Qeq.
+  rewrite <- Qplus_inj_l with (z:=x*-y).
+  rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_plus_distr_l.
+  rewrite Qplus_opp_r. rewrite Qplus_comm. rewrite Qplus_opp_r.
+  rewrite Qmult_0_r. apply Qmult_0_l.
+Qed.
+
+Lemma Qinv_opp : forall a:Q,(~a==0->-/a==/-a)%Q.
+Proof.
+  intros. assert(~-a==0)%Q. { hnf. intros. apply H.
+  rewrite <- Qplus_inj_l with (z:=a) in H0. rewrite Qplus_opp_r in H0.
+  rewrite Qplus_0_r in H0. rewrite H0. reflexivity. }
+  rewrite <- Qmult_inj_l with (z:=-a);auto.
+  rewrite Qmult_inv_r;auto. rewrite Qmult_opp_assoc. rewrite Qmult_inv_r;auto.
+  reflexivity.
+Qed.
+
+Lemma Qinv_0_le_compat: forall a : Q, a < 0 -> / a <= 0.
+Proof.
+  intros. assert(~-a==0)%Q. apply Qopp_lt_compat in H.
+  apply Qlt_not_0 in H. auto.
+  pose proof Qlt_not_eq a 0 H.
+  rewrite Qopp_le_compat_iff in *.
+  assert(-/a==/-a)%Q. rewrite <- Qmult_inj_l with (z:=-a);auto.
+  rewrite Qmult_inv_r;auto. rewrite Qmult_opp_assoc. rewrite Qmult_inv_r;auto.
+  reflexivity. rewrite H2. apply Qopp_lt_compat in H.
+  apply Qmult_le_l with (z:=-a). auto. rewrite Qmult_inv_r;auto.
+  rewrite Qmult_0_r. apply Qlt_le_weak. reflexivity.
+Qed.
+
+Lemma Qinv_0_lt_compat: forall a : Q, a < 0 -> / a < 0.
 Proof.
   intros.
-  assert(HA:A 0 \/ Cut_opp A 0 \/ (~ A 0/\~ Cut_opp A 0)).
-  { apply Cut_mult_situation1. }
-  destruct HA as [?|[]].
+  pose proof Qlt_not_eq a 0 H. Search Qlt Qopp.
+  rewrite Qlt_minus_iff in *. rewrite Qplus_0_l in *. rewrite Qinv_opp;auto.
+  apply Qinv_lt_0_compat. auto.
+Qed.
+
+Lemma Qmult_opp_assoc_l : forall x y : Q, (-(x*y)==-x*y)%Q.
+Proof.
+  intros. Search Qmult Qeq.
+  rewrite <- Qplus_inj_l with (z:=x*y).
+  rewrite <- Qmult_plus_distr_l.
+  rewrite Qplus_opp_r. rewrite Qplus_opp_r.
+  rewrite Qmult_0_l. reflexivity.
+Qed.
+
+Lemma Qdiv_le_N : forall x y : Q , 0 > y -> x <= y -> /y <= /x.
+Proof.
+  intros.
+  assert(forall x y, 0 > y -> x <= y -> / y <= / x).
+  { intros. assert(x0<0).
+    { apply Qle_lt_trans with (y:=y0);auto. }
+    rewrite Qopp_le_compat_iff in *.
+    apply Qopp_lt_compat in H1. apply Qopp_lt_compat in H3.
+    rewrite Qinv_opp. rewrite Qinv_opp. apply Qle_shift_inv_l;auto.
+    rewrite <- (Qmult_inv_r (-x0)). { rewrite Qmult_comm.
+    apply Qmult_le_compat_r with (z:=(/(-x0)));auto.
+    apply Qinv_le_0_compat. apply Qlt_le_weak. auto. }
+    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto.
+    unfold not. intros. apply Qlt_not_eq in H1. destruct H1. rewrite H4. reflexivity.
+    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. rewrite H4. reflexivity. } auto.
+Qed.
+
+Theorem Dedekind_inv : forall A : Q -> Prop , Dedekind A -> 
+A 0\/Cut_opp A 0 -> Dedekind (Cut_inv A).
+Proof.
+  intros.
+  destruct H0.
 { split.
   - split.
     + destruct (Dedekind_properties1 _ H), H2.
-      exists (/x). left;split;auto.
-Search Qinv. hnf.
-Admitted.
+      exists (/(x + 1)). left;split;auto.
+      assert(x + 1 <= 0 \/ ~ x + 1 <= 0). apply classic. destruct H3.
+    * left. apply Qnot_lt_le. apply Qle_not_lt in H3.
+      unfold not. intros. apply H3. rewrite <- (Qinv_involutive (x + 1)).
+      apply Qinv_lt_0_compat. auto.
+    * right. apply Qnot_le_lt in H3. split.
+      apply Qinv_lt_0_compat;auto. exists 1.
+      rewrite Qinv_involutive. split. reflexivity.
+      rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+      rewrite Qplus_0_r. auto.
+    + destruct (Dedekind_properties3 _ H 0). auto.
+      exists (/x). destruct H1. hnf. intros.
+      assert(/x <= 0 \/ ~ /x <= 0). apply classic. destruct H4.
+    * apply Qle_not_lt in H4. apply Qinv_lt_0_compat in H2. auto.
+    * destruct H3 as [?|[]].
+      { destruct H3, H5. auto. destruct H5, H6, H6, H7.
+        rewrite Qinv_involutive. apply (Dedekind_properties2 _ H x).
+        split;auto. apply Qlt_le_weak in H6.
+        apply Qopp_le_compat in H6.
+        rewrite <- Qplus_le_r with (z:=x) in H6.
+        rewrite Qplus_0_r in H6. auto. }
+      { destruct H3, H5, H6. apply Qlt_le_weak in H5. auto. }
+      { destruct H3, H5. auto. }
+  - intros. destruct H1. destruct H1 as [?|[]].
+    + assert(q <= 0 \/ ~ q <= 0). apply classic. destruct H1.
+      destruct H3. left;auto.
+      destruct H4. pose proof Qle_trans q p 0 H2 H4. destruct H3. auto.
+      apply Qnot_le_lt in H3. apply Qdiv_le in H2;auto. left.
+      split;auto. right;split;auto. destruct H4, H5. exists x. destruct H5.
+      split;auto. unfold not. intros. apply H6.
+      apply (Dedekind_properties2 _ H (/ q + - x));split;auto.
+      apply Qplus_le_l;auto.
+    + destruct H1. apply Cut_cut_opp_not in H0;auto.
+      destruct H0;auto.
+    + destruct H1, H1. auto.
+  - intros. destruct H1, H1.
+    + destruct H2.
+    * destruct (Dedekind_properties1 _ H). destruct H4.
+      exists (/(x + 1)). split. { left;split;auto.
+      assert(x + 1 <= 0 \/ ~ x + 1 <= 0). apply classic. destruct H5.
+      { left. apply Qnot_lt_le. apply Qle_not_lt in H5.
+      unfold not. intros. apply H5. rewrite <- (Qinv_involutive (x + 1)).
+      apply Qinv_lt_0_compat. auto. }
+      right. apply Qnot_le_lt in H5. split.
+      apply Qinv_lt_0_compat;auto. exists 1.
+      rewrite Qinv_involutive. split. reflexivity.
+      rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+      rewrite Qplus_0_r. auto. }
+      { assert(x + 1 <= 0 \/ ~ x + 1 <= 0). apply classic. destruct H5.
+        { destruct H4. apply (Dedekind_properties2 _ H 0).
+          split;auto. apply Qle_trans with(y:=x+1);auto.
+          rewrite <- Qplus_0_r. rewrite <- Qplus_assoc.
+          apply Qplus_le_r. apply Qlt_le_weak. reflexivity. }
+        { apply Qnot_le_lt in H5. apply Qinv_lt_0_compat in H5.
+          apply Qle_lt_trans with (y:=0);auto. } }
+    * assert(p <= 0 \/ ~ p <= 0). apply classic.  destruct H3.
+    { destruct H2, H4, H4, H5. apply Qle_not_lt in H3.
+      destruct H3;auto. } destruct H2, H4, H4.
+      exists (/((/p) + - (x/(2#1)))).
+      assert(p < / (/ p + - (x / (2 # 1)))).
+      { rewrite <- Qmult_lt_l with (z:=(/ p + - (x / (2 # 1)))).
+        rewrite Qmult_inv_r. rewrite Qmult_comm.
+        rewrite Qmult_plus_distr_r. rewrite Qmult_inv_r. rewrite <- (Qplus_0_r 1).
+        rewrite Qplus_lt_r. rewrite <- Qopp_involutive.
+        rewrite <- (Qopp_involutive 0). apply Qopp_lt_compat.
+        rewrite Qmult_opp_assoc_l. rewrite Qmult_opp_assoc.
+        assert((-0)==0)%Q. reflexivity. rewrite H6.
+        rewrite <- (Qmult_0_l 0). apply Qmult_lt_compat;try apply Qle_refl;auto.
+        apply Qlt_shift_div_l. reflexivity. rewrite Qmult_0_l. auto.
+        apply Qlt_not_0;auto. apply Qlt_not_0.
+        apply Qlt_trans with (y:=(/ p + - x)).
+        apply (Dedekind_le A);auto. apply Qplus_lt_r. Search Qmult Qlt.
+        rewrite Qdiv2. rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+        assert(-(x / (2 # 1)) * (2 # 1)==-x)%Q. field.
+        assert((- x * / (2 # 1) + - x * / (2 # 1)) * (2 # 1)==-(x+x))%Q. field.
+        rewrite H6. rewrite H7. apply Qlt_minus_iff.
+        rewrite Qopp_involutive. rewrite Qplus_comm.
+        rewrite <- Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_r. auto.
+        apply Qlt_trans with (y:=(/ p + - x)).
+        apply (Dedekind_le A);auto. apply Qplus_lt_r. Search Qmult Qlt.
+        rewrite Qdiv2. rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+        assert(-(x / (2 # 1)) * (2 # 1)==-x)%Q. field.
+        assert((- x * / (2 # 1) + - x * / (2 # 1)) * (2 # 1)==-(x+x))%Q. field.
+        rewrite H6. rewrite H7. apply Qlt_minus_iff.
+        rewrite Qopp_involutive. rewrite Qplus_comm.
+        rewrite <- Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_r. auto. }
+      split;auto. left. split;auto. right. split.
+      apply Qlt_trans with (y:=p);auto. exists (x/(2#1)).
+      split. assert((x / (2 # 1)) * (2 # 1)==x)%Q. field.
+      rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+      rewrite H7. auto.
+      assert (/ / (/ p + - (x / (2 # 1))) + - (x / (2 # 1))==(/ p + - x))%Q.
+      rewrite Qinv_involutive. rewrite (Qdiv2_opp x). rewrite <- Qplus_assoc.
+      reflexivity. rewrite H7. auto.
+    + destruct H1. apply Cut_cut_opp_not in H0;auto.
+      destruct H0;auto.
+    + destruct H1, H1. auto.
+  - intros. hnf in H2. hnf. rewrite H1 in H2. destruct H2.
+    + left. repeat split;auto. destruct H2. destruct H3.
+    * left. auto.
+    * destruct H3, H4, H4. right. split;auto. exists x. rewrite <- H1.
+      auto.
+    + destruct H2.
+    * right;left. destruct H2, H3, H4, H4. repeat split;auto.
+      exists x. rewrite <- H1. auto.
+    * destruct H2, H3, H4. }
+{ split.
+  - split.
+    + destruct H0, H0.
+      exists (/-(x/(2#1))). right;left;split;auto.
+    * exists x. auto.
+    * assert((-x/(2#1))<0).
+      assert((-x / (2 # 1)) * (2 # 1)==-x)%Q. field.
+      rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+      rewrite H2. rewrite Qlt_minus_iff.
+      assert(0 * (2 # 1) + - - x==x)%Q. field. rewrite H3. auto.
+      split.
+      apply Qinv_0_lt_compat. unfold Qdiv.
+      rewrite Qmult_opp_assoc_l. auto.
+      exists (x/(2#1)). split. rewrite <- Qopp_involutive.
+      rewrite <- (Qopp_involutive (x/(2#1))). apply Qopp_lt_compat.
+      unfold Qdiv. rewrite Qmult_opp_assoc_l. auto.
+      rewrite Qinv_involutive. rewrite <- (Qdiv2_opp x).
+      rewrite Qplus_0_l in H1. auto.
+    + exists 0. hnf. intros. destruct H1, H1.
+      apply Cut_cut_opp_not in H1;auto.
+      destruct H1, H2. inversion H2. apply H1.
+  - intros. destruct H1. destruct H1 as [?|[]].
+    + destruct H1. apply Cut_cut_opp_not in H1;auto.
+      destruct H1;auto.
+    + destruct H1. destruct H3, H4, H4. right;left;auto.
+      repeat split;auto. pose proof Qle_lt_trans q p 0 H2 H3. auto.
+      exists x. split;auto. unfold not. intros. apply H5.
+      apply (Dedekind_properties2 _ H (/ q + - x));split;auto.
+      apply Qdiv_le_N in H2;auto. apply Qplus_le_l;auto.
+    + exfalso. apply H1.
+  - intros. destruct H1, H1.
+    + apply Cut_cut_opp_not in H1;auto.
+      destruct H1;auto.
+    + destruct H1, H2, H3, H3.
+      exists (/((/p) + - (x/(2#1)))).
+      assert(p < / (/ p + - (x / (2 # 1)))).
+      { rewrite <- Qopp_involutive. rewrite <- (Qopp_involutive (/ (/ - - p + - (x / (2 # 1))))).
+        apply Qopp_lt_compat. rewrite <- Qmult_lt_l with (z:=-(/ p + - (x / (2 # 1)))).
+        rewrite Qmult_opp_assoc. rewrite Qmult_opp_assoc. rewrite Qopp_involutive.
+        rewrite Qmult_inv_r. rewrite Qmult_comm.
+        rewrite Qmult_plus_distr_r. rewrite Qmult_inv_r. rewrite <- (Qplus_0_r 1).
+        rewrite Qplus_lt_r. rewrite Qmult_comm. rewrite <- Qmult_opp_assoc_l.
+        rewrite Qmult_comm. rewrite Qmult_opp_assoc_l.
+        rewrite <- (Qmult_0_l 0). apply Qmult_lt_compat;try apply Qle_refl;auto.
+        rewrite <- Qopp_involutive. apply Qopp_lt_compat. auto. apply Qlt_shift_div_l. reflexivity. rewrite Qmult_0_l. auto.
+        apply Qlt_not_eq;auto. apply Qlt_not_eq.
+        apply Qlt_trans with (y:=(/ p)).
+        rewrite <- (Qplus_0_r (/p)). rewrite <- Qplus_assoc. apply Qplus_lt_r.
+        rewrite Qplus_0_l. 
+      assert((-x/(2#1))<0).
+      assert((-x / (2 # 1)) * (2 # 1)==-x)%Q. field.
+      rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+      rewrite H5. rewrite Qlt_minus_iff.
+      assert(0 * (2 # 1) + - - x==x)%Q. field. rewrite H6. auto.
+        unfold Qdiv. rewrite Qmult_opp_assoc_l. auto. apply Qinv_0_lt_compat;auto.
+        rewrite <- Qopp_involutive. apply Qopp_lt_compat.
+        rewrite <- (Qplus_0_l 0). rewrite Qopp_plus. apply Qplus_lt_le_compat.
+        apply Qinv_0_lt_compat;auto. apply Qlt_le_weak.
+      unfold Qdiv. rewrite Qmult_opp_assoc_l.
+      assert((-x / (2 # 1)) * (2 # 1)==-x)%Q. field.
+      rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+      rewrite H5. rewrite Qlt_minus_iff.
+      assert(0 * (2 # 1) + - - x==x)%Q. field. rewrite H6. auto. }
+      split;auto. right;left. split;auto. split.
+      assert(/ p + - (x / (2 # 1)) < 0).
+      { rewrite <- (Qplus_0_l 0). apply Qplus_lt_le_compat.
+      apply Qinv_0_lt_compat;auto. apply Qlt_le_weak.
+      unfold Qdiv. rewrite Qmult_opp_assoc_l.
+      assert((-x / (2 # 1)) * (2 # 1)==-x)%Q. field.
+      rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+      rewrite H6. rewrite Qlt_minus_iff.
+      assert(0 * (2 # 1) + - - x==x)%Q. field. rewrite H7. auto. }
+      apply Qinv_0_lt_compat;auto. exists (x/(2#1)).
+      split. assert((x / (2 # 1)) * (2 # 1)==x)%Q. field.
+      rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
+      rewrite H6. auto.
+      assert (/ / (/ p + - (x / (2 # 1))) + - (x / (2 # 1))==(/ p + - x))%Q.
+      rewrite Qinv_involutive. rewrite (Qdiv2_opp x). rewrite <- Qplus_assoc.
+      reflexivity. rewrite H6. auto.
+   + exfalso. apply H1.
+  - intros. destruct H2 as [?|[]].
+    + destruct H2. apply Cut_cut_opp_not in H2;auto.
+      destruct H2;auto.
+    + destruct H2. destruct H3, H4, H4. right;left;auto.
+      repeat split;auto. rewrite <- H1. auto.
+      exists x. split;auto. unfold not. intros. apply H5.
+      apply (Dedekind_properties2 _ H (/ q + - x));split;auto.
+      rewrite H1. apply Qle_refl.
+    + exfalso. apply H2. }
+Qed.
 
-Definition Rinv (a : Real) : Real :=
-  match a with
-    | Real_cons A HA => Real_cons (Cut_inv A) (Dedekind_inv A HA)
-  end.
+Lemma Rinv_def_lemma : forall (A : Q->Prop)(HA:Dedekind A),
+ ~Real_cons A HA==Rzero -> A 0 \/ Cut_opp A 0.
+Proof.
+  intros. unfold Req, Rle, Rzero in *.
+  apply not_and_or in H. destruct H.
+  - apply not_all_ex_not in H. destruct H.
+    apply not_imply_to_or in H. destruct H.
+    apply Qnot_lt_le in H0.
+    left. apply (Dedekind_properties2 _ HA x);auto.
+  - apply not_all_ex_not in H. destruct H.
+    apply not_imply_to_or in H. destruct H.
+    right. exists (-x). split. rewrite <- Qopp_involutive.
+    apply Qopp_lt_compat. auto. hnf. intros. destruct H0.
+    apply (Dedekind_properties4 _ HA (-0+--x));auto. field.
+Qed.
 
-Theorem Rmult_inv :
+Definition Rinv (a : Real)(H:~a==Rzero) : Real.
+  destruct a. apply Rinv_def_lemma in H.
+  apply (Real_cons (Cut_inv A) (Dedekind_inv A H0 H)).
+  Defined.
+
+(* Theorem Rmult_inv :
   forall a : Real, (a <> Rzero) -> (a * Rinv a == Rone)%R.
 Proof.
-Admitted.
+Admitted. *)
 

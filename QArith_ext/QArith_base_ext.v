@@ -206,7 +206,7 @@ Proof.
   intros. rewrite Qmult_comm. rewrite (Qmult_comm z y). apply Qmult_le_compat_r. auto. auto.
 Qed.
 
-Lemma Qdiv_lt : forall x y : Q , x > 0 -> x < y -> /y < /x.
+Lemma Qdiv_lt_P : forall x y : Q , x > 0 -> x < y -> /y < /x.
 Proof.
   intros.
   assert(forall x y, x > 0 -> x < y -> / y < / x).
@@ -218,3 +218,72 @@ Proof.
     intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto. } auto.
 Qed.
 
+Lemma Qdiv_le_P : forall x y : Q , x > 0 -> x <= y -> /y <= /x.
+Proof.
+  intros.
+  assert(forall x y, x > 0 -> x <= y -> / y <= / x).
+  { intros. assert(y0>0).
+    { apply Qlt_le_trans with (y:=x0);auto. } apply Qle_shift_inv_l;auto.
+    rewrite <- (Qmult_inv_r y0). { rewrite Qmult_comm.
+    apply Qmult_le_compat_r with (z:=/y0);auto.
+    apply Qinv_le_0_compat. apply Qlt_le_weak. auto. } unfold not.
+    intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto. } auto.
+Qed.
+
+Lemma Qmult_opp_assoc : forall x y : Q, -x*-y==x*y.
+Proof.
+  intros. Search Qmult Qeq.
+  rewrite <- Qplus_inj_l with (z:=x*-y).
+  rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_plus_distr_l.
+  rewrite Qplus_opp_r. rewrite Qplus_comm. rewrite Qplus_opp_r.
+  rewrite Qmult_0_r. apply Qmult_0_l.
+Qed.
+
+Lemma Qinv_0_le_compat: forall a : Q, a < 0 -> / a <= 0.
+Proof.
+  intros. assert(~-a==0). apply Qopp_lt_compat in H.
+  apply Qlt_not_0 in H. auto.
+  pose proof Qlt_not_eq a 0 H.
+  rewrite Qopp_le_compat_iff in *.
+  assert(-/a==/-a). rewrite <- Qmult_inj_l with (z:=-a);auto.
+  rewrite Qmult_inv_r;auto. rewrite Qmult_opp_assoc. rewrite Qmult_inv_r;auto.
+  reflexivity. rewrite H2. apply Qopp_lt_compat in H.
+  apply Qmult_le_l with (z:=-a). auto. rewrite Qmult_inv_r;auto.
+  rewrite Qmult_0_r. apply Qlt_le_weak. reflexivity.
+Qed.
+
+Lemma Qmult_opp_assoc_l : forall x y : Q, -(x*y)==-x*y.
+Proof.
+  intros. 
+  rewrite <- Qplus_inj_l with (z:=x*y).
+  rewrite <- Qmult_plus_distr_l.
+  rewrite Qplus_opp_r. rewrite Qplus_opp_r.
+  rewrite Qmult_0_l. reflexivity.
+Qed.
+
+Lemma Qinv_opp : forall a:Q,(~a==0->-/a==/-a)%Q.
+Proof.
+  intros. assert(~-a==0)%Q. { hnf. intros. apply H.
+  rewrite <- Qplus_inj_l with (z:=a) in H0. rewrite Qplus_opp_r in H0.
+  rewrite Qplus_0_r in H0. rewrite H0. reflexivity. }
+  rewrite <- Qmult_inj_l with (z:=-a);auto.
+  rewrite Qmult_inv_r;auto. rewrite Qmult_opp_assoc. rewrite Qmult_inv_r;auto.
+  reflexivity.
+Qed.
+
+Lemma Qdiv_le_N : forall x y : Q , 0 > y -> x <= y -> /y <= /x.
+Proof.
+  intros.
+  assert(forall x y, 0 > y -> x <= y -> / y <= / x).
+  { intros. assert(x0<0).
+    { apply Qle_lt_trans with (y:=y0);auto. }
+    rewrite Qopp_le_compat_iff in *.
+    apply Qopp_lt_compat in H1. apply Qopp_lt_compat in H3.
+    rewrite Qinv_opp. rewrite Qinv_opp. apply Qle_shift_inv_l;auto.
+    rewrite <- (Qmult_inv_r (-x0)). { rewrite Qmult_comm.
+    apply Qmult_le_compat_r with (z:=(/(-x0)));auto.
+    apply Qinv_le_0_compat. apply Qlt_le_weak. auto. }
+    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto.
+    unfold not. intros. apply Qlt_not_eq in H1. destruct H1. rewrite H4. reflexivity.
+    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. rewrite H4. reflexivity. } auto.
+Qed.
