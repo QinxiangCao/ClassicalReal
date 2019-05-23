@@ -98,3 +98,8 @@ Proof.
   intros.
   exists 0%nat. apply H.
 Qed.
+Lemma inject_Z_nonzero : forall n:nat, (n<>0)%nat -> ~(inject_Z (Z.of_nat n) == 0).
+Proof. intros. intros C. assert (0==inject_Z 0) by reflexivity. rewrite H0 in C.
+   apply (proj1 (inject_Z_injective _ _)) in C. destruct n. destruct H. omega.
+   discriminate C.
+Qed.

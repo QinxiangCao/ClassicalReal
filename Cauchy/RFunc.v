@@ -21,31 +21,85 @@ From CReal.Cauchy Require Import ROrder.
 From CReal.Cauchy Require Import RFloor.
 
 
+Lemma Inject_2: forall m:nat, (m<>0)%nat -> Z.pos (Pos.of_nat m ) = Z.of_nat m.
+Admitted.
+Lemma inject_of_nat_equiv: forall m, (m<>0 )%nat-> (Z.of_nat m # Pos.of_nat m) == 1.
+Admitted.
+Lemma Qinject_nat_pos: forall m, (m<>0)%nat -> inject_Z(Z.of_nat m)>0.
+Admitted.
+Lemma Qmake_pos_inject_Z: forall m, (m<>0)%nat -> (1 / inject_Z (Z.of_nat m)) == (1 # Pos.of_nat m).
+Admitted.
+
+
 (** ---------- Single2Element Function ----------------*)
 
 (** Single Element Set to Element Function *)
-Definition RSingleFun : {X: Real -> Prop|(exists x, X x) /\ (forall x1 x2, X x1 ->
- X x2 -> x1 == x2) /\ Proper (Real_equiv ==> iff) (X)
- }%R -> Real.
 
-Proof. intros. destruct X as [S [H1 [H2 H3]]].
-  apply (Real_intro (fun n q => exists A, S A /\ forall z,
-          (Rfloor (A * (inject_Q (inject_Z (Z.of_nat (n)%nat)))) z) -> 
-        q == z # (Pos.of_nat (n)%nat))).
-  split.
-- intros. destruct H1 as [A0 HA0].
+
+Lemma funlemma1: forall (S:Real->Prop),(exists x, S x) -> (
+forall n : nat,
+exists (q : Q) (A : Real),
+  S A /\
+  (forall z : Z,
+   Rfloor (A * inject_Q (inject_Z (Z.of_nat n))) z ->
+   q == z # Pos.of_nat n)).
+Proof.
+  intros S H1 n. destruct H1 as [A0 HA0].
   destruct (Rfloor_exists  (A0 * inject_Q (inject_Z (Z.of_nat n)))) as [z Hz].
   exists (z # Pos.of_nat (n)).
   exists A0. split. auto. intros. rewrite (Rfloor_unique _ _ _ Hz H). reflexivity.
-- intros. destruct H as[A1 [SHA1 HA1]]. destruct H0 as [A2 [SHA2 HA2]].
+Qed.
+
+
+Lemma funlemma2: forall (S:Real->Prop), (forall x1 x2, S x1 ->
+ S x2 -> (x1 == x2)%R) ->
+(forall (n : nat) (q1 q2 : Q),
+(exists A : Real,
+   S A /\
+   (forall z : Z,
+    Rfloor (A * inject_Q (inject_Z (Z.of_nat n))) z ->
+    q1 == z # Pos.of_nat n)) ->
+(exists A : Real,
+   S A /\
+   (forall z : Z,
+    Rfloor (A * inject_Q (inject_Z (Z.of_nat n))) z ->
+    q2 == z # Pos.of_nat n)) -> q1 == q2).
+Proof.
+  intros S H2. intros. destruct H as[A1 [SHA1 HA1]]. destruct H0 as [A2 [SHA2 HA2]].
   destruct (Rfloor_exists (A1 * inject_Q (inject_Z (Z.of_nat n)))) as [z1 Hz1].
   destruct (Rfloor_exists (A1 * inject_Q (inject_Z (Z.of_nat n)))) as [z2 Hz2].
   assert (E:z1=z2). { apply (Rfloor_unique _ _ _ Hz1 Hz2). }
   rewrite (H2 _ _ SHA1 SHA2) in Hz2.
   rewrite (HA1 _ Hz1),(HA2 _ Hz2). rewrite E. reflexivity.
-- intros. destruct H0 as [A [SHA HA]]. exists A. split. auto. 
+Qed.
+
+Lemma funlemma3: forall (S:Real->Prop), ( Proper (Real_equiv ==> iff) (S)) ->
+forall (p q : Q) (n : nat),
+p == q ->
+(exists A : Real,
+   S A /\
+   (forall z : Z,
+    Rfloor (A * inject_Q (inject_Z (Z.of_nat n))) z ->
+    p == z # Pos.of_nat n)) ->
+exists A : Real,
+  S A /\
+  (forall z : Z,
+   Rfloor (A * inject_Q (inject_Z (Z.of_nat n))) z ->
+   q == z # Pos.of_nat n).
+Proof.
+  intros S H3. intros. destruct H0 as [A [SHA HA]]. exists A. split. auto. 
   intros. rewrite <- H. apply (HA z). auto.
-- intros. exists (max 2 (Z.to_nat (1 + (Qceiling (1/eps))))).
+Qed.
+
+
+Lemma funlemma4: forall (S:Real->Prop), (exists x, S x) -> (forall x1 x2, S x1 ->
+ S x2 -> (x1 == x2)%R) -> Proper (Real_equiv ==> iff) (S) -> 
+forall eps : Q,0 < eps -> exists n : nat,  forall m1 m2 : nat,
+  (m1 > n)%nat ->  (m2 > n)%nat ->  forall q1 q2 : Q,
+  (exists A : Real, S A /\ (forall z : Z, Rfloor (A * inject_Q (inject_Z (Z.of_nat m1))) z -> q1 == z # Pos.of_nat m1)) ->
+  (exists A : Real, S A /\ (forall z : Z, Rfloor (A * inject_Q (inject_Z (Z.of_nat m2))) z -> q2 == z # Pos.of_nat m2)) ->
+   Qabs (q1 - q2) < eps.
+Proof. intros S H1 H2 H3. intros. exists (max 2 (Z.to_nat (1 + (Qceiling (1/eps))))).
   intros. destruct H5 as [A1 [HA1 Hq1]].
   assert (Em1: m1 <> 0%nat).
   { intros C. rewrite C in H0. omega. }
@@ -64,11 +118,9 @@ Proof. intros. destruct X as [S [H1 [H2 H3]]].
     assert (Hqz1: q1 == z1 # Pos.of_nat m1) by auto.
     assert (Hqz2: q2 == z2 # Pos.of_nat m2) by auto.
     clear Hq1. clear Hq2. 
-
     assert (E1: - (1/(inject_Z (Z.of_nat m1))) < (q1 - q2)
           /\ q1 - q2 < 1/(inject_Z (Z.of_nat m2))).
     { destruct Hz1 as [P1 P2].
-      
       assert (T1: (inject_Q q1 > (A1 - (inject_Q (1#Pos.of_nat m1))))%R).
         { unfold Rgt. rewrite Hqz1. rewrite <- (Rmult_1_r A1).
           rewrite <- (Rmult_inv_r' _ (inject_Q_nonzero _ (inject_Z_nonzero _ Em1))).
@@ -86,7 +138,7 @@ Proof. intros. destruct X as [S [H1 [H2 H3]]].
           { rewrite <- Et2. rewrite <- inject_Q_mult.
             assert(Et: inject_Z (Z.of_nat m1) * (1 # Pos.of_nat m1) == 1).
             { rewrite Qmake_Qdiv. unfold Qdiv. rewrite (Qmult_comm (inject_Z 1)).
-              rewrite Qmult_assoc. 
+              rewrite Qmult_assoc.
               assert (Et': inject_Z (Z.of_nat m1) * / inject_Z (Z.pos (Pos.of_nat m1)) ==
                             inject_Z (Z.of_nat m1)  / inject_Z (Z.pos (Pos.of_nat m1))) by reflexivity.
             rewrite Et'. rewrite <- Qmake_Qdiv. rewrite inject_of_nat_equiv. reflexivity. omega. }
@@ -241,7 +293,7 @@ Proof. intros. destruct X as [S [H1 [H2 H3]]].
       rewrite <- inject_Q_opp in H6,H7.
       apply inject_Q_lt_inv in H6. apply inject_Q_lt_inv in H7.
       apply Qopp_lt_compat in H7. rewrite Qopp_involutive in H7,H7.
-      rewrite <- Qmake_pos_inject_Z. split. auto. rewrite <- Qmake_pos_inject_Z. auto. auto. auto.
+      rewrite Qmake_pos_inject_Z. split. auto. rewrite Qmake_pos_inject_Z. auto. auto. auto.
 }
 
   assert (E2: eps > 1 / inject_Z (Z.of_nat (m2 - 1))).
@@ -360,17 +412,33 @@ Proof. intros. destruct X as [S [H1 [H2 H3]]].
     auto.
 Qed.
 
+Definition RSingleFun : {X: Real -> Prop|(exists x, X x) /\ (forall x1 x2, X x1 ->
+ X x2 -> x1 == x2) /\ Proper (Real_equiv ==> iff) (X)
+ }%R -> Real.
+
+Proof. intros. destruct X as [S [H1 [H2 H3]]].
+  apply (Real_intro (fun n q => exists A, S A /\ forall z,
+          (Rfloor (A * (inject_Q (inject_Z (Z.of_nat (n)%nat)))) z) -> 
+        q == z # (Pos.of_nat (n)%nat))).
+  split.
+- apply funlemma1;auto.
+- apply funlemma2;auto.
+- apply funlemma3;auto.
+- apply funlemma4;auto.
+Defined.
+
 
 Theorem Rsinglefun_correct: forall X H, X (RSingleFun (exist _ X H)).
-Proof. intros.
- hnf in *. destruct H as [H1 [H2 H3]].
+Proof. intros. hnf in *. destruct H as [H1 [H2 H3]].
+  hnf in H3. 
+
+ destruct H1.
+  apply (H3 x);auto. hnf. unfold RSingleFun. destruct x as [A HA].
+  intros. exists (Z.to_nat (Qceiling (Qabs(1/eps))+1)).
 
 
- hnf in H3. destruct H1.
+(* *)
 
-
-
-  apply (H3 x);auto.
 
 Admitted.
 
