@@ -704,61 +704,66 @@ Proof.
 Qed.
 End leCModule.
 
-Definition plusSeqProp {X : Type}  (eqX : relation X) {HP : Plus_Field eqX} (seq1 seq2 pseq : seq) : Prop :=
-  (forall (n : nat) (a b : X), seq1 n a -> seq2 n b -> pseq n (a + b)) /\ 
+Definition plusSeq {X : Type}  (eqX : relation X) {HP : Plus_Field eqX} 
+ (seq1 seq2 pseq: seq): Prop := 
+ ((forall (n : nat) (a b : X), seq1 n a -> seq2 n b -> pseq n (a + b)) /\ 
   (forall (n : nat) (a b : X) ,~eqX a b -> pseq n a -> ~(pseq n b)) /\
-  (forall (n : nat) (a b: X) , eqX a b -> pseq n a -> pseq n b).
+  (forall (n : nat) (a b: X) , eqX a b -> pseq n a -> pseq n b)).
 
 Class PropPlusDist {X : Type} {eqX : relation X} {M : Metric eqX eqX}
   {HE : Equivalence eqX} :={
       HPD : forall a b c, eqX (dist (a + b) (a + c)) (dist b c);
+      PSP : forall  (seq1 seq2 : seq), {pseq : seq | plusSeq eqX seq1 seq2 pseq};
   }. 
 Theorem plus_Cauchy_seq : forall {X : Type} {eqX : relation X} {HE : Equivalence eqX} 
-  {M : Metric eqX eqX} { PPD : PropPlusDist} {seq1 seq2 pseq : seq}
-  {HPS : plusSeqProp eqX seq1 seq2 pseq},
-        CauchySeq eqX eqX seq2 -> CauchySeq eqX eqX seq1 -> CauchySeq eqX eqX pseq.
+  {M : Metric eqX eqX} { PPD : PropPlusDist} {seq1 seq2 : seq},
+        CauchySeq eqX eqX seq2 -> CauchySeq eqX eqX seq1 -> 
+        {pseq : seq | CauchySeq eqX eqX pseq}.
 Proof.
     intros.
+     assert(H1 :forall  (seq1 seq2 : seq), {pseq : seq | plusSeq eqX seq1 seq2 pseq}).
+    apply PSP.
+    destruct H1 with (seq1 := seq1) (seq2 := seq2) as [pseq H2].
     assert(Heq : forall n a b, pseq n a -> pseq n b -> eqX a b).
-    {intros. inversion HPS. destruct H4. assert(~~eqX a b).
-    unfold not. intros. apply H4 with (n := n) in H6. assert(pseq n b /\ ~pseq n b).
-    split. auto. auto. apply PNP in H7. destruct H7. auto. apply NNPP in H6.
-    auto. }
-     split. -intros. inversion HPS. inversion HPS. pose proof HCseq1.
+    {intros. inversion H2. destruct H6. assert(~~eqX a b).
+    unfold not. intros. apply H6 with (n := n) in H8. assert(pseq n b /\ ~pseq n b).
+    split. auto. auto. apply PNP in H9. destruct H9. auto. apply NNPP in H8.
+    auto. } exists pseq.
+     split. -intros. inversion H2. inversion H4. pose proof HCseq1.
       assert(forall n : nat, exists a : X, seq2 n a). apply HCseq1.
-      destruct H5 with (n := n) as [a]. destruct H6 with (n := n) as [b].
-      exists (a + b). apply H1. auto. auto.
-      -intros. split. inversion HPS. destruct H3. apply H4. auto.
-            inversion HPS. destruct H3. apply H4. symmetry. auto.
+      destruct H7 with (n := n) as [a]. destruct H8 with (n := n) as [b].
+      exists (a + b). apply H3. auto. auto.
+      -intros. split. inversion H2. destruct H5. apply H6. auto.
+            inversion H2. destruct H5. apply H6. symmetry. auto.
       -intros. apply Heq with (n := m). auto. auto.
-      -intros. inversion HPS. destruct H3. pose proof HCseq1.
+      -intros. inversion H2. destruct H5. pose proof HCseq1.
       assert(forall n : nat, exists a : X, seq2 n a). apply HCseq1.
       pose proof HCA. assert(forall eps : X, eps > x0 -> exists N : nat, 
       forall m n : nat,  (N < m)%nat /\ (N < n)%nat ->  
       forall a b : X,  seq2 m a /\ seq2 n b -> eps > dist a b). apply HCA.
       destruct (division_of_eps X eqX _ eps) as [eps1 Heps]. auto.
       destruct Heps as [eps2 Heps].
-      destruct H7 with (eps := eps1) as [N1]. destruct Heps. auto.
-      destruct H8 with (eps := eps2) as [N2]. destruct Heps as [H10 [H11 H12 ]].
+      destruct H9 with (eps := eps1) as [N1]. destruct Heps. auto.
+      destruct H10 with (eps := eps2) as [N2]. destruct Heps as [H12 [H13 H14 ]].
        auto. destruct (always_greater N1 N2) as [N].
-      destruct H11. exists N. intros. destruct H5 with (n := m) as [am].
-      destruct H5 with (n := n) as [an]. destruct H6 with (n := m) as [bm].
-      destruct H6 with (n := n) as [bn]. destruct H14. assert(eqX a (am + bm)).
+      destruct H13. exists N. intros. destruct H7 with (n := m) as [am].
+      destruct H7 with (n := n) as [an]. destruct H8 with (n := m) as [bm].
+      destruct H8 with (n := n) as [bn]. destruct H16. assert(eqX a (am + bm)).
       apply Heq with (n := m). auto. auto. assert(eqX b (an + bn)). apply Heq with (n := n).
-      auto. auto. assert(eqX (dist a b) (dist (am + bm) (an + bn))). rewrite <-H20.
-      rewrite <- H21. reflexivity. rewrite H22. 
-      assert(dist (am + bm) (an + bn) <= dist (am + bm) (an + bm) + dist (an + bm) (an + bn)). apply mtr. rewrite HPD in H23. rewrite pfc in H23. rewrite (pfc an bm) in H23.
-      rewrite HPD in H23. destruct H9 with (m := m) (a := am) (n := n) (b := an).
-      destruct H13. split. apply (lt_trans _ N _). auto. auto. apply (lt_trans _ N _).
+      auto. auto. assert(eqX (dist a b) (dist (am + bm) (an + bn))). rewrite <-H22.
+      rewrite <- H23. reflexivity. rewrite H24. 
+      assert(dist (am + bm) (an + bn) <= dist (am + bm) (an + bm) + dist (an + bm) (an + bn)). apply mtr. rewrite HPD in H25. rewrite pfc in H25. rewrite (pfc an bm) in H25.
+      rewrite HPD in H25. destruct H11 with (m := m) (a := am) (n := n) (b := an).
+      destruct H15. split. apply (lt_trans _ N _). auto. auto. apply (lt_trans _ N _).
       auto. auto. split. auto. auto.
-      destruct H10 with (m := m) (a := bm) (n := n) (b := bn). destruct H13.
+      destruct H12 with (m := m) (a := bm) (n := n) (b := bn). destruct H15.
       split. apply (lt_trans _ N _). auto. auto. apply (lt_trans _ N _). auto. auto.
       split. auto. auto. assert(dist am an + dist bm bn < eps1 + eps2).
       apply lt_two_plus_two. auto. apply lt_intro. auto. auto. apply lt_intro.
-      auto. auto. destruct Heps as [Heps1 [Heps2 Heqeps]]. rewrite Heqeps in H24.
-      apply le_lt_eq in H23. destruct H23.
+      auto. auto. destruct Heps as [Heps1 [Heps2 Heqeps]]. rewrite Heqeps in H26.
+      apply le_lt_eq in H25. destruct H25.
       apply lttr with (y := dist am an + dist bm bn).
-      auto. rewrite (pfc am bm). auto. auto. rewrite (pfc am bm). rewrite H23. auto.
+      auto. rewrite (pfc am bm). auto. auto. rewrite (pfc am bm). rewrite H25. auto.
 Qed.
 
 (** two funny tool**)
@@ -774,14 +779,18 @@ Definition DstuCprop {X : Type} {eqX : relation X} {HE : Equivalence eqX}
       end.
 
 Definition plusC {X : Type} {eqX : relation X} {HE : Equivalence eqX}
-  {M : Metric eqX eqX} { PPD : PropPlusDist} {pseq : seq}
-  (x y : Cauchilize eqX eqX) {HPS : plusSeqProp eqX (DstuCseq x) (DstuCseq y) pseq} 
-  : Cauchilize eqX eqX :=
-   con_intro _ _ pseq 
-   (@plus_Cauchy_seq X eqX HE M PPD (DstuCseq x) (DstuCseq y)
-      pseq HPS (DstuCprop y) (DstuCprop x)).
+  {M : Metric eqX eqX} { PPD : PropPlusDist} (x y : Cauchilize eqX eqX)
+  : Cauchilize eqX eqX.
+  destruct x as [seq1 H1]. destruct y as [seq2 H2].
+   pose proof (@plus_Cauchy_seq _ _ _ _ _ seq1 seq2).
+   assert({pseq : seq | CauchySeq eqX eqX pseq}). apply X0. auto. auto.
+   pose proof proj2_sig. pose proof proj1_sig. 
+   assert(CauchySeq eqX eqX (proj1_sig X1)). apply H.
+   apply (con_intro eqX eqX (proj1_sig X1) H0).
+   Defined.
 
-Check plusC.
+Instance plusC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) (HE : Equivalence eqX) (PPD : PropPlusDist) ,
+      Proper (equC ==> equC ==> equC) plusC.
 
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
