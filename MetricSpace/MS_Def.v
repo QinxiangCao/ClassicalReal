@@ -791,7 +791,14 @@ Definition plusC {X : Type} {eqX : relation X} {HE : Equivalence eqX}
 
 Instance plusC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) (HE : Equivalence eqX) (PPD : PropPlusDist) ,
       Proper (equC ==> equC ==> equC) plusC.
-
+Proof.
+    intros. hnf. intros. hnf. intros. destruct x. destruct y. destruct x1. destruct y0.
+    simpl. intros. simpl in H0. simpl in H. destruct (division_of_eps _ _ _ eps) as [eps1]. auto.
+    destruct H6 as [eps2]. destruct H6. destruct H7. destruct H with (eps := eps1) as [N1]. auto.
+    destruct H0 with (eps := eps2) as [N2]. auto. destruct(always_greater N1 N2) as [G].
+    destruct H11. exists G. intros. remember (proj1_sig (plus_Cauchy_seq H3 H1)).
+    remember (proj1_sig (plus_Cauchy_seq H4 H2)). 
+    
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
   Admitted.
