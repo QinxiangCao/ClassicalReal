@@ -38,7 +38,17 @@ Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
 Notation "a == b" :=(C1.Real_equiv a b):CReal_Scope.
 Notation "a + b" :=(C1.Rplus a b):CReal_Scope.
 Notation "a * b" :=(C1.Rmult a b):CReal_Scope.
-
+Lemma Z_1_mult: forall(a:Z),(1*a=a)%Z.
+Proof.
+  intros. simpl. induction a. omega. omega. omega.
+Qed.
+Lemma mult_lt_0:forall (a b :Q),0<a->0<b->0<a*b.
+Proof.
+  intros. unfold Qlt in *. simpl in *.
+  rewrite Zmult_comm in*.  rewrite Z_1_mult in *.
+  assert(0=Qnum a*0)%Z. rewrite Zmult_comm. reflexivity. rewrite H1.
+  apply Zmult_lt_compat_l . auto. auto.
+Qed.
 
 Theorem Dedekind_CSeq :forall (CSeq:nat->Q->Prop),
 Cauchy CSeq->Dedekind (fun q=>exists (t:Q),(t>0)%Q/\(exists(N:nat),forall (n:nat)(p:Q),(n>N)%nat->CSeq n p->(q+t<p)%Q)).
@@ -114,29 +124,94 @@ Proof.
   apply Qplus_lt_le_compat. apply H1. apply Qlt_le_weak. apply H2.
   destruct H3. destruct H5. exists (x4+x5)%nat. intros. unfold C1.CauchySeqPlus in H7.
   destruct H. destruct H0. destruct Cauchy_exists with n. destruct Cauchy_exists0 with n.
-  assert(p==x6+x7)%Q. apply H6. auto. auto. rewrite H7. 
-  apply Qplus_lt_le_compat.
-  + apply H1 with n. omega. auto.
-  + assert(x1<x5). apply H2 with n. omega. auto.
-    apply Qlt_le_weak. auto.
-- unfold Rle. unfold "+"%D. simpl. intros. destruct H1.
-  unfold D3.Cut_plus_Cut.
-  destruct H. destruct H0.
-  destruct Cauchy_exists with x0. 
-  destruct Cauchy_exists0 with x0.
-  exists ((1#2)*x)%Q,((1#2)*x)%Q. split.
-  + exists x0. intros. assert(x<(2#1)*p)%Q.
-    { apply H1 with n. apply H2. unfold C1.CauchySeqPlus.
-      intros.  
-
+  assert(p==x6+x7)%Q. apply H7. auto. auto. rewrite H8. rewrite<-H4. 
+  assert(x0 + x2 < x6)%Q. apply H3 with n.
+  apply Nat.le_lt_trans with (x4+x5)%nat.
+  apply le_plus_l. apply H6. auto.
+  assert(x1 + x3 < x7)%Q. apply H5 with n.
+  apply Nat.le_lt_trans with (x4+x5)%nat.
+  apply le_plus_r. apply H6. auto.
+  rewrite Qplus_assoc. rewrite Qplus_comm. rewrite Qplus_assoc.
+  assert(x0 + x1==x1+x0)%Q. rewrite Qplus_comm. reflexivity.
+  rewrite H11. rewrite Qplus_assoc.
+  assert(x3 + x1 + x0 + x2==(x3+x1)+(x0+x2))%Q.
+  symmetry. rewrite Qplus_assoc. reflexivity. rewrite H12.
+  rewrite Qplus_comm. apply Qplus_lt_le_compat. auto.
+  rewrite Qplus_comm. apply Qlt_le_weak. auto.
+- unfold Rle. unfold "+"%D. simpl. intros. unfold D3.Cut_plus_Cut.
+  destruct H1. destruct H1. 
+  (*destruct H. destruct H0. destruct H2.
+  unfold CauchySeqPlus in *. exists ((1#2)*x)%Q,((1#2)*x)%Q.
+  split. exists ((1#2)*x0)%Q. split. apply H1. exists x1. intros.
+ destruct Cauchy_exists with x1. 
+  destruct Cauchy_exists0 with x1.*)
 Theorem C2D_properity2:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
 Proof.
 
 Admitted.
+Lemma Qminus_Qplus:forall(a b c:Q),a<=b+c<->a-b<=c.
+Proof.
+  intros. split.
+- intros. unfold Qminus. assert(a + -b<= b + c +-b).
+  { Search Qle Qplus. apply Qplus_le_compat. auto. apply Qle_refl. }
+  assert(b+ c+ -b==c)%Q. rewrite Qplus_comm. rewrite Qplus_assoc.
+  rewrite Qplus_comm. assert(-b+b==0)%Q. rewrite Qplus_comm. apply Qplus_opp_r.
+  rewrite H1. Search Qplus 0. apply Qplus_0_r. rewrite<-H1. auto.
+- intros. unfold Qminus in H. assert(a + -b +b<= c+b).
+  apply Qplus_le_compat. auto. apply Qle_refl.
+  rewrite Qplus_comm. assert( a + - b + b==a)%Q.
+  assert(- b + b ==0)%Q. rewrite Qplus_comm. apply Qplus_opp_r.
+  rewrite<-Qplus_assoc. rewrite H1. apply Qplus_0_r.
+  rewrite <-H1. auto.
+Qed.
+  
 Theorem C2D_properity3:forall (x y:C1.Real),
 (x==y)%C->  ((C2D x)==(C2D y)).
 Proof.
-Admitted.
-
+intros.
+unfold "==". split. 
+- unfold D2.Rle. destruct x. destruct y. unfold C2D. unfold C1.Real_equiv in H.
+  intros. destruct H2. destruct H2. destruct H3. destruct H with ((1#2)*x0)%Q.
+  apply mult_lt_0. reflexivity. auto. exists ((1#2)*x0)%Q. split.
+  apply mult_lt_0. reflexivity. auto. exists (x1+x2)%nat. intros. destruct H0.
+  destruct Cauchy_exists with n. assert(x + x0 < x3). apply H3 with n.
+  apply Nat.le_lt_trans with (x1+x2)%nat. omega. apply H5. apply H0.
+  assert(Qabs(x3-p)<(1 # 2) * x0). apply H4 with n. apply Nat.le_lt_trans with (x1+x2)%nat. omega.
+  apply H5. auto. auto. assert(x3 -(1#2)*x0<=p). 
+  assert(x3-p<=(1 # 2) * x0). Search Qle "trans". 
+  apply QOrderedType.QOrder.le_trans with (Qabs (x3 - p)).
+  apply Qle_Qabs. apply Qlt_le_weak. auto. rewrite<-Qminus_Qplus.
+  rewrite<-Qminus_Qplus in H9. rewrite Qplus_comm. auto.
+  rewrite<- Qminus_Qplus in H9. assert(x + x0 <(1 # 2) * x0 + p).
+  apply QOrderedType.QOrder.lt_le_trans with x3. auto.
+  auto. assert(x + (1 # 2) * x0 +(1 # 2) * x0< p+(1 # 2) * x0).
+  rewrite<- Qplus_assoc. assert(p + (1 # 2) * x0==(1 # 2) * x0+p)%Q.
+  apply Qplus_comm. assert((1 # 2) * x0 + (1 # 2) * x0==x0)%Q.
+  rewrite<- Qmult_plus_distr_l. assert((1 # 2) + (1 # 2)==1)%Q.
+  reflexivity. rewrite H12. apply Qmult_1_l. rewrite H12. auto. 
+  rewrite H11. auto. apply Qplus_lt_l with ((1 # 2) * x0)%Q.
+  auto.
+- unfold D2.Rle. destruct x. destruct y. unfold C2D. unfold C1.Real_equiv in H.
+  intros. destruct H2. destruct H2. destruct H3. destruct H with ((1#2)*x0)%Q.
+  apply mult_lt_0. reflexivity. auto. exists ((1#2)*x0)%Q. split.
+  apply mult_lt_0. reflexivity. auto. exists (x1+x2)%nat. intros. destruct H1.
+  destruct Cauchy_exists with n. assert(x + x0 < x3). apply H3 with n.
+  apply Nat.le_lt_trans with (x1+x2)%nat. omega. apply H5. apply H1.
+  assert(Qabs(p-x3)<(1 # 2) * x0). apply H4 with n. apply Nat.le_lt_trans with (x1+x2)%nat. omega.
+  apply H5. auto. auto. assert(x3 -(1#2)*x0<=p). 
+  assert(x3-p<=(1 # 2) * x0). Search Qle "trans". 
+  apply QOrderedType.QOrder.le_trans with (Qabs (x3 - p)).
+  apply Qle_Qabs. rewrite Qabs_Qminus. apply Qlt_le_weak. auto. rewrite<-Qminus_Qplus.
+  rewrite<-Qminus_Qplus in H9. rewrite Qplus_comm. auto.
+  rewrite<- Qminus_Qplus in H9. assert(x + x0 <(1 # 2) * x0 + p).
+  apply QOrderedType.QOrder.lt_le_trans with x3. auto.
+  auto. assert(x + (1 # 2) * x0 +(1 # 2) * x0< p+(1 # 2) * x0).
+  rewrite<- Qplus_assoc. assert(p+ (1 # 2) * x0==(1 # 2) * x0+p)%Q.
+  apply Qplus_comm. assert((1 # 2) * x0 + (1 # 2) * x0==x0)%Q.
+  rewrite<- Qmult_plus_distr_l. assert((1 # 2) + (1 # 2)==1)%Q.
+  reflexivity. rewrite H12. apply Qmult_1_l. rewrite H12. 
+  rewrite H11. auto. apply Qplus_lt_l with ((1 # 2) * x0)%Q.
+  auto.
+Qed.
 

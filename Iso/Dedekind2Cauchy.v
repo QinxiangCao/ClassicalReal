@@ -45,7 +45,9 @@ Theorem Cauchy_Dcut :forall (DCut:Q->Prop),
 Dedekind DCut->Cauchy (fun n q=>exists N:Z,
 DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat n))/\(q==N#2^(of_nat n))%Q).
 Proof.
-Admitted.
+  intros.
+  split.
+- intros. destruct H.  
 
 Definition D2C (B:D1.Real):C1.Real :=
 match B with
