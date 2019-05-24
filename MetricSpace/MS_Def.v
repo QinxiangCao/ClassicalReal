@@ -718,7 +718,7 @@ Class PropPlusDist {X : Type} {eqX : relation X} {M : Metric eqX eqX}
 Theorem plus_Cauchy_seq : forall {X : Type} {eqX : relation X} {HE : Equivalence eqX} 
   {M : Metric eqX eqX} { PPD : PropPlusDist} {seq1 seq2 : seq},
         CauchySeq eqX eqX seq2 -> CauchySeq eqX eqX seq1 -> 
-        {pseq : seq | CauchySeq eqX eqX pseq}.
+        {pseq : seq | CauchySeq eqX eqX pseq /\ plusSeq eqX seq1 seq2 pseq}.
 Proof.
     intros.
      assert(H1 :forall  (seq1 seq2 : seq), {pseq : seq | plusSeq eqX seq1 seq2 pseq}).
@@ -729,7 +729,7 @@ Proof.
     unfold not. intros. apply H6 with (n := n) in H8. assert(pseq n b /\ ~pseq n b).
     split. auto. auto. apply PNP in H9. destruct H9. auto. apply NNPP in H8.
     auto. } exists pseq.
-     split. -intros. inversion H2. inversion H4. pose proof HCseq1.
+     split. split. -intros. inversion H2. inversion H4. pose proof HCseq1.
       assert(forall n : nat, exists a : X, seq2 n a). apply HCseq1.
       destruct H7 with (n := n) as [a]. destruct H8 with (n := n) as [b].
       exists (a + b). apply H3. auto. auto.
@@ -764,6 +764,7 @@ Proof.
       apply le_lt_eq in H25. destruct H25.
       apply lttr with (y := dist am an + dist bm bn).
       auto. rewrite (pfc am bm). auto. auto. rewrite (pfc am bm). rewrite H25. auto.
+      -auto.
 Qed.
 
 (** two funny tool**)
@@ -783,24 +784,18 @@ Definition plusC {X : Type} {eqX : relation X} {HE : Equivalence eqX}
   : Cauchilize eqX eqX.
   destruct x as [seq1 H1]. destruct y as [seq2 H2].
    pose proof (@plus_Cauchy_seq _ _ _ _ _ seq1 seq2).
-   assert({pseq : seq | CauchySeq eqX eqX pseq}). apply X0. auto. auto.
-   pose proof proj2_sig. pose proof proj1_sig. 
-   assert(CauchySeq eqX eqX (proj1_sig X1)). apply H.
-   apply (con_intro eqX eqX (proj1_sig X1) H0).
+   assert({pseq : seq | CauchySeq eqX eqX pseq /\ plusSeq eqX seq1 seq2 pseq}).
+   apply X0. auto. auto.
+   assert(CauchySeq eqX eqX (proj1_sig X1) /\
+       plusSeq eqX seq1 seq2 (proj1_sig X1)). apply proj2_sig.
+    destruct H. apply (con_intro eqX eqX (proj1_sig X1) H).
    Defined.
 
 Instance plusC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) (HE : Equivalence eqX) (PPD : PropPlusDist) ,
       Proper (equC ==> equC ==> equC) plusC.
 Proof.
-    intros. hnf. intros. hnf. intros. destruct x. destruct y. destruct x1. destruct y0.
-    simpl. intros. simpl in H0. simpl in H. destruct (division_of_eps _ _ _ eps) as [eps1]. auto.
-    destruct H6 as [eps2]. destruct H6. destruct H7. destruct H with (eps := eps1) as [N1]. auto.
-    destruct H0 with (eps := eps2) as [N2]. auto. destruct(always_greater N1 N2) as [G].
-    destruct H11. exists G. intros. remember (proj1_sig (plus_Cauchy_seq H3 H1)).
-    remember (proj1_sig (plus_Cauchy_seq H4 H2)). 
-    assert(exists a, Cseq n a). apply HCseq1. destruct H16 as [ca].
-    assert(exists a, Cseq1 n a). apply HCseq1. destruct H17 as [ca1].
-   assert(s n (ca + ca1)). destruct (proj2_sig (plus_Cauchy_seq H3 H1)).
+    intros. hnf. intros. hnf. intros. 
+   
     
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
