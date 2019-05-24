@@ -798,6 +798,9 @@ Proof.
     destruct H0 with (eps := eps2) as [N2]. auto. destruct(always_greater N1 N2) as [G].
     destruct H11. exists G. intros. remember (proj1_sig (plus_Cauchy_seq H3 H1)).
     remember (proj1_sig (plus_Cauchy_seq H4 H2)). 
+    assert(exists a, Cseq n a). apply HCseq1. destruct H16 as [ca].
+    assert(exists a, Cseq1 n a). apply HCseq1. destruct H17 as [ca1].
+   assert(s n (ca + ca1)). destruct (proj2_sig (plus_Cauchy_seq H3 H1)).
     
 Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
 Proof.
@@ -807,14 +810,3 @@ Theorem Cauchilized_eps_division :
     forall (X : Type) (x : Cauchilize X X), (exists x1, leC (x1 + x1) x) .
 Proof.
     Admitted.
-
-
-Theorem Cauchy_seq_converge :
-    forall (A X : Type) (seq : nat -> Cauchilize A X -> Prop) (M : Metric (Cauchilize A X) (Cauchilize X X)),
-      Converge (Cauchilize A X) (Cauchilize X X) M seq
-      <-> CauchySeq (Cauchilize A X) (Cauchilize X X) M seq.
-Proof.
-  split. -intros. inversion H0. split. +apply HC4.
-    +apply HC5. +apply HC6.  +intros. destruct HC0 with (eps := eps ).
-    exists x. intros. destruct H3. destruct H4. destruct H2.
-
