@@ -3061,10 +3061,20 @@ Proof.
 Qed.
 
 Definition Rinv (a : Real)(H:~a==Rzero) : Real.
+Admitted.
+
+Definition Rinv' (a: Real): Real.
+  apply Rsinglefun.
+  exists (fun b => (exists H: ~ a == Rzero, Rinv a H = b) \/
+                   a == Rzero /\ b == Rzero).
+  split; [| split].
+Abort.
+(*
+Definition Rinv (a : Real)(H:~a==Rzero) : Real.
   destruct a. apply Rinv_def_lemma in H.
   apply (Real_cons (Cut_inv A) (Dedekind_inv A H0 H)).
   Defined.
-
+*)
 (* Theorem Rmult_inv :
   forall a : Real, (a <> Rzero) -> (a * Rinv a == Rone)%R.
 Proof.
