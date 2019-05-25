@@ -224,7 +224,7 @@ Proof.
     rewrite <- H. apply H1.
 Qed.
 
-Fixpoint Rplus(a b : Real) : Real :=
+Definition Rplus(a b : Real) : Real :=
   match a with
     | (Real_cons A HA) => match b with
                             | (Real_cons B HB) =>
@@ -2839,72 +2839,6 @@ Definition Cut_inv (A : Q -> Prop) : Q -> Prop :=
            \/ (~ A 0 /\ ~ Cut_opp A 0/\ False ))
 .
 
-Lemma Qmult_opp_assoc : forall x y : Q, (-x*-y==x*y)%Q.
-Proof.
-  intros. Search Qmult Qeq.
-  rewrite <- Qplus_inj_l with (z:=x*-y).
-  rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_plus_distr_l.
-  rewrite Qplus_opp_r. rewrite Qplus_comm. rewrite Qplus_opp_r.
-  rewrite Qmult_0_r. apply Qmult_0_l.
-Qed.
-
-Lemma Qinv_opp : forall a:Q,(~a==0->-/a==/-a)%Q.
-Proof.
-  intros. assert(~-a==0)%Q. { hnf. intros. apply H.
-  rewrite <- Qplus_inj_l with (z:=a) in H0. rewrite Qplus_opp_r in H0.
-  rewrite Qplus_0_r in H0. rewrite H0. reflexivity. }
-  rewrite <- Qmult_inj_l with (z:=-a);auto.
-  rewrite Qmult_inv_r;auto. rewrite Qmult_opp_assoc. rewrite Qmult_inv_r;auto.
-  reflexivity.
-Qed.
-
-Lemma Qinv_0_le_compat: forall a : Q, a < 0 -> / a <= 0.
-Proof.
-  intros. assert(~-a==0)%Q. apply Qopp_lt_compat in H.
-  apply Qlt_not_0 in H. auto.
-  pose proof Qlt_not_eq a 0 H.
-  rewrite Qopp_le_compat_iff in *.
-  assert(-/a==/-a)%Q. rewrite <- Qmult_inj_l with (z:=-a);auto.
-  rewrite Qmult_inv_r;auto. rewrite Qmult_opp_assoc. rewrite Qmult_inv_r;auto.
-  reflexivity. rewrite H2. apply Qopp_lt_compat in H.
-  apply Qmult_le_l with (z:=-a). auto. rewrite Qmult_inv_r;auto.
-  rewrite Qmult_0_r. apply Qlt_le_weak. reflexivity.
-Qed.
-
-Lemma Qinv_0_lt_compat: forall a : Q, a < 0 -> / a < 0.
-Proof.
-  intros.
-  pose proof Qlt_not_eq a 0 H. Search Qlt Qopp.
-  rewrite Qlt_minus_iff in *. rewrite Qplus_0_l in *. rewrite Qinv_opp;auto.
-  apply Qinv_lt_0_compat. auto.
-Qed.
-
-Lemma Qmult_opp_assoc_l : forall x y : Q, (-(x*y)==-x*y)%Q.
-Proof.
-  intros. Search Qmult Qeq.
-  rewrite <- Qplus_inj_l with (z:=x*y).
-  rewrite <- Qmult_plus_distr_l.
-  rewrite Qplus_opp_r. rewrite Qplus_opp_r.
-  rewrite Qmult_0_l. reflexivity.
-Qed.
-
-Lemma Qdiv_le_N : forall x y : Q , 0 > y -> x <= y -> /y <= /x.
-Proof.
-  intros.
-  assert(forall x y, 0 > y -> x <= y -> / y <= / x).
-  { intros. assert(x0<0).
-    { apply Qle_lt_trans with (y:=y0);auto. }
-    rewrite Qopp_le_compat_iff in *.
-    apply Qopp_lt_compat in H1. apply Qopp_lt_compat in H3.
-    rewrite Qinv_opp. rewrite Qinv_opp. apply Qle_shift_inv_l;auto.
-    rewrite <- (Qmult_inv_r (-x0)). { rewrite Qmult_comm.
-    apply Qmult_le_compat_r with (z:=(/(-x0)));auto.
-    apply Qinv_le_0_compat. apply Qlt_le_weak. auto. }
-    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto.
-    unfold not. intros. apply Qlt_not_eq in H1. destruct H1. rewrite H4. reflexivity.
-    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. rewrite H4. reflexivity. } auto.
-Qed.
-
 Theorem Dedekind_inv : forall A : Q -> Prop , Dedekind A -> 
 A 0\/Cut_opp A 0 -> Dedekind (Cut_inv A).
 Proof.
@@ -2940,7 +2874,7 @@ Proof.
     + assert(q <= 0 \/ ~ q <= 0). apply classic. destruct H1.
       destruct H3. left;auto.
       destruct H4. pose proof Qle_trans q p 0 H2 H4. destruct H3. auto.
-      apply Qnot_le_lt in H3. apply Qdiv_le in H2;auto. left.
+      apply Qnot_le_lt in H3. apply Qdiv_le_P in H2;auto. left.
       split;auto. right;split;auto. destruct H4, H5. exists x. destruct H5.
       split;auto. unfold not. intros. apply H6.
       apply (Dedekind_properties2 _ H (/ q + - x));split;auto.
@@ -2984,7 +2918,7 @@ Proof.
         apply Qlt_shift_div_l. reflexivity. rewrite Qmult_0_l. auto.
         apply Qlt_not_0;auto. apply Qlt_not_0.
         apply Qlt_trans with (y:=(/ p + - x)).
-        apply (Dedekind_le A);auto. apply Qplus_lt_r. Search Qmult Qlt.
+        apply (Dedekind_le A);auto. apply Qplus_lt_r.
         rewrite Qdiv2. rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
         assert(-(x / (2 # 1)) * (2 # 1)==-x)%Q. field.
         assert((- x * / (2 # 1) + - x * / (2 # 1)) * (2 # 1)==-(x+x))%Q. field.
@@ -2992,7 +2926,7 @@ Proof.
         rewrite Qopp_involutive. rewrite Qplus_comm.
         rewrite <- Qplus_assoc. rewrite Qplus_opp_r. rewrite Qplus_0_r. auto.
         apply Qlt_trans with (y:=(/ p + - x)).
-        apply (Dedekind_le A);auto. apply Qplus_lt_r. Search Qmult Qlt.
+        apply (Dedekind_le A);auto. apply Qplus_lt_r.
         rewrite Qdiv2. rewrite <- Qmult_lt_r with (z:=(2#1));try reflexivity.
         assert(-(x / (2 # 1)) * (2 # 1)==-x)%Q. field.
         assert((- x * / (2 # 1) + - x * / (2 # 1)) * (2 # 1)==-(x+x))%Q. field.
@@ -3135,4 +3069,89 @@ Definition Rinv (a : Real)(H:~a==Rzero) : Real.
   forall a : Real, (a <> Rzero) -> (a * Rinv a == Rone)%R.
 Proof.
 Admitted. *)
+
+Record Rdedekind ( A : Real-> Prop) : Prop := {
+  Rdedekind_properties1 : (exists (x : Real) , A x) /\ (exists (x : Real) , ~ A x) ;
+  Rdedekind_properties2 : forall (p q : Real) , A p /\ (Rle q p) -> A q ;
+  Rdedekind_properties3 : forall (p : Real) , A p -> (exists r, A r /\ (Rlt p r)) ;
+  Rdedekind_properties4 : forall (p q : Real), p == q -> A p -> A q ;
+}.
+
+Lemma RQle : forall (a : Real), exists x : Q, ((Q_to_R x) <= a)%R.
+Proof.
+  intros. destruct a. destruct (Dedekind_properties1 _ H), H0, H1.
+  exists x. hnf. intros.
+  apply (Dedekind_properties2 _ H x);split;try apply Qlt_le_weak;auto.
+Qed.
+
+Lemma QRle : forall (a : Real), exists x : Q, (a <= (Q_to_R x))%R.
+Proof.
+  intros. destruct a. destruct (Dedekind_properties1 _ H), H0, H1.
+  exists x0. hnf. intros.
+  apply (Dedekind_le A);auto.
+Qed.
+
+Lemma RQdensity : forall p q : Real, (p < q -> 
+exists x : Q, p < (Q_to_R x) /\ (Q_to_R x) < q)%R.
+Proof.
+  intros. hnf in *. destruct p, q, H, H2, H2.
+  apply (Dedekind_properties3 _ H1) in H2. destruct H2, H2.
+  exists x0. split.
+  - hnf. split.
+    + intros. apply (Dedekind_le A);auto. hnf. intros.
+      apply H3. apply (Dedekind_properties2 _ H0 x0);split;try apply Qlt_le_weak;auto.
+    + exists x. auto.
+  - hnf. split.
+    + intros. apply (Dedekind_properties2 _ H1 x0);split;try apply Qlt_le_weak;auto.
+    + apply (Dedekind_properties3 _ H1) in H2. destruct H2, H2.
+      exists x1. split;auto. apply Qle_not_lt. apply Qlt_le_weak. auto.
+Qed.
+
+
+Lemma Dedekind_complete : forall ( A : Real-> Prop),
+Rdedekind A -> Dedekind (fun x : Q =>A (Q_to_R x)).
+Proof.
+  intros. split.
+  - split.
+    + destruct (Rdedekind_properties1 _ H). destruct H0.
+      pose proof RQle x. destruct H2.
+      exists x0. apply (Rdedekind_properties2 _ H x);auto.
+    + destruct (Rdedekind_properties1 _ H). destruct H1.
+      pose proof QRle x. destruct H2.
+      exists x0. hnf. intros. apply H1.
+      apply (Rdedekind_properties2 _ H (Q_to_R x0));auto.
+  - intros. destruct H0.
+    apply (Rdedekind_properties2 _ H (Q_to_R p));split;auto.
+    hnf. intros. apply Qlt_le_trans with (y:=q);auto.
+  - intros. apply (Rdedekind_properties3 _ H) in H0. destruct H0, H0.
+    pose proof RQdensity (Q_to_R p) x H1. destruct H2, H2.
+    exists x0. split. apply (Rdedekind_properties2 _ H x);split;try apply Rlt_le_weak;auto.
+    hnf in H2. destruct H2, H4, H4. apply Qnot_lt_le in H5.
+    apply Qle_lt_trans with (y:= x1);auto.
+  - intros. apply (Rdedekind_properties4 _ H (Q_to_R p)).
+    hnf. split;hnf;intros;rewrite H0 in *;auto. auto.
+Qed.
+
+Theorem R_complete : forall A : Real -> Prop, Rdedekind A -> 
+exists a : Real, forall b : Real, A b <-> (b < a)%R.
+Proof.
+  intros. pose proof Dedekind_complete A H.
+  exists (Real_cons (fun x : Q =>A (Q_to_R x)) H0).
+  intros. split.
+  - intros. hnf. destruct b. split.
+    + intros. apply (Rdedekind_properties2 _ H (Real_cons A0 H2)).
+      split;auto. hnf. intros.
+      apply (Dedekind_properties2 _ H2 x);split;try apply Qlt_le_weak;auto.
+    + apply (Rdedekind_properties3 _ H) in H1. destruct H1, H1.
+      hnf in H3. destruct x, H3, H5, H5. exists x. split;auto.
+      apply (Rdedekind_properties2 _ H (Real_cons A1 H4)).
+      split;auto. hnf. intros.
+      apply (Dedekind_properties2 _ H4 x);split;try apply Qlt_le_weak;auto.
+  - intros. hnf in *. destruct b. destruct H1, H3, H3.
+    apply (Rdedekind_properties2 _ H (Q_to_R x));split;auto.
+    hnf. intros. apply (Dedekind_le A0);auto.
+Qed.
+
+
+
 

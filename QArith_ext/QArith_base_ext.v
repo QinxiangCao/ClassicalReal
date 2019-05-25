@@ -232,7 +232,7 @@ Qed.
 
 Lemma Qmult_opp_assoc : forall x y : Q, -x*-y==x*y.
 Proof.
-  intros. Search Qmult Qeq.
+  intros.
   rewrite <- Qplus_inj_l with (z:=x*-y).
   rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_plus_distr_l.
   rewrite Qplus_opp_r. rewrite Qplus_comm. rewrite Qplus_opp_r.
@@ -286,4 +286,12 @@ Proof.
     unfold not. intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto.
     unfold not. intros. apply Qlt_not_eq in H1. destruct H1. rewrite H4. reflexivity.
     unfold not. intros. apply Qlt_not_eq in H3. destruct H3. rewrite H4. reflexivity. } auto.
+Qed.
+
+Lemma Qinv_0_lt_compat: forall a : Q, a < 0 -> / a < 0.
+Proof.
+  intros.
+  pose proof Qlt_not_eq a 0 H.
+  rewrite Qlt_minus_iff in *. rewrite Qplus_0_l in *. rewrite Qinv_opp;auto.
+  apply Qinv_lt_0_compat. auto.
 Qed.
