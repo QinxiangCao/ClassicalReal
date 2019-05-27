@@ -501,7 +501,9 @@ Module Type Vir_R.
         rewrite H1. apply Up_R0.
   Qed.
   (** This theorem also proves the uncomputability of Int_part frac_part *)
+  
 
+  (** (single point set -> R) -> (Rinv : {a0 : R | a0 <> R0} -> R) -> (Rinv' : R -> R) *)
   Theorem Rinv_def : (forall (Rinv' : R -> R)(r: R) (H : r <> R0) ,Rinv' r = Rinv (exist _ r H)) -> Halting.
   Proof.  
     intros. 
@@ -519,9 +521,10 @@ Module Type Vir_R.
   Axiom TMR_is_CR : forall (r : R) (n : nat) , TMR n r -> CR r.
   Parameter Un_cv : (nat -> R) -> R -> Prop. (** the limitation of a list of Real Number *)
   
+  
   Theorem lim_CN_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> CR l1) -> Halting.
   Proof. 
-    
+    intros.
   Admitted.
   
 End Vir_R.
