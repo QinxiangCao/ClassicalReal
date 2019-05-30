@@ -90,6 +90,8 @@ Class Plus_Field {X : Type} (eqX : relation X):={
     pfi : forall (x : X), (exists ix, eqX (plus x ix) x0);
     pfeq : forall (a b c d : X), eqX a b -> eqX c d -> eqX (plus a c) (plus b d);
     ppof : forall (x y z : X), le x y -> le (plus x z) (plus y z);
+}.
+Class Density {X : Type} (eqX :  relation X) (PF : Plus_Field eqX) :={
     pd : forall (x1 x2 : X), lt x1 x2 -> (exists x3 : X, lt x1 x3 /\ lt x3 x2);
 }.
 Notation "a + b" := (plus a b)
@@ -234,7 +236,7 @@ Proof.
     rewrite pfz in H4. auto.
 Qed.
 
-Theorem division_of_eps : forall {H : Plus_Field eqX} (eps : X ), lt x0 eps
+Theorem division_of_eps : forall {H : Plus_Field eqX} {Dpd : Density eqX H} (eps : X ), lt x0 eps
     -> (exists (d1 d2 : X), lt x0 d1 /\ lt x0 d2 /\ eqX (plus d1 d2) eps) .
 Proof.
     intros. destruct (pd x0 eps). auto. destruct H1. exists x.
@@ -361,8 +363,8 @@ Proof.
   apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
 Qed.
 
-Instance EquR_trans : forall {X A : Type} {eqX : relation X} {eqA : relation A} {HE : Equivalence eqX} {HEA : Equivalence eqA}
-{M : Metric eqX eqA}, Equivalence (equC).
+Instance EquR_trans : forall {X A : Type} {eqX : relation X} {eqA : relation A} {HE : Equivalence eqX} {HEA : Equivalence eqA} 
+{M : Metric eqX eqA} {Dpd : Density eqX mof} , Equivalence (equC).
 Proof.
   intros. split.
   -unfold Reflexive. apply refl_equC.
@@ -395,6 +397,7 @@ Proof.
             apply le_lt_eq in H14. destruct H14. apply lttr with (y := dist a1 a + dist a a2).
             auto. auto. auto. rewrite <-H14 in H15. auto.
   +auto.
+  +auto.
 Defined.
 
 Inductive ball {X : Type} {eqX : relation X} {M : Metric eqX eqX} {HE : Equivalence eqX} (a : X) (r : X) (x : X): Prop :=
@@ -415,7 +418,8 @@ Class PropBucket {X : Type} {eqX : relation X} {M : Metric eqX eqX} {HE : Equiva
           orderPres1 : forall (a b c : X), a < b -> a < c -> dist a b < dist a c -> b < c;
           orderPres2 : forall (a b c : X), a < b -> a < c -> b < c -> dist a b < dist a c;
 }. 
-Theorem leC_pre : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) (HE : Equivalence eqX) (a b c d : Cauchilize eqX eqX) (HP : PropBucket), equC a b -> equC c d -> leC a c -> leC b d .
+Theorem leC_pre : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) {Dpd : Density eqX mof}
+  (HE : Equivalence eqX) (a b c d : Cauchilize eqX eqX) (HP : PropBucket), equC a b -> equC c d -> leC a c -> leC b d .
 Proof.
   intros.
   destruct (classic (equC a c)). -unfold leC. destruct b. destruct d. left. rewrite <-H.
@@ -539,18 +543,20 @@ Proof.
             apply inBall1 with (a0  := apin) (eps0 := eps1). auto. auto. auto.
 Qed.
         
-Instance leC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) (HE : Equivalence eqX) (HP : PropBucket) ,
+Instance leC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) 
+ {Dpd : Density eqX mof} (HE : Equivalence eqX) (HP : PropBucket) ,
       Proper (equC ==> equC ==> iff) leC.
 Proof.
     intros. hnf. intro x1. intro x2. intro. hnf. intro. intro. intro. split.
-    -apply leC_pre. auto. auto. auto.
-    -apply leC_pre. auto.  symmetry. auto. symmetry. auto.
+    -apply leC_pre. auto. auto. auto. auto.
+    -apply leC_pre. auto. auto.  symmetry. auto. symmetry. auto.
 Defined.
 Section leCModule.
 Variables X : Type.
 Variables eqX : relation X.
 Variables HE : Equivalence eqX.
 Variables M : Metric eqX eqX.
+Variables Dpd : Density eqX mof.
 Variables HPB :PropBucket.
 Notation "a == b" := (eqX a b)
     (at level 70, no associativity).
@@ -716,7 +722,7 @@ Class PropPlusDist {X : Type} {eqX : relation X} {M : Metric eqX eqX}
       PSP : forall  (seq1 seq2 : seq), {pseq : seq | plusSeq eqX seq1 seq2 pseq};
   }. 
 Theorem plus_Cauchy_seq : forall {X : Type} {eqX : relation X} {HE : Equivalence eqX} 
-  {M : Metric eqX eqX} { PPD : PropPlusDist} {seq1 seq2 : seq},
+  {M : Metric eqX eqX}  {Dpd : Density eqX mof}{ PPD : PropPlusDist} {seq1 seq2 : seq},
         CauchySeq eqX eqX seq2 -> CauchySeq eqX eqX seq1 -> 
         {pseq : seq | CauchySeq eqX eqX pseq /\ plusSeq eqX seq1 seq2 pseq}.
 Proof.
@@ -780,10 +786,10 @@ Definition DstuCprop {X : Type} {eqX : relation X} {HE : Equivalence eqX}
       end.
 
 Definition plusC {X : Type} {eqX : relation X} {HE : Equivalence eqX}
-  {M : Metric eqX eqX} { PPD : PropPlusDist} (x y : Cauchilize eqX eqX)
+  {M : Metric eqX eqX}  {Dpd : Density eqX mof} { PPD : PropPlusDist} (x y : Cauchilize eqX eqX)
   : Cauchilize eqX eqX.
   destruct x as [seq1 H1]. destruct y as [seq2 H2].
-   pose proof (@plus_Cauchy_seq _ _ _ _ _ seq1 seq2).
+   pose proof (@plus_Cauchy_seq _ _ _ _ _ _ seq1 seq2).
    assert({pseq : seq | CauchySeq eqX eqX pseq /\ plusSeq eqX seq1 seq2 pseq}).
    apply X0. auto. auto.
    assert(CauchySeq eqX eqX (proj1_sig X1) /\
@@ -791,17 +797,122 @@ Definition plusC {X : Type} {eqX : relation X} {HE : Equivalence eqX}
     destruct H. apply (con_intro eqX eqX (proj1_sig X1) H).
    Defined.
 
-Instance plusC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) (HE : Equivalence eqX) (PPD : PropPlusDist) ,
+Instance plusC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX)
+  {Dpd : Density eqX mof} (HE : Equivalence eqX) (PPD : PropPlusDist) ,
       Proper (equC ==> equC ==> equC) plusC.
 Proof.
-    intros. hnf. intros. hnf. intros. 
-   
+    intros. hnf. intros. hnf. intros. destruct x. destruct y. destruct x1. destruct y0.
+    simpl in H0. simpl in H. simpl. destruct (proj2_sig (plus_Cauchy_seq H3 H1)).
+    destruct (proj2_sig (plus_Cauchy_seq H4 H2)). simpl. intros. 
+    destruct (division_of_eps _ _ _ eps) as [eps1]. auto. destruct H6 as [eps2].
+    destruct H6 as [H6 [H7 H8]]. destruct H with (eps := eps1) as [N1]. auto.
+    destruct H0 with (eps := eps2) as [N2]. auto. destruct (always_greater N1 N2) as [G].
+    destruct H11. exists G. intros. assert(exists cs, Cseq n cs). apply HCseq1. destruct H16 as [cs].
+    assert(exists cs0, Cseq0 n cs0). apply HCseq1. destruct H17 as [cs0].
+    assert(exists cs1, Cseq1 n cs1). apply HCseq1. destruct H18 as [cs1].
+    assert(exists cs2, Cseq2 n cs2). apply HCseq1. destruct H19 as [cs2].
+    remember (proj1_sig (plus_Cauchy_seq H3 H1)) as seq1.
+    remember  (proj1_sig (plus_Cauchy_seq H4 H2)) as seq02.
+    assert(eqX a1 (cs + cs1)). assert(seq1 n (cs + cs1)). inversion p.
+    apply H20. auto. auto. inversion c. apply (HCseq6 n _ _). auto. auto.
+    rewrite H20.
+    assert(eqX a2 (cs0 + cs2)). assert(seq02 n (cs0 + cs2)). inversion p0. apply H21.
+    auto. auto. inversion c0. apply (HCseq6 n _ _ ). auto. auto. rewrite H21.
+    assert((dist (cs + cs1) (cs0 + cs2)) <= dist (cs + cs1) (cs1 + cs0) + dist (cs1 + cs0) (cs0 + cs2)).
+    apply mtr. assert(eqX (dist (cs + cs1) (cs1 + cs0)) (dist cs cs0)). rewrite pfc.
+    rewrite HPD. reflexivity. rewrite H23 in H22. 
+    assert(eqX (dist (cs1 + cs0) (cs0 + cs2)) (dist cs1 cs2)). rewrite (pfc _ cs0).
+    rewrite HPD. reflexivity. rewrite H24 in H22. assert(dist cs cs0 + dist cs1 cs2 < eps).
+    rewrite <-H8. destruct H9 with (n := n) (a1 := cs) (a2 := cs0). apply (lt_trans _ G  _).
+    auto. auto. auto. auto. destruct H10 with (n := n) (a1 := cs1) (a2 := cs2). apply (lt_trans _ G _).
+    auto. auto. auto. auto. apply lt_two_plus_two. auto. apply lt_intro. auto. auto.
+    apply lt_intro. auto. auto. apply le_lt_eq in H22. destruct H22.
+    apply lttr with (y := dist cs cs0 + dist cs1 cs2). auto. auto. auto.
+    rewrite H22. auto.
+    Defined.
     
-Theorem metric_trans : Metric A X -> Metric (Cauchilize A X) (Cauchilize X X) .
-Proof.
-  Admitted.
+Class wellreflseq {A : Type} (eqA : relation A) :={
+         Hrf : forall a : A,{ reflseq : seq | refl eqA reflseq a}; 
+         }.
+Section PfModule.
+Variables X : Type.
+Variables eqX : relation X.
+Variables HE : Equivalence eqX.
+Variables M : Metric eqX eqX.
+Variables Dpd : Density eqX mof.
+Variables HPB :PropBucket.
+Variables PPD : PropPlusDist.
+Variables Wellrseq : wellreflseq eqX.
+Definition Cele (a : X) : Cauchilize eqX eqX. inversion Wellrseq.
+      assert({reflseq : seq | refl eqX reflseq a}). auto. pose proof ctr.
+      apply X1 with (a := a) (reflseq := (proj1_sig X0)). auto. auto. apply (proj2_sig X0).
+      Defined.
+Definition Czero : Cauchilize eqX eqX. apply (Cele x0). Defined.
 
-Theorem Cauchilized_eps_division :
-    forall (X : Type) (x : Cauchilize X X), (exists x1, leC (x1 + x1) x) .
+
+Notation "a == b" := (eqX a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eqX a b)
+    (at level 70, no associativity).
+
+Theorem pf_trans : Plus_Field equC.
 Proof.
-    Admitted.
+    pose proof preOrder_trans as pot. assert(Pre_Order_Field equC) as pof. 
+    apply (pot X eqX HE M). auto. auto. inversion Wellrseq. destruct Hrf0 with (a := x0) as [seqz]. 
+    pose proof c_trans as ctra. assert(CauchySeq eqX eqX seqz) as Hseqz. apply ctra with (a := x0).
+    auto. auto. auto.
+    split with (plus := plusC) (p_pof := pof) (x0 := con_intro eqX eqX seqz Hseqz).
+    -intros. destruct x. destruct y. simpl. destruct ( proj2_sig (plus_Cauchy_seq H0 H)).
+    destruct (proj2_sig (plus_Cauchy_seq H H0)). simpl. intros.
+    remember (proj1_sig (plus_Cauchy_seq H0 H)) as seqL.
+    remember (proj1_sig (plus_Cauchy_seq H H0)) as seqR.
+    inversion p. inversion p0. exists 0. intros. assert (a1 == a2).
+    assert(exists b, Cseq n b). apply HCseq1. destruct H9 as [b].
+    assert(exists b0, Cseq0 n b0). apply HCseq1. destruct H10 as [b0].
+    assert(a1 == b + b0). assert(seqL n (b + b0)). apply H2. auto. auto.
+    inversion c. apply (HCseq6 n _ _ ). auto. auto.
+    assert(a2 == b0 + b). assert(seqR n (b0 + b)). apply H4. auto. auto.
+    inversion c0. apply (HCseq6 n _ _). auto. auto. rewrite H11. rewrite H12. rewrite pfc.
+    reflexivity. rewrite H9. rewrite mre. auto. auto. reflexivity.
+    -intros. destruct x. destruct y. destruct z. simpl.
+    destruct (proj2_sig (plus_Cauchy_seq H0 H)).
+    destruct (proj2_sig (plus_Cauchy_seq H1 H0)).
+    destruct ( proj2_sig (plus_Cauchy_seq c0 H)).
+    simpl. destruct (proj2_sig (plus_Cauchy_seq H1 c)). simpl.
+    intros. exists 0. intros. 
+    remember (proj1_sig (plus_Cauchy_seq H0 H)) as seq0L.
+    remember (proj1_sig (plus_Cauchy_seq H1 H0)) as seq10.
+    remember (proj1_sig (plus_Cauchy_seq c0 H)) as seqc0L.
+    remember (proj1_sig (plus_Cauchy_seq H1 c)) as seq1c.
+    assert(a1 == a2). inversion p. inversion p0. inversion p1. inversion p2.
+    assert(exists b, Cseq n b). apply HCseq1. destruct H14 as [b].
+    assert(exists b0, Cseq0 n b0). apply HCseq1. destruct H15 as [b0].
+    assert(exists b1, Cseq1 n b1). apply HCseq1. destruct H16 as [b1].
+    assert(exists b0L, seq0L n b0L). apply HCseq1. destruct H17 as [b0L].
+    assert(exists b10, seq10 n b10). apply HCseq1. destruct H18 as [b10].
+    assert(b0L == b + b0). assert(seq0L n (b + b0)). apply H6. auto. auto.
+        destruct c. apply (HCseq6 n _ _ ). auto. auto.
+    assert(b10 == b0 + b1). assert(seq10 n (b0 + b1)). apply H8.
+    auto. auto. inversion c0. apply (HCseq6 n _ _). auto. auto.
+    assert(a1 == b0L + b1). assert(seq1c n (b0L + b1)). apply H12. auto. auto.
+    inversion c2. apply (HCseq6 n _ _). auto. auto.
+    assert(a2 == b + b10). assert(seqc0L n (b + b10)). apply H10. auto. auto.
+    inversion c1. apply (HCseq6 n _  _). auto. auto. rewrite H21. rewrite H22.
+    rewrite H19. rewrite H20. rewrite pfa. reflexivity. rewrite H6. rewrite mre.
+    auto. reflexivity.
+    -intros. destruct x. simpl. destruct (proj2_sig (plus_Cauchy_seq H Hseqz)). simpl.
+    intros. exists 0. intros. assert(a1 == a2). destruct p.
+     remember (proj1_sig (plus_Cauchy_seq H Hseqz)) as zseq. assert(zseq n (x0 + a2)).
+     apply H4. inversion r. destruct H7. apply H8 with (a := x0). reflexivity. auto. auto.
+     destruct c. apply (HCseq6 n _ _). auto. destruct H5. apply H7 with (a := x0 + a2). rewrite pfz.
+     reflexivity. auto. rewrite H4. rewrite mre. auto. reflexivity.
+     -admit. (** a small problem occurs **)
+     -intros. rewrite H. rewrite H0. reflexivity.
+     -intros. apply le_lt_eq in H. destruct H. destruct x. destruct y. destruct z.
+     simpl. destruct (proj2_sig (plus_Cauchy_seq H2 H1)).
+     destruct (proj2_sig (plus_Cauchy_seq H2 H0)). 
+     remember (proj1_sig (plus_Cauchy_seq H2 H1)) as seqxz.
+     remember (proj1_sig (plus_Cauchy_seq H2 H0)) as seqyz.
+     Check le.
+     Admitted.
+     
