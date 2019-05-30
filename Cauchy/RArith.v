@@ -68,7 +68,7 @@ assert (Hn: le n1 n2 \/ ~ (le n1 n2)). { apply classic. } destruct Hn.
     apply Qlt_le_weak. apply (HBC m1 m2 Hm1n2 Hm2n2 qb1 qb2 Hqb1 Hqb2).
 Qed.
 
-Fixpoint Rplus(a b : Real) : Real :=
+Definition Rplus(a b : Real) : Real :=
   match a with
     | (Real_intro A HA) => match b with
                             | (Real_intro B HB) =>

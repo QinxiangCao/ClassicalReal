@@ -18,7 +18,9 @@ From CReal.Cauchy Require Import RBase.
 From CReal.Cauchy Require Import RArith.
 From CReal.Cauchy Require Import RSign.
 From CReal.Cauchy Require Import ROrder.
+From CReal.Cauchy Require Import RAbs.
 From CReal.Cauchy Require Import RFloor.
+
 
 
 Lemma Inject_2: forall m:nat, (m<>0)%nat -> Z.pos (Pos.of_nat m ) = Z.of_nat m.
@@ -427,7 +429,36 @@ Proof. intros. destruct X as [S [H1 [H2 H3]]].
 - apply funlemma4;auto.
 Defined.
 
+Theorem Cauchy_Q_limit: forall A eps, eps>0->
+exists N, forall n, (n>=N)%nat ->
+forall q, (match A with Real_intro A0 _ => A0 end) n q ->
+(Rabs (A - (inject_Q q)) < inject_Q eps)%R.
+Proof. intros. destruct A as [A HA].
+  destruct (Cauchy_def _ HA (eps * (1 # 2)) (eps_divide_2_positive _ H)) as [N HN].
+  exists (S N).
+  intros.
+  assert (forall m, (m >= n)%nat ->  forall qm : Q,
+    A m qm -> Qabs (q - qm) < eps * (1 # 2)).
+    { intros.
+      apply (HN n m). auto. omega. auto. auto. }
+  hnf. repeat (unfold Rminus; unfold Ropp; unfold Rplus; unfold Cauchy_abs;
+               unfold CauchySeqPlus; unfold Cauchy_opp; unfold Rabs; unfold inject_Q).
+  exists (eps*(1#2)). split. apply eps_divide_2_positive. auto.
+  exists n. intros. destruct (Cauchy_exists _ HA n0) as [qn0 Hqn0].
+  assert (q0 == eps - Qabs (qn0 - q)).
+   { apply H4. ring. intros. rewrite (H5 (qn0 - q)). reflexivity.
+     intros. rewrite (H7 q). rewrite (Cauchy_unique _ HA _ _ _ Hqn0 H6).
+     ring. ring. }
+  rewrite H5. apply (Qplus_le_r _ _ (Qabs (qn0 - q) - eps * (1 # 2))).
+   assert (Et1: Qabs (qn0 - q) - eps * (1 # 2) + eps * (1 # 2) == Qabs (qn0 -q)) by ring.
+    rewrite Et1. clear Et1.
+  assert (Et2: Qabs (qn0 - q) - eps * (1 # 2) + (eps - Qabs (qn0 - q)) == eps * (1-(1#2))) by ring.
+  rewrite Et2. assert (Et3: (1-(1#2)==1#2)) by ring. rewrite Et3. clear Et2. clear Et3.
+  apply Qlt_le_weak. rewrite Qabs_Qminus. apply (H2 n0). auto. auto.
+Qed.
 
+
+(**
 Theorem Rsinglefun_correct: forall X H, X (RSingleFun (exist _ X H)).
 Proof. intros. hnf in *. destruct H as [H1 [H2 H3]].
   hnf in H3. 
@@ -436,6 +467,18 @@ Proof. intros. hnf in *. destruct H as [H1 [H2 H3]].
   apply (H3 x);auto. hnf. unfold RSingleFun. destruct x as [A HA].
   intros. exists (Z.to_nat (Qceiling (Qabs(1/eps))+1)).
 
+intros. destruct H4 as [A' [HA' H5]].
+assert ((Real_intro A HA)==A')%R. { apply H2. auto. auto. }
+
+apply Qabs_Qlt_condition. split.
+
+assert (E1:((Real_intro A HA) <= inject_Q q2)%R).
+{ 
+
+
+assert (
+
+Search Rfloor.
 
 (* *)
 
@@ -449,3 +492,4 @@ Admitted.
 
 
 
+*)

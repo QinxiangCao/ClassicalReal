@@ -152,3 +152,13 @@ Proof. split.
   rewrite H. auto.
 Qed.
 
+Theorem Rfloor_iff: forall A z, Rfloor A z -> (inject_Q (inject_Z z) > A - 1 /\ 
+  inject_Q (inject_Z z) <= A)%R.
+Proof. intros. destruct H. assert (E1:(1==inject_Q 1)%R). { reflexivity. }
+  split. 
+  - unfold Rgt. apply (Rlt_plus_compat_r _ _ 1). rewrite E1.
+    rewrite <- inject_Q_plus. assert (A - inject_Q 1 + inject_Q 1 == A)%R by ring.
+    rewrite H1. auto. 
+  - auto.
+Qed.
+
