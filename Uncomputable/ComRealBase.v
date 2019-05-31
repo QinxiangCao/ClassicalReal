@@ -504,27 +504,154 @@ Module Type Vir_R.
   
 
   (** (single point set -> R) -> (Rinv : {a0 : R | a0 <> R0} -> R) -> (Rinv' : R -> R) *)
-  Theorem Rinv_def : (forall (Rinv' : R -> R)(r: R) (H : r <> R0) ,Rinv' r = Rinv (exist _ r H)) -> Halting.
-  Proof.  
-    intros. 
-    apply Exam_dimensions2.
-    intros.
-    
-  Admitted.
-  Theorem Rpow_def : forall (Rpow' : R -> nat -> R)(r: R)(H : r <> R0) ,Rpow' r 0%nat = Rpow (exist _ r H) 0%nat -> Halting.
-  Proof.  
-    intros. 
-  Admitted.
-  (** This theorem also proves the problem in the definition of powRZ *)
+  Parameter Rsinglefun : {X: R -> Prop | (forall x1 x2, X x1 -> X x2 ->
+  x1 = x2) /\ (exists x, X x) /\ Proper (Reqb ==> iff) X} -> R.
 
-  Parameter CR : R -> Prop.
-  Axiom TMR_is_CR : forall (r : R) (n : nat) , TMR n r -> CR r.
-  Parameter Un_cv : (nat -> R) -> R -> Prop. (** the limitation of a list of Real Number *)
+  Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
   
+  Definition rinv (a : R) (H : a <> R0) : R.
+    apply Rinv.
+    exists a. apply H.
+  Defined.
+
+  Axiom rinv_eqb : forall (x y : R) (H : x <> R0) (H' : y <> R0) , rinv x H = rinv y H' <-> x = y.
+ 
+  Definition Rinv' (a : R): R.
+    apply Rsinglefun.
+    exists (fun b => (exists H: a <> R0, (rinv a H) = b) \/
+                   (a = R0 /\ b = R0)).
+    split; [| split].
+    - intros.
+      destruct H. 
+      + destruct H. rewrite <- H. symmetry.
+        destruct H0.  
+        * destruct H0. rewrite <- H0.
+          apply rinv_eqb. auto.
+        * exfalso. apply x. apply H0.
+      + destruct H0.
+        * destruct H0. exfalso. apply x. apply H.
+        * destruct H. destruct H0. rewrite H1. auto. 
+    - pose proof (classic (a = R0)).
+      destruct H.
+      + exists R0. right. split ; auto.
+      + exists (rinv a H). left. exists H. auto.
+    - split ; intros ; destruct H0.
+      + destruct H0. left. exists x0. rewrite H0. auto.
+      + right. split; try ( apply H0 ).
+        rewrite <- H. apply H0.
+      + destruct H0. left. exists x0. rewrite H0. auto.
+      + right. split ; try ( apply H0).
+        rewrite H. apply H0.
+  Defined.
+   
+  Definition rpow (a : R) (H : a <> R0) : nat -> R.
+    apply Rpow.
+    exists a. apply H.
+  Defined.
+
+  Axiom rpow_eqb : forall (x y : R)(z : nat) (H : x <> R0) (H' : y <> R0) , rpow x H z = rpow y H' z <-> x = y.
+ 
+  Definition Rpow' (a : R) (z : nat) : R.
+    apply Rsinglefun.
+    exists (fun b => (exists H: a <> R0, (rpow a H z) = b) \/
+                   (a = R0 /\ b = R0)).
+    split; [| split].
+    - intros.
+      destruct H. 
+      + destruct H. rewrite <- H. symmetry.
+        destruct H0.  
+        * destruct H0. rewrite <- H0.
+          apply rpow_eqb. auto.
+        * exfalso. apply x. apply H0.
+      + destruct H0.
+        * destruct H0. exfalso. apply x. apply H.
+        * destruct H. destruct H0. rewrite H1. auto. 
+    - pose proof (classic (a = R0)).
+      destruct H.
+      + exists R0. right. split ; auto.
+      + exists (rpow a H z). left. exists H. auto.
+    - split ; intros ; destruct H0.
+      + destruct H0. left. exists x0. rewrite H0. auto.
+      + right. split; try ( apply H0 ).
+        rewrite <- H. apply H0.
+      + destruct H0. left. exists x0. rewrite H0. auto.
+      + right. split ; try ( apply H0).
+        rewrite H. apply H0.
+  Defined.
+ 
+  Definition CR (r : R) : Prop := 
+      exists f : R -> nat -> nat, (forall (n: nat), (f r n = 1%nat \/ f r n = 0%nat) /\ Bin_R r n (f r n)).
+  Parameter TM'r : nat -> R.
+  Axiom TM'r_pro0 : forall (n m: nat), Bin_R (TM'r n) m 1 <-> TM m n.
+  Theorem TM'r_pro0' : forall (n m : nat), Bin_R (TM'r n) m 0 <-> ~ TM m n.
+  Proof.
+    intros.
+    pose proof TM'r_pro0 n m.
+    unfold not in *.
+    split ; intros. 
+    - apply Bin_R_pro2 in H0 ; auto.
+      apply H. auto.
+    - apply Bin_R_pro2'. unfold not. intros.
+      apply H0. apply H. auto.
+  Qed.
+
+  Theorem TM'r_pro1 : forall (n m : nat) , Bin_R (TM'r n) m 1 -> (forall (r : nat) , (r >= n)%nat -> Bin_R (TM'r r) m 1).
+  Proof.
+    intros.
+    apply TM'r_pro0 in H.
+    apply TM'r_pro0.
+    pose proof Turing_proper1 m n r.
+    apply H1 ; auto.
+  Qed.
   
-  Theorem lim_CN_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> CR l1) -> Halting.
+  Theorem TM'r_pro1' : forall (n m : nat) , Bin_R (TM'r n) m 0 -> (forall (r : nat) , (r <= n)%nat -> Bin_R (TM'r r) m 0).
+  Proof.
+    intros.
+    apply TM'r_pro0' in H.
+    apply TM'r_pro0'.
+    pose proof Turing_proper2 m n r.
+    apply H1 ; auto.
+  Qed.
+
+  Parameter limitTM'r : R.
+  Axiom limitTM'r_pro : forall (n : nat) , Bin_R limitTM'r n 1 <-> exists j : nat , TM n j.
+  Theorem limitTM'r_pro' : forall (n : nat) , Bin_R limitTM'r n 0 <-> forall j : nat ,~ TM n j. 
+  Proof.
+    intros.
+    pose proof limitTM'r_pro n.
+    unfold not in *.
+    split ; intros.
+    - apply Bin_R_pro2 in H0 ; auto. apply H. exists j. auto.
+    - apply Bin_R_pro2'. unfold not . intros.
+      apply H in H1.
+      destruct H1.
+      apply (H0 x) ; auto. 
+  Qed.
+
+  Theorem limitTM'r_pro1 : (forall (n : nat) , {Bin_R limitTM'r n 0} + {Bin_R limitTM'r n 1}) -> Halting.
+  Proof.
+    unfold Halting.
+    intros.
+    pose proof H i.
+    destruct H0.
+    - rewrite (limitTM'r_pro' i) in b. auto.
+    - rewrite (limitTM'r_pro i) in b. auto.
+  Qed.
+
+  Axiom TM'r_is_computable : forall n : nat , CR (TM'r n).
+  
+  Parameter Un_cv : (nat -> R) -> R -> Prop.
+  Axiom limit_of_TM'r : Un_cv TM'r limitTM'r.
+ (** the limitation of a list of Real Number *)
+
+  Theorem lim_CN_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> CR l1) -> Halting_easy.
   Proof. 
     intros.
+    pose proof H TM'r limitTM'r limit_of_TM'r TM'r_is_computable.
+    clear H.
+    unfold CR in *.
+    unfold Halting_easy. unfold Halting.
+    inversion H0.
   Admitted.
   
 End Vir_R.
