@@ -457,39 +457,61 @@ Proof. intros. destruct A as [A HA].
   apply Qlt_le_weak. rewrite Qabs_Qminus. apply (H2 n0). auto. auto.
 Qed.
 
+Lemma Real_constr_help1: forall A z m q, (m<>0)%nat ->
+     Rfloor (A * inject_Q (inject_Z (Z.of_nat m))) z -> q == z # Pos.of_nat m
+    -> (inject_Q q <= A)%R.
+Proof. intros A z m q E. intros.
+  apply Rfloor_iff in H. destruct H.
+  apply (Rle_mult_l_compat _ _ (inject_Q (inject_Z (Z.of_nat m)))).
+  apply Rpositive_gt_0. apply Qlt_Rlt. assert (0==inject_Z 0) by ring.
+  rewrite H2. rewrite <- Zlt_Qlt. omega.
+  rewrite H0. rewrite Qmake_Qdiv. rewrite <- inject_Q_mult.
+  assert (Et: ((Z.of_nat m)) = (Z.pos (Pos.of_nat m))).
+    { symmetry. apply Inject_2.  omega. }
+  rewrite <- Et.
+  assert (Et1: (inject_Z (Z.of_nat m) * (inject_Z z / inject_Z (Z.of_nat m))) == inject_Z z).
+    { field. intros C.
+      apply inject_Z_nonzero in E. contradiction. }
+  rewrite Et1. rewrite Rmult_comm. auto.
+Qed.
+Lemma Real_constr_help2: forall A z m q, (m<>0)%nat ->
+     Rfloor (A * inject_Q (inject_Z (Z.of_nat m))) z -> q == z # Pos.of_nat m
+    -> (inject_Q q > A - inject_Q (1# Pos.of_nat m))%R.
+Proof. intros A z m q E. intros.
+  apply Rfloor_iff in H. destruct H.
+  apply (Rlt_mult_compat_r _ _ (inject_Q (inject_Z (Z.of_nat m)))).
+  apply Rpositive_gt_0. apply Qlt_Rlt. assert (0==inject_Z 0) by ring.
+  rewrite H2. rewrite <- Zlt_Qlt. omega.
+  rewrite H0. repeat rewrite Qmake_Qdiv. unfold Rminus. repeat unfold Qdiv.
+  rewrite Rmult_plus_distr_l. rewrite <- Ropp_mult_distr.
+  repeat rewrite <- inject_Q_mult.
+  assert (Et: ((Z.of_nat m)) = (Z.pos (Pos.of_nat m))).
+    { symmetry. apply Inject_2.  omega. }
+  rewrite <- Et.
+  assert (Et1: inject_Z 1 * / inject_Z (Z.of_nat m) * inject_Z (Z.of_nat m) == inject_Z 1).
+    { field. intros C.
+      apply inject_Z_nonzero in E. contradiction. }
+  assert (Et2: inject_Z z * / inject_Z (Z.of_nat m) * inject_Z (Z.of_nat m) == inject_Z z).
+    { field. intros C.
+      apply inject_Z_nonzero in E. contradiction. }
+  rewrite Et1. rewrite Et2.
+  assert (Et3:  (- inject_Q (inject_Z 1) == - (1))%R). { reflexivity. }
+  rewrite Et3. auto.
+Qed.
 
-(**
+
 Theorem Rsinglefun_correct: forall X H, X (RSingleFun (exist _ X H)).
 Proof. intros. hnf in *. destruct H as [H1 [H2 H3]].
   hnf in H3. 
-
- destruct H1.
+  destruct H1.
   apply (H3 x);auto. hnf. unfold RSingleFun. destruct x as [A HA].
   intros. exists (Z.to_nat (Qceiling (Qabs(1/eps))+1)).
-
-intros. destruct H4 as [A' [HA' H5]].
-assert ((Real_intro A HA)==A')%R. { apply H2. auto. auto. }
-
-apply Qabs_Qlt_condition. split.
-
-assert (E1:((Real_intro A HA) <= inject_Q q2)%R).
-{ 
-
-
-assert (
-
-Search Rfloor.
-
-(* *)
-
+  intros. destruct H4 as [A' [HA' H5]].
+  assert ((Real_intro A HA)==A')%R. { apply H2. auto. auto. }
+  apply Qabs_Qlt_condition. split.
+(** Move the proof of CCR_is_Cauchy to here *)
 
 Admitted.
 
 
 
-
-
-
-
-
-*)
