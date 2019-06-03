@@ -581,6 +581,17 @@ Module Type Vir_R.
  
   Definition CR (r : R) : Prop := 
       exists f : R -> nat -> nat, (forall (n: nat), (f r n = 1%nat \/ f r n = 0%nat) /\ Bin_R r n (f r n)).
+  Definition CR' (r : R) := {f : R -> nat -> nat | (forall (n: nat), (f r n = 1%nat \/ f r n = 0%nat) /\ Bin_R r n (f r n)) }.
+
+  Theorem CR_CR' : forall r : R , CR' r -> CR r.
+  Proof.
+    intros.
+    unfold CR' in *.
+    unfold CR in *.
+    destruct X as [f ?].
+    exists f. auto.
+  Qed.
+  
   Parameter TM'r : nat -> R.
   Axiom TM'r_pro0 : forall (n m: nat), Bin_R (TM'r n) m 1 <-> TM m n.
   Theorem TM'r_pro0' : forall (n m : nat), Bin_R (TM'r n) m 0 <-> ~ TM m n.
@@ -638,21 +649,81 @@ Module Type Vir_R.
     - rewrite (limitTM'r_pro i) in b. auto.
   Qed.
 
-  Axiom TM'r_is_computable : forall n : nat , CR (TM'r n).
-  
+  Axiom TM'r_is_computable' : forall n : nat , CR' (TM'r n).
+  Theorem TM'r_is_computable : forall n : nat , CR (TM'r n).
+  Proof.
+    intros.
+    apply CR_CR'. apply TM'r_is_computable'.
+  Qed.
+
   Parameter Un_cv : (nat -> R) -> R -> Prop.
   Axiom limit_of_TM'r : Un_cv TM'r limitTM'r.
  (** the limitation of a list of Real Number *)
 
-  Theorem lim_CN_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> CR l1) -> Halting_easy.
+  Theorem lim_CN_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> CR l1) -> Halting_easy'.
   Proof. 
     intros.
     pose proof H TM'r limitTM'r limit_of_TM'r TM'r_is_computable.
     clear H.
     unfold CR in *.
-    unfold Halting_easy. unfold Halting.
+    unfold Halting_easy'.
     inversion H0.
-  Admitted.
+    intros.
+    pose proof H i.
+    clear H.
+    destruct H1 as [[ ? | ?] ?].
+    - rewrite H in H1.
+      rewrite (limitTM'r_pro i) in H1.
+      assert (H' : {exists j : nat, TM i j} + {forall j : nat, ~ TM i j}) by auto.
+      exists H'. auto.
+    - rewrite H in H1.
+      rewrite (limitTM'r_pro' i) in H1.
+      assert (H' : {exists j : nat, TM i j} + {forall j : nat, ~ TM i j}) by auto.
+      exists H'. auto.
+  Qed.
+  
+  Theorem lim_CN_NCN' : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR (Un n)) -> CR l1) -> Halting_easy.
+  Proof. 
+    intros.
+    pose proof H TM'r limitTM'r limit_of_TM'r TM'r_is_computable.
+    clear H.
+    unfold CR in *.
+    unfold Halting_easy.
+    destruct H0 as [f ?].
+    unfold Halting.
+    Print ex.
+    refine (@ex_intro _ _ _ I).
+    intros.
+    pose proof H i.
+    clear H.
+    destruct H0 as [? ?].
+    destruct (f limitTM'r i) as [ | [ | ]].
+    - right. apply limitTM'r_pro' ; auto.
+    - left. apply limitTM'r_pro ; auto.
+    - exfalso. 
+      destruct H. 
+      + apply eq_add_S in H. discriminate H.
+      + discriminate H.
+  Qed.
+  
+  Theorem lim_CN'_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR' (Un n)) -> CR' l1) -> Halting.
+  Proof.
+    unfold Halting.
+    intros.
+    pose proof X TM'r limitTM'r limit_of_TM'r TM'r_is_computable'.
+    clear X.
+    unfold CR' in *.
+    destruct X0 as [f ].
+    destruct (a i).
+    clear a.
+    destruct (f limitTM'r i) as [ | [ | ]].
+    - right. apply limitTM'r_pro' ; auto.
+    - left. apply limitTM'r_pro ; auto.
+    - exfalso. 
+      destruct H. 
+      + apply eq_add_S in H. discriminate H.
+      + discriminate H.
+  Qed.
   
 End Vir_R.
 
