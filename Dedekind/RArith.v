@@ -3061,7 +3061,9 @@ Proof.
 Qed.
 
 Definition Rinv (a : Real)(H:~a==Rzero) : Real.
-Admitted.
+  destruct a. apply Rinv_def_lemma in H.
+  apply (Real_cons (Cut_inv A) (Dedekind_inv A H0 H)).
+  Defined.
 
 Definition Rinv' (a: Real): Real.
   apply Rsinglefun.
@@ -3069,16 +3071,131 @@ Definition Rinv' (a: Real): Real.
                    a == Rzero /\ b == Rzero).
   split; [| split].
 Abort.
-(*
-Definition Rinv (a : Real)(H:~a==Rzero) : Real.
-  destruct a. apply Rinv_def_lemma in H.
-  apply (Real_cons (Cut_inv A) (Dedekind_inv A H0 H)).
-  Defined.
-*)
-(* Theorem Rmult_inv :
-  forall a : Real, (a <> Rzero) -> (a * Rinv a == Rone)%R.
+
+Lemma Rnot_0 : forall (a : Real), (~ a == Rzero -> ~ - a == Rzero)%R.
 Proof.
-Admitted. *)
+  intros. hnf. intros. apply H. rewrite Ropp_opp.
+  rewrite H0. rewrite <- Rzero_opp. reflexivity.
+Qed.
+
+Theorem Cut_inv_same : forall (A : Q -> Prop), Dedekind A ->
+  A 0 -> Cut_inv A 0.
+Proof.
+  intros. left. split;auto. left. apply Qle_refl.
+Qed.
+
+Lemma Cut_inv_opp : forall (A : Q -> Prop) (x : Q), Dedekind A ->
+A 0 \/ Cut_opp A 0 ->
+Cut_opp (Cut_inv A) x -> Cut_inv (Cut_opp A) x.
+Proof.
+  intros. hnf.
+    pose proof Cut_mult_situation1 A.
+    destruct H2 as [?|[]].
+    + right. left. repeat split.
+      * rewrite <- Cut_opp_opp;auto.
+      * destruct H1, H1. apply Qnot_le_lt. hnf. intros. apply H3.
+        left. split;auto. left. rewrite <- (Qplus_0_r 0).
+        apply Qplus_le_compat;rewrite Qle_minus_iff;
+        rewrite Qplus_0_l;rewrite Qopp_involutive;auto;
+        apply Qlt_le_weak;auto.
+      * destruct H1, H1. exists (/(-x + - x0)+-(/-x)). split.
+        { rewrite <- Qlt_minus_iff. apply Qdiv_lt_P. 
+          apply (Dedekind_le (Cut_inv A));auto. apply Dedekind_inv;auto.
+          apply Cut_inv_same;auto. rewrite <- (Qplus_0_r (-x)).
+          rewrite <- Qplus_assoc. rewrite Qplus_lt_r.
+          rewrite Qplus_0_l. rewrite Qlt_minus_iff.
+          rewrite Qplus_0_l. rewrite Qopp_involutive. auto. }
+        { hnf. intros. apply H3. left. destruct H4, H4. split;auto.
+        right. split. apply (Dedekind_le (Cut_inv A));auto.
+        apply Dedekind_inv;auto. apply Cut_inv_same;auto.
+        exists x1. split;auto. hnf. intros. apply H5.
+        rewrite <- Qinv_opp.
+        { rewrite (Qopp_plus (/ (- x + - x0)) (--/x)).
+          rewrite (Qplus_comm (- / (- x + - x0)) (---/x)).
+          rewrite Qplus_assoc. rewrite Qopp_involutive.
+          rewrite Qplus_opp_r. rewrite Qplus_0_l.
+          rewrite Qopp_involutive. auto. }
+        { apply Qlt_not_eq. apply Qnot_le_lt. hnf. intros. apply H3.
+        left. split;auto. left. rewrite <- (Qplus_0_r 0).
+        apply Qplus_le_compat;rewrite Qle_minus_iff;
+        rewrite Qplus_0_l;rewrite Qopp_involutive;auto;
+        apply Qlt_le_weak;auto. } }
+    + left. split;auto. assert(x<=0\/~x<=0). apply classic.
+      destruct H3. auto. right. split.
+      apply Qnot_le_lt;auto.
+      apply Qnot_le_lt in H3. destruct H1, H1.
+      exists (/x +-/(x + x0)). split.
+        { rewrite <- Qlt_minus_iff. apply Qdiv_lt_P. auto.
+          rewrite <- Qplus_0_r. rewrite <- Qplus_assoc.
+          rewrite Qplus_lt_r. rewrite Qplus_0_l. auto. }
+      { hnf. intros. apply H4. destruct H5, H5. right. left.
+        split;auto. split. rewrite <- Qopp_plus.
+        rewrite Qlt_minus_iff. rewrite Qopp_involutive.
+        rewrite Qplus_0_l. rewrite <- (Qplus_0_r 0).
+        apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto.
+        exists x1. split;auto. hnf. intros. apply H6.
+        repeat rewrite Qopp_plus. rewrite Qplus_assoc.
+        rewrite Qplus_opp_r. rewrite Qopp_involutive.
+        rewrite Qplus_0_l. rewrite Qinv_opp. rewrite Qopp_plus. auto.
+        apply Qlt_not_0. rewrite <- (Qplus_0_r 0).
+        apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto. }
+    + destruct H2.
+      destruct H0;destruct H2;auto;destruct H3;auto.
+Qed.
+
+Theorem Rinv_opp :
+  forall (a : Real) (H : ~ a == Rzero),(- Rinv a H == Rinv (-a) (Rnot_0 a H))%R.
+Proof.
+  intros. hnf. split.
+  - destruct a. hnf. intros.
+    apply Rinv_def_lemma in H. apply Cut_inv_opp;auto.
+  - destruct a. hnf. intros.
+    apply Rinv_def_lemma in H.
+Qed.
+
+Theorem Rmult_inv :
+  forall (a : Real) (H : ~ a == Rzero),(a * Rinv a H == Rone)%R.
+Proof.
+intros. hnf. destruct a. unfold Rinv, Rone, Rzero in *. split.
+- hnf. intros. destruct H1 as [?|[?|[?|[]]]].
+  + destruct H1, H1. destruct H2 as [?[?[?[?[?[]]]]]].
+    destruct H6 as [?|[]].
+    * destruct H6. destruct H8.
+      { apply Qle_not_lt in H8. destruct H8. auto. }
+      destruct H8, H9, H9.
+      apply Qle_lt_trans with (y:= x0 * x1);auto.
+      apply Qlt_le_trans with (y:= (/x1) * x1).
+      { apply Qmult_lt_r;auto.
+        apply (Dedekind_le A);auto. hnf. intros.
+        apply H10. apply (Dedekind_properties2 _ H0 (/x1)).
+        split;auto. rewrite <- (Qplus_0_r (/x1)).
+        rewrite <- Qplus_assoc. rewrite Qplus_le_r.
+        rewrite Qplus_0_l. rewrite Qle_minus_iff.
+        rewrite Qplus_0_l. rewrite Qopp_involutive.
+        apply Qlt_le_weak. auto. }
+      rewrite Qmult_comm. rewrite Qmult_inv_r. apply Qle_refl.
+      apply Qlt_not_eq in H8. hnf. intros.
+      apply H8. rewrite H11. reflexivity.
+    * destruct H6. apply Cut_cut_opp_not in H1;auto.
+      destruct H1. auto.
+    * destruct H6, H8, H9.
+  + destruct H1, H1. destruct H3 as [?|[]].
+    * destruct H3. apply Cut_cut_opp_not in H3;auto.
+      destruct H3. auto.
+    * destruct H3, H4. inversion H4.
+    * destruct H3, H4, H5.
+  + destruct H1, H1. destruct H3 as [?[]].
+    destruct H4. left. split;auto. left.
+    rewrite Qplus_0_l. rewrite Qle_minus_iff.
+    rewrite Qplus_0_l. rewrite Qopp_involutive.
+    apply Qlt_le_weak. auto.
+  + destruct H1, H1. destruct H3 as [?[]].
+    destruct H2 as [?[?[?[?[?[]]]]]].
+    destruct H4. right. split;auto. left.
+    rewrite Qplus_0_l. rewrite Qle_minus_iff.
+    rewrite Qplus_0_l. rewrite Qopp_involutive.
+    apply Qlt_le_weak. auto.
+Admitted.
 
 Record Rdedekind ( A : Real-> Prop) : Prop := {
   Rdedekind_properties1 : (exists (x : Real) , A x) /\ (exists (x : Real) , ~ A x) ;
