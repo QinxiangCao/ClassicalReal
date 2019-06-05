@@ -363,18 +363,39 @@ Qed.
 
 Theorem Rle_mult_r:
   forall A B C : Real, Rpositive C -> (A <= B)%R -> (A * C <= B * C)%R.
-Admitted.
+Proof.
+  intros. destruct H0.
+  - left. apply Rlt_mult_r. auto. auto.
+  - right. rewrite H0. ring.
+Qed.
 Theorem Rle_mult_l:
   forall A B C : Real, Rpositive C -> (A <= B)%R -> (C*A<= C*B)%R.
-Admitted.
+Proof.
+  intros. destruct H0.
+  - left. apply Rlt_mult_l. auto. auto.
+  - right. rewrite H0. ring.
+Qed.
 Theorem Rle_mult_r_compat:
   forall A B C : Real, Rpositive C -> (A <= B)%R <-> (A * C <= B * C)%R.
-Admitted.
+Proof.
+  intros. split.
+  { intros. destruct H0.
+  - left. apply Rlt_mult_r. auto. auto.
+  - right. rewrite H0. ring. }
+  { intros. destruct H0.
+  - left. apply (Rlt_mult_compat_r _ _ C). auto. auto.
+  - right. rewrite <- Rmult_1_l. apply Rpositive_not_zero in H.
+    rewrite <- (Rmult_inv_r' _ H). 
+    assert (C * / exist (fun a0 : Real => ~ a0 == 0) C H * A == A * C */ exist (fun a0 : Real => ~ a0 == 0) C H)%R by ring.
+    rewrite H0 in H1.
+    rewrite H1. rewrite Rmult_assoc. rewrite Rmult_inv_r'. ring. }
+Qed.
+
 Theorem Rle_mult_l_compat:
   forall A B C : Real, Rpositive C -> (A <= B)%R <-> (C*A<= C*B)%R.
-Admitted.
-
-
+Proof.
+  intros. repeat rewrite (Rmult_comm C). apply Rle_mult_r_compat. auto.
+Qed.
 
 Theorem R_Archimedian: forall A B, Rpositive A -> (B>A)%R -> exists (N:nat),
   (inject_Q (inject_Z (Z.of_nat N)) * A > B)%R.

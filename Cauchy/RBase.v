@@ -125,6 +125,9 @@ Definition inject_Q (q:Q):Real:=
  Real_intro (fun (n:nat) => (fun x => x == q)) (Real_has_Q q).
 
 Lemma Qnot_0_abs_pos: forall (q:Q), ~(q==0) -> Qabs q > 0.
-Admitted.
-
-
+Proof. intros. destruct (classic (0 < Qabs q)).
+  auto. apply Qnot_lt_le in H0. 
+  pose proof (Qabs_nonneg q). pose proof (Qle_antisym _ _ H0 H1).
+  apply Qnot_0_abs in H.
+  contradiction.
+Qed.

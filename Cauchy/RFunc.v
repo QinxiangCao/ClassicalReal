@@ -24,13 +24,30 @@ From CReal.Cauchy Require Import RFloor.
 
 
 Lemma Inject_2: forall m:nat, (m<>0)%nat -> Z.pos (Pos.of_nat m ) = Z.of_nat m.
-Admitted.
+Proof. intros. induction m.
+  - omega.
+  - destruct m. + reflexivity.
+  + assert (S m <> 0)%nat. { omega. }
+    apply IHm in H0. rewrite Nat2Z.inj_succ. rewrite <- H0.
+    rewrite <- Pos2Z.inj_succ.
+    rewrite <- Nat2Pos.inj_succ.
+    reflexivity.
+    omega.
+Qed.
 Lemma inject_of_nat_equiv: forall m, (m<>0 )%nat-> (Z.of_nat m # Pos.of_nat m) == 1.
-Admitted.
+Proof. intros. rewrite Qmake_Qdiv. rewrite Inject_2. field.
+  intros C. assert (0==inject_Z 0) by reflexivity. rewrite H0 in C.
+  rewrite inject_Z_injective in C. omega. omega.
+Qed.
+
 Lemma Qinject_nat_pos: forall m, (m<>0)%nat -> inject_Z(Z.of_nat m)>0.
-Admitted.
+Proof. intros. assert (0==inject_Z 0) by reflexivity. rewrite H0. rewrite <- Zlt_Qlt.
+    omega.
+Qed.
 Lemma Qmake_pos_inject_Z: forall m, (m<>0)%nat -> (1 / inject_Z (Z.of_nat m)) == (1 # Pos.of_nat m).
-Admitted.
+Proof. intros. rewrite (Qmake_Qdiv _ (Pos.of_nat m)).
+       rewrite Inject_2. reflexivity. auto.
+Qed.
 
 
 (** ---------- Single2Element Function ----------------*)
@@ -499,19 +516,87 @@ Proof. intros A z m q E. intros.
   rewrite Et3. auto.
 Qed.
 
+Lemma inject_Q_minus:forall a b, (inject_Q (a-b) == inject_Q a- inject_Q b)%R.
+Proof. intros. unfold Qminus. rewrite inject_Q_plus. rewrite inject_Q_opp. reflexivity.
+Qed.
 
 Theorem Rsinglefun_correct: forall X H, X (RSingleFun (exist _ X H)).
 Proof. intros. hnf in *. destruct H as [H1 [H2 H3]].
   hnf in H3. 
+  assert (T1:0 == inject_Z 0) by ring.
   destruct H1.
   apply (H3 x);auto. hnf. unfold RSingleFun. destruct x as [A HA].
-  intros. exists (Z.to_nat (Qceiling (Qabs(1/eps))+1)).
-  intros. destruct H4 as [A' [HA' H5]].
+  intros.
+  pose proof (Cauchy_Q_limit (Real_intro A HA) _ (eps_divide_2_positive _ H)).
+  destruct H0 as [N0 HN0].
+  exists (max N0 (2* Z.to_nat (Qceiling (/eps))+1)).
+  intros n Hn. apply Nat.max_lub_lt_iff in Hn.
+  intros. destruct H1 as [A' [HA' H5]].
   assert ((Real_intro A HA)==A')%R. { apply H2. auto. auto. }
+    clear HA'.
+  assert (n<>0)%nat. {intros C. rewrite C in Hn. destruct Hn. omega. }
+  destruct (Rfloor_exists (A' * inject_Q (inject_Z (Z.of_nat n)))%R) as [z0 Hz0].
+  pose proof (Real_constr_help2 _ _ _ _ H4 Hz0 (H5 _ Hz0)).
+  pose proof (Real_constr_help1 _ _ _ _ H4 Hz0 (H5 _ Hz0)).
   apply Qabs_Qlt_condition. split.
-(** Move the proof of CCR_is_Cauchy to here *)
+  - assert (q1-q2==-(q2-q1))by ring. rewrite H8. apply Qopp_lt_compat. 
+    apply Qlt_Rlt. rewrite inject_Q_minus. clear H8.
+    apply (Rle_lt_trans _ (A'-inject_Q q1)%R).
+    repeat unfold Rminus. apply Rle_plus_r. auto.
+    rewrite <- H1.
+    assert ((Rabs (Real_intro A HA - inject_Q q1) < inject_Q (eps * (1 # 2)))%R).
+    { apply (HN0 n). omega. auto. }
+    apply Rabs_lt_iff in H8. destruct H8.
+    apply (Rlt_trans _ _ _ H9). apply Qlt_Rlt. rewrite <- (Qmult_1_r eps).
+    rewrite <- Qmult_assoc.
+    apply Qmult_lt_l. auto. reflexivity.
+    apply Qlt_Rlt. apply eps_divide_2_positive. auto.
+  - apply Qlt_Rlt. rewrite inject_Q_minus.
+    apply (Rlt_le_trans _ (inject_Q q1 - A' + inject_Q (1 # Pos.of_nat n))%R).
+    repeat unfold Rminus. rewrite Rplus_assoc. apply Rlt_plus_l.
+    assert (- A' + inject_Q (1 # Pos.of_nat n) == - (A' - inject_Q (1 # Pos.of_nat n)))%R by ring.
+    rewrite H8. apply Ropp_lt_compat. auto.
 
-Admitted.
+    assert ((Rabs (Real_intro A HA - inject_Q q1) < inject_Q (eps * (1 # 2)))%R).
+    { apply (HN0 n). omega. auto. }
+    apply Rabs_lt_iff in H8. destruct H8. clear H9.
+    rewrite <- H1.
+    apply Ropp_lt_compat in H8.
+    assert (Real_intro A HA - inject_Q q1 == -(inject_Q q1 - Real_intro A HA))%R by ring.
+    rewrite H9 in H8. repeat  rewrite <- Ropp_involutive in H8.
+    apply (Rle_trans _ (inject_Q (eps * (1 # 2)) + inject_Q (1 # Pos.of_nat n))).
+    apply Rle_plus_r. left. auto.
+    rewrite <- inject_Q_plus. apply Qle_Rle.
+    apply (Qplus_le_l _ _ (-eps * (1 # 2) )).
+    assert (eps * (1 # 2) + (1 # Pos.of_nat n) + - eps * (1 # 2) == (1 # Pos.of_nat n)) by ring.
+    assert (eps + - eps * (1 # 2) == eps * (1 # 2)) by ring.
+    rewrite H10,H11.
+  clear Hz0. clear H6. clear H7. clear H8. clear H9. clear H10. clear H11.
+  pose proof (proj2 Hn).
+  pose proof (Qle_ceiling (/ eps)).
+  apply (Qmult_le_l _ _ (inject_Z 2)) in H7.
+  assert (inject_Z 2*/eps<= inject_Z 2*inject_Z (Qceiling (/ eps))+1).
+  { apply (Qle_trans _ _ _ H7). rewrite <- Qplus_0_r. rewrite <- Qplus_assoc. apply Qplus_le_r.
+    intros C. discriminate C. }
+  rewrite Qmake_Qdiv.
+  apply Qle_shift_div_r. rewrite Inject_2. rewrite T1. rewrite <- Zlt_Qlt. omega. omega.
+  apply (Qle_trans _ (eps * (1 # 2) * (inject_Z 2 * inject_Z (Qceiling (/ eps)) + 1))).
+    { apply (Qmult_le_l _ _ (eps * (1 # 2) )) in H8.
+      assert (eps * (1 # 2) * (inject_Z 2 * / eps) == 1). { field. intros C. rewrite C in H. apply Qlt_irrefl in H. auto. }
+      rewrite H9 in H8. auto. apply eps_divide_2_positive. auto. }
+    { apply Qmult_le_l. apply eps_divide_2_positive. auto.  rewrite <- inject_Z_mult.
+      assert (1==inject_Z 1) by ring. rewrite H9.
+      rewrite <- inject_Z_plus. rewrite<-  Zle_Qle. rewrite Inject_2.
+      apply inj_lt in H6. rewrite inj_plus in H6. rewrite inj_mult in H6.
+      rewrite  Z2Nat.id in H6.
+      assert (Z.of_nat 2 = 2)%Z by reflexivity. rewrite H10 in H6.
+      assert (Z.of_nat 1 = 1)%Z by reflexivity. rewrite H11 in H6.
+      apply Z.lt_le_incl. auto.
+       assert (0 = Qceiling 0)%Z by reflexivity. rewrite H10.
+          apply Qceiling_resp_le. apply Qlt_le_weak. apply Qinv_lt_0_compat. auto. auto. }
+      reflexivity.
+      apply Qlt_Rlt. apply eps_divide_2_positive. auto.
+Qed.
 
 
 
