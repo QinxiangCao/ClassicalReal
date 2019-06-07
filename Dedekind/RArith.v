@@ -2833,6 +2833,53 @@ Proof.
   rewrite (Rmult_comm c). apply Rmult_distr_l.
 Qed.
 
+Theorem Rlt_not_refl : forall x : Real, (~x<x)%R.
+Proof.
+  intros. apply Rle_not_lt. apply Rle_refl.
+Qed.
+
+Lemma Rmult_Rlt_0 : forall x y: Real, (Rzero < x ->
+Rzero < y -> Rzero < x * y)%R.
+Proof.
+  intros. destruct x, y. hnf in *.
+  assert(exists x : Q, Cut_mult A A0 x /\ ~ x < 0).
+  { destruct H, H3, H3, H0, H5, H5. exists (x*x0).
+  apply (Dedekind_properties3 _ H1) in H3. destruct H3, H3.
+  apply Qnot_lt_le in H4.
+  assert(0<x1). apply Qle_lt_trans with (y:=x);auto.
+  apply (Dedekind_properties3 _ H2) in H5. destruct H5, H5.
+  apply Qnot_lt_le in H6.
+  assert(0<x2). apply Qle_lt_trans with (y:=x0);auto.
+    split.
+    - left. repeat split.
+  apply (Dedekind_properties2 _ H1 x1). split. auto. apply Qlt_le_weak. auto.
+  apply (Dedekind_properties2 _ H2 x2). split. auto. apply Qlt_le_weak. auto.
+    exists x1, x2. repeat split;auto. apply Qlt_le_weak.
+    apply Qmult_lt_compat;auto.
+    - apply Qle_not_lt. apply Qmult_le_0_compat;auto. }
+  split;auto.
+  intros. destruct H3, H3.
+  pose proof Dedekind_mult A A0 H1 H2.
+  apply (Dedekind_properties2 _ H6 x0). split;auto.
+  apply Qlt_le_weak. apply Qlt_le_trans with (y:=0).
+  auto. apply Qnot_lt_le. auto.
+Qed.
+
+Theorem Rmult_lt_compat_r: forall x y z : Real,
+ (Rzero < z -> x * z < y * z -> x < y)%R.
+Proof.
+  intros. apply Rplus_lt_l with (z:= (-(y*z))%R) in H0.
+  apply Rplus_lt_l with (z:= (-y)%R). rewrite Rplus_opp in *.
+  rewrite Rmult_opp_l in H0. rewrite <- Rmult_distr_r in H0.
+  apply Rnot_le_lt. hnf. intros. rewrite Rle_lt_eq in H1.
+  destruct H1.
+  - rewrite <- H1 in H0. rewrite Rmult_0_l in H0.
+    apply (Rlt_not_refl Rzero). auto.
+  - pose proof Rmult_Rlt_0 (x + - y)%R z H1 H.
+    pose proof Rlt_trans ((x + - y) * z)%R Rzero ((x + - y) * z)%R H0 H2.
+    apply Rlt_not_refl in H3. auto.
+Qed.
+
 Definition Cut_inv (A : Q -> Prop) : Q -> Prop :=
   (fun x => (A 0 /\ (x <= 0 \/ (x > 0 /\ exists r : Q, (r > 0 /\ ~ (A (/x + -r))))))
            \/ (Cut_opp A 0 /\ x < 0 /\ exists r : Q, (r > 0 /\ ~ (A (/x + -r))))
