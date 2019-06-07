@@ -9,16 +9,23 @@ From Coq Require Import Arith.EqNat.
 From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import Classes.Morphisms.
-From Coq Require Import QArith.
+From Coq Require Import QArith.QArith_base.
+From Coq Require Import QArith.Qabs.
+From Coq Require Import QArith.Qminmax.
+From Coq Require Import QArith.Qround.
+From Coq Require Import Logic.Classical.
+From Coq Require Import Classes.Equivalence.
+From Coq Require Import Classes.Morphisms.
+From Coq Require Export Field.
 Import ListNotations.
 
 (** The definition of Turing machine *)
 Parameter A : Type.
-Parameter TM : nat -> nat -> Prop.
-Parameter TM_input : nat -> A -> nat -> Prop.
-Definition Halting : Type := forall i : nat , {exists j, TM i j} + {forall j , ~ TM i j}.
+Parameter TM : nat -> nat -> nat.
+Parameter TM_input : nat -> A -> nat -> nat.
+Definition Halting : Type := forall i : nat , {exists j, TM i j = 1%nat} + {forall j , TM i j = 0%nat}.
 Definition Halting_easy : Type := exists f : Halting , True.
-Definition Halting_easy' : Type := forall i : nat , exists f : ({exists j, TM i j} + {forall j , ~ TM i j}), True.
+Definition Halting_easy' : Type := forall i : nat , exists f : ({exists j, TM i j = 1%nat} + {forall j , TM i j = 0%nat}), True.
 (** forall n,exists b : {P n} +{~ P n} , True *)
 
 Theorem Halting_arrow : Halting -> Halting_easy.
@@ -39,13 +46,16 @@ Proof.
   exists (x i) ; auto.
 Qed.
 
-Axiom Turing_proper1 : forall (i j k: nat), (j <= k)%nat -> TM i j -> TM i k.
-Theorem Turing_proper2 : forall (i j k: nat), (k <= j)%nat -> ~ (TM i j) -> ~ (TM i k).
+Axiom Turing_proper0 : forall (i j : nat) , TM i j = 0%nat \/ TM i j = 1%nat.
+Axiom Turing_proper1 : forall (i j k: nat), (j <= k)%nat -> TM i j = 1%nat -> TM i k = 1%nat.
+Theorem Turing_proper2 : forall (i j k: nat), (k <= j)%nat -> TM i j = 0%nat -> TM i k = 0%nat.
 Proof.
   unfold not in *.
   intros.
-  apply H0.
-  apply Turing_proper1 with k ; auto.
+  destruct (Turing_proper0 i k) ; auto.
+  apply (Turing_proper1 i k j) in H1 ; auto.
+  rewrite H0 in H1.
+  discriminate H1.
 Qed.
 
 Module Type Vir_R.
@@ -60,8 +70,10 @@ Module Type Vir_R.
   Parameter Ropp : R -> R.
   Parameter Rinv : {a0 : R | ~(a0 = R0)} -> R.
   Parameter Rlt : R -> R -> Prop.
+  Parameter Rabs : R -> R.
   Parameter up : R -> Z.
   Parameter IZR : Z -> R.
+  Parameter QTR : Q -> R.
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.
@@ -132,6 +144,24 @@ Module Type Vir_R.
     split ; intros ; apply H ; apply IZR_0 ; auto.
   Qed.
   
+  Parameter QTR_0 : forall q : Q , QTR q = R0 <-> (q = 0)%Q.
+  Theorem QTR_0' : QTR 0 = R0.
+  Proof.
+    apply QTR_0 ; auto.
+  Qed.
+  Parameter Q_same_R : forall q1 q2 : Q , (q1 = q2)%Z <-> QTR q1 = QTR q2.
+  Theorem Q_same_R' : forall q1 q2 : Q , (q1 <> q2)%Z <-> QTR q1 <> QTR q2.
+  Proof.
+    unfold not in *.
+    intros. 
+    split ; intros ; apply H ; apply Q_same_R ; auto.
+  Qed.
+  Theorem Ex_Q_R' : forall q : Q , (q <> 0)%Q <-> QTR q <> R0.
+  Proof.
+    unfold not in *.
+    intros.
+    split ; intros ; apply H ; apply QTR_0 ; auto.
+  Qed.
   Axiom Rle_ge_eq : forall x y : R , x >= y -> y >= x -> x = y.
 
   (** The definition of R Number matched with Turing machine *)
@@ -219,24 +249,20 @@ Module Type Vir_R.
       + apply H2 ; auto.
   Qed.
   
-  Axiom R_is_TMR : forall (n:nat) (r:R) , TMR n r <-> (forall (j : nat), TM n j -> Bin_R r j 1) /\ (forall (j:nat) , ~ TM n j -> Bin_R r j 0).
-  Theorem TMR_proper0 : forall (n:nat) (r:R) , TMR n r -> forall (j : nat), (Bin_R r j 1 -> TM n j) /\ (Bin_R r j 0 -> ~TM n j).
+  Axiom R_is_TMR : forall (n:nat) (r:R) , TMR n r <-> (forall (j : nat), Bin_R r j (TM n j)).
+  Theorem TMR_proper0 : forall (n:nat) (r:R) , TMR n r -> forall (j : nat), (Bin_R r j 1 -> TM n j = 1%nat) /\ (Bin_R r j 0 -> TM n j = 0%nat).
   Proof.
     intros.
     rewrite R_is_TMR in H.
-    destruct H.
-    split.
-    - intros.
+    destruct (Turing_proper0 n j) ; split ; auto ; intros.
+    - pose proof H j.
+      rewrite H0 in H2.
       rewrite Bin_R_pro2 in H1.
-      pose proof (H0 j).
-      apply imply_to_or in H2.
-      destruct H2.
-      + apply NNPP in H2. auto.
-      + exfalso. auto.
-    - unfold not. intros.
-      apply H in H2.
+      exfalso. apply H1 ; auto.
+    - pose proof H j.
+      rewrite H0 in H2.
       rewrite Bin_R_pro2 in H2.
-      auto.
+      exfalso. apply H2 ; auto.
   Qed.
 
   Theorem TMR_proper1 : forall (n : nat) (r : R), TMR n r -> (forall (j k : nat), (j <= k)%nat -> (Bin_R r j 1) -> (Bin_R r k 1)).
@@ -244,11 +270,12 @@ Module Type Vir_R.
     intros.
     pose proof H.
     rewrite R_is_TMR in H.
-    destruct H.
-    apply H.
-    apply Turing_proper1 with j ; auto.
-    pose proof (TMR_proper0 _ _ H2 j).
-    apply H4. 
+    pose proof H k.
+    assert (H' : TM n j = 1%nat).
+    { apply (TMR_proper0 n r H2) ; auto. }
+    assert (H'' : TM n k = 1%nat).
+    { apply Turing_proper1 with j ; auto. }
+    rewrite H'' in H3.
     auto.
   Qed.
 
@@ -257,13 +284,13 @@ Module Type Vir_R.
     intros.
     pose proof H.
     rewrite R_is_TMR in H.
-    destruct H.
-    apply H3.
-    unfold not. intros.
-    apply H in H4.
-    apply (TMR_proper1 n r H2 j k H0) in H4.
-    apply Bin_R_pro2 in H4.
-    apply H4 ; auto.
+    pose proof H j.
+     assert (H' : TM n k = 0%nat).
+    { apply (TMR_proper0 n r H2) ; auto. }
+    assert (H'' : TM n j = 0%nat).
+    { apply Turing_proper2 with k ; auto. }
+    rewrite H'' in H3.
+    auto.
   Qed.
 
   Parameter Get_TMR : nat -> R.
@@ -304,13 +331,12 @@ Module Type Vir_R.
   Proof. 
     unfold Halting.
     intros.
-    pose proof X (exists j : nat , TM i j).
+    pose proof X (exists j : nat , TM i j = 1%nat).
     destruct H ; auto.
     right.
-    unfold not in *.
     intros.
-    apply n.
-    exists j ; auto.
+    destruct (Turing_proper0 i j) ; auto.
+    exfalso. apply n. exists j. auto.
   Qed.
 
   Theorem Two_dimensions : (forall r1 r2 : R, {r1 = r2} + {r1 <> r2}) -> Halting.
@@ -399,72 +425,6 @@ Module Type Vir_R.
   Qed.
   (** This theorem also proves the uncomputability of Rmax Rmin Rabs Rdist*)
   (** Rmax Rmin Rabs Rdist are actually computable. Defined in an incorrect way in std. -- Qinxiang *)
-
-  Parameter RnZ : R -> nat -> Z. (** use the first n numbers of R to construct a member of Z *)
-  Axiom RnZ_pro1 : forall (r : R) (n : nat) , (forall (j : nat) , (j > n)%nat -> (Bin_R (IZR (RnZ r n)) j 0)). 
-  Axiom RnZ_pro2 : forall (r : R) (n : nat) , (forall (j : nat) , (j <= n)%nat -> (Bin_R r j 1 <-> Bin_R (IZR (RnZ r n))j 1)).
-
-  Lemma Turing_eqb_1 : forall (n : nat) (r : R), TMR n r -> ((forall (j : nat) , (RnZ r j = 0)%Z) <-> (forall (j : nat), ~ TM n j)).
-  Proof.
-    intros.
-    pose proof TMR_proper0 n r H.
-    split ; intros.
-    - pose proof H1 j.
-      apply (IZR_0 (RnZ r j)) in H2.
-      apply H0. 
-      apply Bin_R_pro2'. unfold not in *.
-      intros.
-      apply (RnZ_pro2 r j j) in H3 ; auto.
-      rewrite H2 in H3.
-      pose proof Zero_Bin j.
-      apply Bin_R_pro2' in H4.
-      apply H4 ; auto.
-    - apply Z_same_R. rewrite IZR_0'.
-      apply Bin_R_pro3. intros.
-      pose proof le_gt_dec j0 j.
-      destruct H2. 
-      + pose proof RnZ_pro2 r j j0 l.
-        rewrite <- H2.
-        split.
-        * intros. apply H0 in H3.
-          apply Bin_R_pro2. unfold not in *.
-          intros. apply (H1 j0) ; auto.
-        * intros. exfalso. apply Bin_R_pro2 in H3.
-          apply H3. apply Zero_Bin.
-      + pose proof RnZ_pro1 r j j0 g.
-        split.
-        * intros. exfalso. apply Bin_R_pro2 in H3. apply H3;auto.
-        * intros. exfalso. apply Bin_R_pro2 in H3. apply H3. apply Zero_Bin.
-  Qed.
-
-  Lemma Turing_eqb_1' : forall (n : nat) (r : R), TMR n r -> ((exists (j : nat) , (RnZ r j <> 0)%Z) <-> (exists (j : nat), TM n j)).
-  Proof.
-    intros.
-    pose proof TMR_proper0 n r H.
-    split ; intros ; destruct H1.
-    - apply Ex_Z_R' in H1.
-      apply Bin_R_pro3_not in H1.
-      destruct H1. exists x0.
-      apply H0.
-      pose proof le_gt_dec x0 x.
-      destruct H2. 
-      + pose proof RnZ_pro2 r x x0 l.
-        apply H2. apply H1. apply Zero_Bin.
-      + pose proof RnZ_pro1 r x x0 g.
-        apply Bin_R_pro2' in H2.
-        exfalso. apply H2. apply H1. apply Zero_Bin.
-    - exists x.
-      apply Ex_Z_R'. 
-      apply Bin_R_pro3_not.
-      exists x.
-      assert (H' : (x <= x) %nat). { auto. }
-      pose proof RnZ_pro2 r x x H'. clear H'.
-      rewrite <- H2.
-      split ; intros.
-      + apply Zero_Bin.
-      + apply (R_is_TMR n r) in H.
-        apply H in H1 ; auto.
-  Qed.
   
   Theorem Up_R : (forall (r : R) (z : Z) , IZR (z - 1) < r /\ r <= IZR z <-> (up r = z)%Z) -> Halting.
   Proof.
@@ -580,30 +540,102 @@ Module Type Vir_R.
   Defined.
  
   Definition CR (r : R) : Prop := 
-      exists f : R -> nat -> nat, (forall (n: nat), (f r n = 1%nat \/ f r n = 0%nat) /\ Bin_R r n (f r n)).
-  Definition CR' (r : R) := {f : R -> nat -> nat | (forall (n: nat), (f r n = 1%nat \/ f r n = 0%nat) /\ Bin_R r n (f r n)) }.
-
-  Theorem CR_CR' : forall r : R , CR' r -> CR r.
+      exists f : nat -> nat, (forall (n: nat), (f n = 1%nat \/ f n = 0%nat) /\ Bin_R r n (f n)).
+  Definition CR1 (r : R) := {f : nat -> nat | (forall (n: nat), (f n = 1%nat \/ f n = 0%nat) /\ Bin_R r n (f n)) }.
+  Definition limit (f : nat -> Q) (r : R) : Prop :=
+    forall eps : Q , (eps > 0)%Q -> exists N : nat , forall n : nat , (n >= N)%nat -> Rabs(QTR (f n) - r) < QTR eps.
+  (** exists a sequence of rational number limits to r *)
+  Definition CR2 (r : R) := exists f : nat -> Q, limit f r.
+  (** exists a Cauthy sequence of rational number limits to r *)
+  Definition CR3 (r : R) :=
+      {f : nat -> Q | limit f r /\ (exists N : Q -> nat, forall eps : Q , forall (n m : nat) , (n >= N eps)%nat -> (m >= n)%nat -> (Qabs(f n - f m) < eps)%Q)}.
+ 
+  Theorem CR1_CR : forall r : R , CR1 r -> CR r.
   Proof.
     intros.
-    unfold CR' in *.
+    unfold CR1 in *.
     unfold CR in *.
-    destruct X as [f ?].
+    destruct H as [f ?].
     exists f. auto.
   Qed.
+  Theorem CR3_CR2 : forall r : R , CR3 r -> CR2 r.
+  Proof.
+    unfold CR3 in *.
+    unfold CR2 in *.
+    intros.
+    destruct H as [? [? ?]].
+    exists x. auto.
+  Qed.
+
+  Fixpoint sum_f (f : nat -> nat) (n : nat) : Q :=
+    match n with
+      | 0%nat => Z_of_nat (f 0%nat) # 1%positive
+      | S n' => (sum_f f n' + (Z_of_nat (f n) # Pos.of_nat (2 ^ n)))%Q
+    end.
+ 
+  Axiom sum_f_limit_r : forall (f : nat -> nat) (r : R) , limit (sum_f f) r <-> (forall n : nat , Bin_R r n (f n)).
+  
+  Axiom sum_f_limit_eps : forall (f : nat -> nat) (r : R) (n m : nat) , (n <= m) % nat -> (Qabs(sum_f f n - sum_f f m) < 1%Z # Pos.of_nat (2^n))%Q.
+
+  Theorem CR_CR2 : forall r : R , CR r -> CR2 r.
+  Proof.
+    unfold CR.
+    unfold CR2.
+    intros.
+    destruct H.
+    exists (sum_f x).
+    rewrite sum_f_limit_r.
+    apply H.
+  Qed.
+
+  Theorem CR1_CR3 : forall r : R , CR1 r -> CR3 r.
+  Proof.
+    unfold CR1.
+    unfold CR3.
+    intros.
+    destruct H.
+    exists (sum_f x).
+    split.
+    - rewrite sum_f_limit_r. apply a.
+    - exists (fun eps => (2 ^ S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps)))%nat).
+      intros.
+      apply Qlt_trans with (y := (1%Z # Pos.of_nat(2 ^ S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps)))%nat)).
+      + apply Qlt_trans with (y := (1%Z # Pos.of_nat (2^n))%Q).
+        * apply sum_f_limit_eps ; auto.
+        * unfold Qlt. simpl.
+          apply Pos2Z.pos_lt_pos.
+          apply Pos2Nat.inj_lt.
+          repeat rewrite Nat2Pos.id_max.
+          simpl.
+          admit.
+      + unfold Qlt. simpl. admit.
+  Admitted.
   
   Parameter TM'r : nat -> R.
-  Axiom TM'r_pro0 : forall (n m: nat), Bin_R (TM'r n) m 1 <-> TM m n.
-  Theorem TM'r_pro0' : forall (n m : nat), Bin_R (TM'r n) m 0 <-> ~ TM m n.
+  Axiom TM'r_pro : forall (n m: nat), Bin_R (TM'r n) m (TM m n).
+
+  Theorem TM'r_pro0 : forall (n m : nat), Bin_R (TM'r n) m 1 <-> TM m n = 1%nat.
   Proof.
     intros.
-    pose proof TM'r_pro0 n m.
+    pose proof TM'r_pro n m.
     unfold not in *.
     split ; intros. 
     - apply Bin_R_pro2 in H0 ; auto.
-      apply H. auto.
-    - apply Bin_R_pro2'. unfold not. intros.
-      apply H0. apply H. auto.
+      destruct (Turing_proper0 m n) ; auto.
+      rewrite H1 in H. exfalso. apply H0 ; auto.
+    - rewrite H0 in H; auto.
+  Qed.
+
+  Theorem TM'r_pro0' : forall (n m : nat), Bin_R (TM'r n) m 0 <-> TM m n = 0%nat.
+  Proof.
+    intros.
+    pose proof TM'r_pro n m.
+    unfold not in *.
+    split ; intros. 
+    - apply Bin_R_pro2' in H0 ; auto.
+      destruct (Turing_proper0 m n) ; auto.
+      rewrite H1 in H. exfalso. apply H0 ; auto.
+    - rewrite H0 in H; auto.
   Qed.
 
   Theorem TM'r_pro1 : forall (n m : nat) , Bin_R (TM'r n) m 1 -> (forall (r : nat) , (r >= n)%nat -> Bin_R (TM'r r) m 1).
@@ -625,18 +657,21 @@ Module Type Vir_R.
   Qed.
 
   Parameter limitTM'r : R.
-  Axiom limitTM'r_pro : forall (n : nat) , Bin_R limitTM'r n 1 <-> exists j : nat , TM n j.
-  Theorem limitTM'r_pro' : forall (n : nat) , Bin_R limitTM'r n 0 <-> forall j : nat ,~ TM n j. 
+  Axiom limitTM'r_pro : forall (n : nat) , Bin_R limitTM'r n 1 <-> exists j : nat , TM n j = 1%nat.
+  Theorem limitTM'r_pro' : forall (n : nat) , Bin_R limitTM'r n 0 <-> forall j : nat , TM n j = 0%nat. 
   Proof.
     intros.
     pose proof limitTM'r_pro n.
     unfold not in *.
     split ; intros.
-    - apply Bin_R_pro2 in H0 ; auto. apply H. exists j. auto.
+    - destruct (Turing_proper0 n j) ; auto.
+      apply Bin_R_pro2 in H0 ; try inversion H0. 
+      apply H. exists j ; auto. 
     - apply Bin_R_pro2'. unfold not . intros.
       apply H in H1.
       destruct H1.
-      apply (H0 x) ; auto. 
+      rewrite (H0 x) in H1.
+      discriminate H1.
   Qed.
 
   Theorem limitTM'r_pro1 : (forall (n : nat) , {Bin_R limitTM'r n 0} + {Bin_R limitTM'r n 1}) -> Halting.
@@ -649,11 +684,33 @@ Module Type Vir_R.
     - rewrite (limitTM'r_pro i) in b. auto.
   Qed.
 
-  Axiom TM'r_is_computable' : forall n : nat , CR' (TM'r n).
+  Theorem TM'r_is_computable1 : forall n : nat , CR1 (TM'r n).
+  Proof.
+    intros.
+    unfold CR1.
+    exists (fun n0 => TM n0 n).
+    intros.
+    split.
+    - destruct (Turing_proper0 n0 n) ; auto.
+    - apply TM'r_pro.
+  Qed.
+  
   Theorem TM'r_is_computable : forall n : nat , CR (TM'r n).
   Proof.
     intros.
-    apply CR_CR'. apply TM'r_is_computable'.
+    apply CR1_CR. apply TM'r_is_computable1.
+  Qed.
+  
+  Theorem TM'r_is_computable3 : forall n : nat , CR3 (TM'r n).
+  Proof.
+    intros.
+    apply CR1_CR3. apply TM'r_is_computable1.
+  Qed.
+
+  Theorem TM'r_is_computable2 : forall n : nat , CR2 (TM'r n).
+  Proof.
+    intros.
+    apply CR3_CR2. apply TM'r_is_computable3.
   Qed.
 
   Parameter Un_cv : (nat -> R) -> R -> Prop.
@@ -674,11 +731,11 @@ Module Type Vir_R.
     destruct H1 as [[ ? | ?] ?].
     - rewrite H in H1.
       rewrite (limitTM'r_pro i) in H1.
-      assert (H' : {exists j : nat, TM i j} + {forall j : nat, ~ TM i j}) by auto.
+      assert (H' : {exists j : nat, TM i j = 1%nat} + {forall j : nat, TM i j = 0%nat}) by auto.
       exists H'. auto.
     - rewrite H in H1.
       rewrite (limitTM'r_pro' i) in H1.
-      assert (H' : {exists j : nat, TM i j} + {forall j : nat, ~ TM i j}) by auto.
+      assert (H' : {exists j : nat, TM i j = 1%nat} + {forall j : nat, TM i j = 0%nat}) by auto.
       exists H'. auto.
   Qed.
   
@@ -697,7 +754,7 @@ Module Type Vir_R.
     pose proof H i.
     clear H.
     destruct H0 as [? ?].
-    destruct (f limitTM'r i) as [ | [ | ]].
+    destruct (f i) as [ | [ | ]].
     - right. apply limitTM'r_pro' ; auto.
     - left. apply limitTM'r_pro ; auto.
     - exfalso. 
@@ -706,17 +763,17 @@ Module Type Vir_R.
       + discriminate H.
   Qed.
   
-  Theorem lim_CN'_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR' (Un n)) -> CR' l1) -> Halting.
+  Theorem lim_CN1_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR1 (Un n)) -> CR1 l1) -> Halting.
   Proof.
     unfold Halting.
     intros.
-    pose proof X TM'r limitTM'r limit_of_TM'r TM'r_is_computable'.
+    pose proof X TM'r limitTM'r limit_of_TM'r TM'r_is_computable1.
     clear X.
-    unfold CR' in *.
-    destruct X0 as [f ].
+    unfold CR1 in *.
+    destruct H as [f ].
     destruct (a i).
     clear a.
-    destruct (f limitTM'r i) as [ | [ | ]].
+    destruct (f i) as [ | [ | ]].
     - right. apply limitTM'r_pro' ; auto.
     - left. apply limitTM'r_pro ; auto.
     - exfalso. 
@@ -724,7 +781,6 @@ Module Type Vir_R.
       + apply eq_add_S in H. discriminate H.
       + discriminate H.
   Qed.
-  
 End Vir_R.
 
 
