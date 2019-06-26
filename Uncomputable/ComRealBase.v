@@ -548,7 +548,7 @@ Module Type Vir_R.
   Definition CR2 (r : R) := exists f : nat -> Q, limit f r.
   (** exists a Cauthy sequence of rational number limits to r *)
   Definition CR3 (r : R) :=
-      {f : nat -> Q | limit f r /\ (exists N : Q -> nat, forall eps : Q , forall (n m : nat) , (n >= N eps)%nat -> (m >= n)%nat -> (Qabs(f n - f m) < eps)%Q)}.
+      {f : nat -> Q & {N : Q -> nat | limit f r /\ (forall eps : Q , forall (n m : nat) , (n >= N eps)%nat /\ (n >= 1) %nat -> (m >= n)%nat -> (Qabs(f n - f m) < eps)%Q)} }.
  
   Theorem CR1_CR : forall r : R , CR1 r -> CR r.
   Proof.
@@ -564,7 +564,7 @@ Module Type Vir_R.
     unfold CR2 in *.
     intros.
     destruct H as [? [? ?]].
-    exists x. auto.
+    exists x. destruct a. auto.
   Qed.
 
   Fixpoint sum_f (f : nat -> nat) (n : nat) : Q :=
@@ -587,7 +587,57 @@ Module Type Vir_R.
     rewrite sum_f_limit_r.
     apply H.
   Qed.
+  
+  Lemma Max_powSn_1 : forall n : nat , ( n >= 1 -> 2 ^ n > 1)%nat.
+  Proof.
+    intros.
+    induction n.
+    - inversion H.
+    - assert (H' : forall p : nat , (2 ^ p > 0) %nat).
+      { intros. induction p.
+        + simpl. apply Nat.lt_0_1.
+        + simpl. rewrite <- plus_n_O. apply lt_plus_trans ; auto.  
+      }
+      simpl. rewrite <- plus_n_O.
+      apply Nat.lt_le_trans with (m := (1 + 2 ^ n) % nat).
+      simpl. apply lt_n_S. apply (H' n). 
+      apply plus_le_compat_r. 
+      pose proof H' n.
+      apply H0.
+  Qed.
+  
+  Lemma nat_le_four : forall (n m q p : nat) , (n <= m)%nat -> (p <= q)%nat -> (n + p <= m + q)%nat.
+  Proof.
+    intros.
+    apply Nat.le_trans with (m := (n + q)%nat).
+    - apply plus_le_compat_l. auto.
+    - apply plus_le_compat_r. auto.
+  Qed.
+  
+  Lemma nat_lt_four : forall (n m q p : nat) , (n < m)%nat -> (p < q)%nat -> (n + p < m + q)%nat.
+  Proof.
+    intros.
+    apply Nat.lt_trans with (m := (n + q)%nat).
+    - apply plus_lt_compat_l. auto.
+    - apply plus_lt_compat_r. auto.
+  Qed.
 
+  Lemma ge_pow_ge : forall n: nat , (n >= 1 -> 2 ^ n > n)%nat.
+  Proof.
+    intros.
+    induction n.
+    - simpl. inversion H.
+    - simpl. destruct n.
+      + simpl. apply Nat.lt_succ_diag_r.
+      + rewrite <- plus_n_O.
+        replace (S (S n))%nat with ((S n) + 1)%nat.
+        * apply nat_lt_four.
+          apply IHn. apply le_n_S. apply Nat.le_0_l. 
+          apply Max_powSn_1.
+          apply le_n_S. apply Nat.le_0_l.
+        * simpl. rewrite Nat.add_1_r. reflexivity.
+  Qed.
+  
   Theorem CR1_CR3 : forall r : R , CR1 r -> CR3 r.
   Proof.
     unfold CR1.
@@ -595,9 +645,10 @@ Module Type Vir_R.
     intros.
     destruct H.
     exists (sum_f x).
+    exists (fun eps => (2 ^ S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps)))%nat).
     split.
     - rewrite sum_f_limit_r. apply a.
-    - exists (fun eps => (2 ^ S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps)))%nat).
+    - 
       intros.
       apply Qlt_trans with (y := (1%Z # Pos.of_nat(2 ^ S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps)))%nat)).
       + apply Qlt_trans with (y := (1%Z # Pos.of_nat (2^n))%Q).
@@ -606,8 +657,15 @@ Module Type Vir_R.
           apply Pos2Z.pos_lt_pos.
           apply Pos2Nat.inj_lt.
           repeat rewrite Nat2Pos.id_max.
-          simpl.
-          admit.
+          replace (max 1 (2 ^ n))%nat with (2 ^ n)%nat.
+          destruct H.
+          pose proof ge_pow_ge n H1.
+          apply le_lt_trans with (m := n) ; auto.
+          apply Nat.max_lub ; auto.
+          symmetry.
+          apply max_r.
+          apply Nat.lt_le_incl.
+          apply Max_powSn_1. apply H.
       + unfold Qlt. simpl. admit.
   Admitted.
   
@@ -748,7 +806,6 @@ Module Type Vir_R.
     unfold Halting_easy.
     destruct H0 as [f ?].
     unfold Halting.
-    Print ex.
     refine (@ex_intro _ _ _ I).
     intros.
     pose proof H i.
