@@ -725,8 +725,8 @@ Definition plusSeq {X : Type}  (eqX : relation X) {HP : Plus_Field eqX}
 Class PropPlusDist {X : Type} {eqX : relation X} {M : Metric eqX eqX}
   {HE : Equivalence eqX} :={
       HPD : forall a b c, eqX (dist (a + b) (a + c)) (dist b c);
-      PSP : forall  (seq1 seq2 : seq), {pseq : seq | plusSeq eqX seq1 seq2 pseq};
-  }. 
+}. 
+  
 Theorem plus_Cauchy_seq : forall {X : Type} {eqX : relation X} {HE : Equivalence eqX} 
   {M : Metric eqX eqX}  {Dpd : Density eqX mof}{ PPD : PropPlusDist} {seq1 seq2 : seq},
         CauchySeq eqX eqX seq2 -> CauchySeq eqX eqX seq1 -> 
@@ -837,9 +837,6 @@ Proof.
     rewrite H22. auto.
     Defined.
     
-Class wellreflseq {A : Type} (eqA : relation A) :={
-         Hf : forall (f : nat -> A) , {fseq : seq |forall (n : nat), fseq n (f n)};
-         }.
 Section PfModule.
 Variables X : Type.
 Variables eqX : relation X.
@@ -849,12 +846,12 @@ Variables Dpd : Density eqX mof.
 Variables HPB :PropBucket.
 Variables PPD : PropPlusDist.
 Variables Wellrseq : wellreflseq eqX.
-Lemma Hrf : forall a : X,{ reflseq : seq | refl eqX reflseq a}.
+(*Lemma Hrf : forall a : X,{ reflseq : seq | refl eqX reflseq a}.
 Proof.
     intros. inversion Wellrseq. assert(nat -> X).
     intros. apply a. destruct Hf0 with (f := X0).
     exists x. unfold refl. split. auto.
-    
+   *) 
     
 Definition Cele (a : X) : Cauchilize eqX eqX. inversion Wellrseq.
       assert({reflseq : seq | refl eqX reflseq a}). auto. pose proof ctr.
