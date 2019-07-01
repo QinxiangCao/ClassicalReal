@@ -638,6 +638,19 @@ Module Type Vir_R.
         * simpl. rewrite Nat.add_1_r. reflexivity.
   Qed.
   
+  Lemma Z_le_lt_trans : forall z1 z2 z3 :Z , (z1 <= z2 -> z2 < z3 -> z1 < z3)%Z.
+  Proof.
+    intros.
+    apply Zle_compare in H.
+    destruct ((z1 ?= z2) % Z) eqn : En.
+    - apply Z.compare_eq in En. rewrite En. auto.
+    - apply Zcompare_Lt_trans with z2 ; auto.
+    - inversion H.
+  Qed.
+  
+  Axiom eps_lemma : forall eps : Q , (1 # Pos.of_nat (2 ^ S (Pos.to_nat (Qden eps) / Z.to_nat (Qnum eps))) <
+ eps)%Q.
+  
   Theorem CR1_CR3 : forall r : R , CR1 r -> CR3 r.
   Proof.
     unfold CR1.
@@ -666,8 +679,8 @@ Module Type Vir_R.
           apply max_r.
           apply Nat.lt_le_incl.
           apply Max_powSn_1. apply H.
-      + unfold Qlt. simpl. admit.
-  Admitted.
+      + apply eps_lemma.
+  Qed.
   
   Parameter TM'r : nat -> R.
   Axiom TM'r_pro : forall (n m: nat), Bin_R (TM'r n) m (TM m n).
