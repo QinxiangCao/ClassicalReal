@@ -295,3 +295,21 @@ Proof.
   rewrite Qlt_minus_iff in *. rewrite Qplus_0_l in *. rewrite Qinv_opp;auto.
   apply Qinv_lt_0_compat. auto.
 Qed.
+
+Lemma Qdiv_lt_N : forall x y : Q , 0 > y -> x < y -> /y < /x.
+Proof.
+  intros.
+  assert(forall x y, 0 > y -> x < y -> / y < / x).
+  { intros. assert(x0<0).
+    { apply Qlt_trans with (y:=y0);auto. }
+    rewrite <- Qopp_involutive. rewrite <- (Qopp_involutive (/x0)).
+    apply Qopp_lt_compat. apply Qopp_lt_compat in H1.
+    apply Qopp_lt_compat in H2. apply Qopp_lt_compat in H3.
+    rewrite Qinv_opp. rewrite Qinv_opp. apply Qlt_shift_inv_l;auto.
+    rewrite <- (Qmult_inv_r (-x0)). { rewrite Qmult_comm.
+    apply Qmult_lt_compat_r with (z:=(/(-x0)));auto.
+    apply Qinv_lt_0_compat. auto. }
+    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. symmetry;auto.
+    unfold not. intros. apply Qlt_not_eq in H1. destruct H1. rewrite H4. reflexivity.
+    unfold not. intros. apply Qlt_not_eq in H3. destruct H3. rewrite H4. reflexivity. } auto.
+Qed.
