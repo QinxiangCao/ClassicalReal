@@ -140,14 +140,152 @@ Proof.
   rewrite Qplus_comm. apply Qlt_le_weak. auto.
 - unfold Rle. unfold "+"%D. simpl. intros. unfold D3.Cut_plus_Cut.
   destruct H1. destruct H1. 
-  (*destruct H. destruct H0. destruct H2.
-  unfold CauchySeqPlus in *. exists ((1#2)*x)%Q,((1#2)*x)%Q.
-  split. exists ((1#2)*x0)%Q. split. apply H1. exists x1. intros.
- destruct Cauchy_exists with x1. 
-  destruct Cauchy_exists0 with x1.*)
+  destruct H. assert(exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q,
+               CSeq m1 q1 -> CSeq m2 q2 -> Qabs (q1 - q2) < (1#4)*x0).
+  apply Cauchy_def. apply mult_lt_0. reflexivity. apply H1.
+  destruct H0. assert(exists n : nat,
+                forall m1 m2 : nat,
+                (m1 > n)%nat ->
+                (m2 > n)%nat ->
+                forall q1 q2 : Q,
+                CSeq0 m1 q1 -> CSeq0 m2 q2 -> Qabs (q1 - q2) < (1#4)*x0).
+  apply Cauchy_def0. apply mult_lt_0. reflexivity. auto.
+  destruct H. destruct H0. destruct H2.
+  assert(exists q : Q, CSeq (x1+x2+x3+1)%nat q).
+  apply Cauchy_exists. destruct H3.
+  assert(exists q : Q, CSeq0 (x1+x2+x3+1)%nat q).
+  apply Cauchy_exists0. destruct H4. exists (x4-(1#2)*x0)%Q,(x-x4+(1#2)*x0)%Q.
+  split.
+    + exists ((1#4)*x0)%Q. split. apply mult_lt_0. reflexivity.
+      auto. exists (x1+x2+x3)%nat. intros. 
+      assert(Qabs (x4 - p) < (1 # 4) * x0).
+      apply H with (x1 + x2 +x3 + 1)%nat n. omega.
+      apply Nat.le_lt_trans with (x1+x2+x3)%nat. omega. auto. auto. auto.
+      assert((x4 - p) < (1 # 4) * x0).
+      apply QOrderedType.QOrder.le_lt_trans with (Qabs (x4 - p)).
+      apply Qle_Qabs. apply H7.
+      assert(x4 - (1#2)*x0 + (1 # 4) * x0==x4-(1 # 4) * x0)%Q.
+      assert(- ((1 # 2) * x0)==((-(1#2))*x0))%Q. 
+      assert( forall (a b:Q),-(a)*b==-(a*b))%Q.
+        intros. unfold Qmult. simpl. unfold Qeq. simpl. rewrite Z.mul_opp_l. reflexivity.
+      symmetry. apply H9.
+       unfold Qminus. rewrite H9. rewrite<-Qplus_assoc.
+       rewrite<-Qmult_plus_distr_l. assert((- (1#2) + (1 # 4))==-(1#4))%Q.
+        reflexivity. rewrite H10. assert(- (1 # 4) * x0==- ((1 # 4) * x0))%Q.
+        assert( forall (a b:Q),-(a)*b==-(a*b))%Q.
+        intros. unfold Qmult. simpl. unfold Qeq. simpl. rewrite Z.mul_opp_l. reflexivity.
+        apply H11. rewrite H11. reflexivity. rewrite H9. 
+        rewrite Qlt_minus_iff. rewrite Qlt_minus_iff in H8.
+        assert(forall (a b:Q),-(a-b)==-a+b)%Q.
+        intros. unfold Qminus. assert((a + - b)+ - (a + - b) == (a + - b)- a + b)%Q.
+        rewrite Qplus_opp_r. symmetry.
+        rewrite Qplus_comm. assert((a + - b - a)==-b)%Q.
+         unfold Qminus. rewrite<- Qplus_assoc. rewrite Qplus_comm .
+        rewrite <-Qplus_assoc. rewrite Qplus_comm .  assert(- a + a ==0)%Q.
+        rewrite Qplus_comm. apply Qplus_opp_r. rewrite H10.
+        apply Qplus_0_l. rewrite H10. apply Qplus_opp_r. apply Qplus_inj_l with (a + - b )%Q.
+        rewrite H10. unfold Qminus. rewrite Qplus_assoc. reflexivity.
+        rewrite H10. rewrite H10 in H8. rewrite Qplus_assoc in H8. rewrite Qplus_comm.
+        assert( - x4 + (1 # 4) * x0 ==(1 # 4) * x0 + - x4)%Q.
+        rewrite Qplus_comm . reflexivity. rewrite H11. apply H8.
+    + split.
+        * exists ((1#4)*x0)%Q. split.  apply mult_lt_0. reflexivity.
+      auto. exists (x1+x2+x3)%nat. intros. apply Qlt_trans with ( x4+x5 -x0- x4 + (1#2)*x0 + (1 # 4) * x0 )%Q.
+      unfold Qminus.  
+      apply Qplus_lt_l.
+      apply Qplus_lt_l.  apply Qplus_lt_l. 
+      assert(x+x0<x4+x5)%Q. apply H2 with (x1+x2+x3+1)%nat.
+      omega. unfold C1.CauchySeqPlus. intros.
+      assert(x4==q1)%Q. apply Cauchy_unique with (x1+x2+x3+1)%nat.
+      apply H3. apply H7. assert(x5==q2)%Q. apply Cauchy_unique0 with (x1+x2+x3+1)%nat.
+      apply H4. apply H8. rewrite H9. rewrite H10. reflexivity.
+      assert(x +x0< x4 + x5 + - x0+x0)%Q.
+      rewrite <-Qplus_assoc. assert(- x0 + x0==0)%Q.
+      rewrite Qplus_comm. apply Qplus_opp_r. rewrite H8.
+      rewrite<-Qplus_assoc. rewrite Qplus_0_r. auto.
+      apply Qplus_lt_l with x0. auto.
+      assert(x4 + x5 - x0 - x4 + (1 # 2) * x0 + (1 # 4) * x0==x5-(1 # 4) * x0)%Q.
+      unfold Qminus. assert(x4 + x5==x5+x4)%Q. symmetry. apply Qplus_comm.
+      rewrite H7. rewrite <-Qplus_assoc. rewrite<-Qmult_plus_distr_l.
+      assert(((1 # 2) + (1 # 4))==3#4)%Q. reflexivity.
+      rewrite H8. assert(x5 + x4 + - x0 + - x4==x5 +-x0)%Q. 
+      assert(- x0==x4 + - x0 + - x4)%Q.
+      rewrite <-Qplus_comm. rewrite Qplus_assoc.
+      assert( - x4 + x4 ==0)%Q. rewrite Qplus_comm.
+      apply Qplus_opp_r. rewrite H9. rewrite Qplus_comm.
+      symmetry. apply Qplus_0_r.
+      assert(x5 + x4 + - x0 + - x4==x5 + (x4 + - x0 + - x4))%Q.
+      rewrite Qplus_assoc. rewrite Qplus_assoc. reflexivity.
+      rewrite H10. rewrite<-H9. reflexivity. rewrite H9.
+      assert(- x0==-(1)*x0)%Q. reflexivity. rewrite H10.
+      rewrite<-Qplus_assoc. rewrite<-Qmult_plus_distr_l.
+      assert(- (1) + (3 # 4)==-(1#4))%Q. reflexivity.
+      rewrite H11. assert(- (1 # 4) * x0==- ((1 # 4) * x0))%Q.
+        assert( forall (a b:Q),-(a)*b==-(a*b))%Q.
+        intros. unfold Qmult. simpl. unfold Qeq. simpl. rewrite Z.mul_opp_l. reflexivity.
+      apply H12. rewrite H12. reflexivity. rewrite H7.
+      assert(Qabs (x5 - p) < (1 # 4) * x0).
+      apply H0 with (x1 + x2 +x3 + 1)%nat n. omega.
+      apply Nat.le_lt_trans with (x1+x2+x3)%nat. omega. auto. auto. auto.
+      assert((x5 - p) < (1 # 4) * x0).
+      apply QOrderedType.QOrder.le_lt_trans with (Qabs (x5 - p)).
+      apply Qle_Qabs. apply H8.
+      assert(x5 - (1#2)*x0 + (1 # 4) * x0==x5-(1 # 4) * x0)%Q.
+      assert(- ((1 # 2) * x0)==((-(1#2))*x0))%Q. 
+      assert( forall (a b:Q),-(a)*b==-(a*b))%Q.
+        intros. unfold Qmult. simpl. unfold Qeq. simpl. rewrite Z.mul_opp_l. reflexivity.
+      symmetry. apply H10.
+       unfold Qminus. rewrite H10. rewrite<-Qplus_assoc.
+       rewrite<-Qmult_plus_distr_l. assert((- (1#2) + (1 # 4))==-(1#4))%Q.
+        reflexivity. rewrite H11. assert(- (1 # 4) * x0==- ((1 # 4) * x0))%Q.
+        assert( forall (a b:Q),-(a)*b==-(a*b))%Q.
+        intros. unfold Qmult. simpl. unfold Qeq. simpl. rewrite Z.mul_opp_l. reflexivity.
+        apply H12. rewrite H12. reflexivity. rewrite<- H10. 
+        rewrite Qlt_minus_iff. rewrite Qlt_minus_iff in H9.
+        assert(forall (a b:Q),-(a-b)==-a+b)%Q.
+        intros. unfold Qminus. assert((a + - b)+ - (a + - b) == (a + - b)- a + b)%Q.
+        rewrite Qplus_opp_r. symmetry.
+        rewrite Qplus_comm. assert((a + - b - a)==-b)%Q.
+         unfold Qminus. rewrite<- Qplus_assoc. rewrite Qplus_comm .
+        rewrite <-Qplus_assoc. rewrite Qplus_comm .  assert(- a + a ==0)%Q.
+        rewrite Qplus_comm. apply Qplus_opp_r. rewrite H11.
+        apply Qplus_0_l. rewrite H11. apply Qplus_opp_r. apply Qplus_inj_l with (a + - b )%Q.
+        rewrite H11. unfold Qminus. rewrite Qplus_assoc. reflexivity.
+        rewrite H10. rewrite H11 in H9. rewrite Qplus_assoc in H9. rewrite Qplus_comm.
+        assert( - x4 + (1 # 4) * x0 ==(1 # 4) * x0 + - x4)%Q.
+        rewrite Qplus_comm . reflexivity. rewrite H11. 
+        rewrite Qplus_comm. rewrite Qplus_assoc.
+        rewrite Qplus_comm. assert((p + - x5)==(-x5+p))%Q.
+        apply Qplus_comm. rewrite H13. rewrite Qplus_assoc.
+         apply H9.
+    * unfold Qminus. assert((x + - x4 + (1 # 2) * x0)==(1 # 2) * x0+-x4+x)%Q.
+      rewrite<- Qplus_assoc. rewrite Qplus_comm. assert(- x4 + (1 # 2) * x0==(1 # 2) * x0+-x4)%Q.
+      apply Qplus_comm. rewrite H5. reflexivity. rewrite H5.
+      rewrite Qplus_assoc. rewrite Qplus_comm.
+      assert((x4 + - ((1 # 2) * x0) + ((1 # 2) * x0 + - x4)==0))%Q.
+      rewrite Qplus_assoc. rewrite Qplus_comm. rewrite<- Qplus_assoc.  
+      assert((- ((1 # 2) * x0) + (1 # 2) * x0)==0)%Q.
+      rewrite Qplus_comm. apply Qplus_opp_r. rewrite H6.
+      rewrite Qplus_comm. rewrite Qplus_0_r. apply Qplus_opp_r.
+      rewrite H6. apply Qplus_0_r.
+Qed.
 Theorem C2D_properity2:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
 Proof.
+  intros.
+  unfold "==". split.
+- destruct x,y. unfold "*". simpl. intros.
+  unfold Cut_mult in H1. unfold PP in H1. simpl in H1. destruct H1.
+  + destruct H1. destruct H1. destruct H1. destruct H1.
+    destruct H3. destruct H3. destruct H4. destruct H5.
+    unfold Cut_multPP in H2. destruct H2. destruct H2.
+    destruct H2. destruct H6. destruct H7. destruct H8.
+    destruct H7. destruct H8. destruct H7. destruct H8.
+    destruct H10. destruct H11. 
 
 Admitted.
 Lemma Qminus_Qplus:forall(a b c:Q),a<=b+c<->a-b<=c.

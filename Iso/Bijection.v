@@ -25,4 +25,7 @@ Require Import CReal.Iso.Dedekind2Cauchy.
 
 Theorem Bijection: forall x y,(D2C x==y)%C <->(C2D y==x)%D.
 Proof.
+  intros. split.
+- intros. destruct x. destruct y.
+  unfold D2C in H. simpl in H. simpl. 
 Admitted.
