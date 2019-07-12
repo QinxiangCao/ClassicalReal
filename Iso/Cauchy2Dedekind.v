@@ -352,4 +352,9 @@ unfold "==". split.
   rewrite H11. auto. apply Qplus_lt_l with ((1 # 2) * x0)%Q.
   auto.
 Qed.
-
+Require Import Lia.
+Goal forall (a b c:Q),(a-b<c)%Q->(a<b+c)%Q.
+intros. assert(a==b+(a-b))%Q. ring. rewrite H0. Search (_ + _ < _ + _)%Q.
+apply Qplus_lt_r.
+Abort.
+Goal forall(a b c d e:Q), (a+b*e==d+e-c+e*b+c-e-d+a)%Q. intros. ring.

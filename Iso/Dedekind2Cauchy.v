@@ -40,14 +40,34 @@ Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
 Notation "a == b" :=(C1.Real_equiv a b):CReal_Scope.
 Notation "a + b" :=(C1.Rplus a b):CReal_Scope.
 Notation "a * b" :=(C1.Rmult a b):CReal_Scope.
+Lemma Dcut_P: forall (n:positive)(Dcut:Q->Prop),Dedekind Dcut ->
+exists (m:Z),Dcut (m#n)/\~Dcut (m+1#n).
+Proof.
+  intros. assert(exists (t:Z),Dcut (t#n)).
+  { destruct H. destruct Dedekind_properties1. Search Z Q. destruct H.
+  destruct Inject_lemmas.le_inject_Z with x.
+  exists (Zpos(n)*x0)%Z. assert(Z.pos n * x0 # n<=x).
+Admitted.
+Definition CSeq_pre (DCut: Q -> Prop): nat -> Q -> Prop :=
+(fun n q=>exists N:Z,
+DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat n))/\(q==N#2^(of_nat n))%Q).
 
 Theorem Cauchy_Dcut :forall (DCut:Q->Prop),
-Dedekind DCut->Cauchy (fun n q=>exists N:Z,
+Dedekind DCut->Cauchy (CSeq_pre DCut). (*(fun n q=>exists N:Z,
 DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat n))/\(q==N#2^(of_nat n))%Q).
+*)
 Proof.
   intros.
   split.
-- intros. destruct H.  
+- intros. unfold CSeq_pre. 
+  assert(exists (N:Z), DCut (N # 2 ^ of_nat n) /\
+  ~ DCut (N + 1 # 2 ^ of_nat n)). apply Dcut_P. apply H.
+  destruct H0.
+  exists( x # 2 ^ of_nat n). exists x.
+  split. apply H0. split. apply H0. reflexivity.
+- intros. unfold CSeq_pre in *. destruct H0. destruct H1.
+  assert(x=x0)%Z.
+  { assert(x<=x0+1)%Z.
 
 Definition D2C (B:D1.Real):C1.Real :=
 match B with
