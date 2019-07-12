@@ -40,6 +40,12 @@ Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
 Notation "a == b" :=(C1.Real_equiv a b):CReal_Scope.
 Notation "a + b" :=(C1.Rplus a b):CReal_Scope.
 Notation "a * b" :=(C1.Rmult a b):CReal_Scope.
+Lemma Dcut_lt :forall(Dcut:Q->Prop),Dedekind Dcut->forall (p q:Q),
+Dcut p/\~Dcut q->p<q.
+Proof. 
+  intros. destruct H0. pose proof Dedekind_properties2 _ H.
+assert(p<q\/~p<q). apply classic. inversion H3. apply H4. assert(q<=p).
+ Admitted.
 Lemma Dcut_P: forall (n:positive)(Dcut:Q->Prop),Dedekind Dcut ->
 exists (m:Z),Dcut (m#n)/\~Dcut (m+1#n).
 Proof.
@@ -67,7 +73,7 @@ Proof.
   split. apply H0. split. apply H0. reflexivity.
 - intros. unfold CSeq_pre in *. destruct H0. destruct H1.
   assert(x=x0)%Z.
-  { assert(x<=x0+1)%Z.
+  { assert(x<=x0+1)%Z. pose proof Dedekind_properties2 _ H.
 
 Definition D2C (B:D1.Real):C1.Real :=
 match B with
