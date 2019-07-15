@@ -27,7 +27,7 @@ Iso_FILES = \
   Dedekind2Cauthy.v
 
 MetricSpace_FILES = \
-  MS_Def.v
+  M_pack.v M_pre.v M_def.v M_prop.v
 
 Uncomputable_FILES = \
   ComRealBase.v

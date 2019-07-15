@@ -1,0 +1,12 @@
+From Coq Require Export Bool.Bool.
+From Coq Require Export Logic.Classical.
+From Coq Require Export Init.Nat.
+From Coq Require Export Arith.Arith.
+From Coq Require Export Arith.EqNat.
+From Coq Require Export omega.Omega.
+From Coq Require Export Lists.List.
+From Coq Require Export Strings.String.
+From Coq Require Export Classes.RelationClasses.
+From Coq Require Export Classes.Equivalence.
+From Coq Require Export Classes.Morphisms.
+From Coq Require Export Setoids.Setoid.
