@@ -232,4 +232,50 @@ Proof.
       destruct H1. apply HCseq3 with (m := n). auto. auto.
       rewrite H2 in He. rewrite H3 in He. rewrite <- He in He0. symmetry. auto.
 Qed.
- 
+Section plus_pre.
+Variables X : Type.
+Variables eqX : relation X.
+Variables HE : Equivalence eqX.
+Variables A : Type.
+Variables eqA : relation A.
+Variables HEA : Equivalence eqA.
+Variables M : Metric eqX eqA.
+Variables HPA : Plus_Field eqA.
+        (**This Plus_Field is sometimes the same as the one in M**)
+Variables Dpd : Density eqX mof.
+Variables HPD : forall a b c, eqX (dist (a + b) (a + c)) (dist b c).
+
+Notation "a == b" := (eqX a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eqX a b)
+    (at level 70, no associativity).
+
+Theorem plus_trans : forall {Pa Pb : @prj_nat A},
+    CauchySeq eqX eqA Pa -> CauchySeq eqX eqA Pb
+        -> CauchySeq eqX eqA (@dibasic A eqA HPA Pa Pb).
+Proof.
+    intros. split. apply well_dibasic. auto. destruct H. apply HWS. destruct H0.
+    apply HWS.
+    intros. destruct H. destruct H0.
+    destruct division_of_eps with (X := X) (eqX := eqX) (H := mof) (eps := eps) as [eps1].
+    auto. auto. auto. destruct H as [eps2]. destruct H as [Heps1 [Heps2 Heq]].
+    destruct HCA with (eps := eps1) as [N1]. auto.
+    destruct HCA0 with (eps := eps2) as [N2]. auto.
+    destruct (always_greater N1 N2) as [G]. destruct H2. exists G. intros. destruct H5.
+    destruct H5. destruct H6. rewrite He. rewrite He0. 
+    assert(plus (dist (a + b0) (a + b)) (dist (a + b) (a0 + b)) >= dist (a + b0) (a0 + b)).
+    apply mtr. assert(dist (a + b0) (a + b) == dist b0 b). rewrite HPD. reflexivity.
+    assert(dist (a + b) (a0 + b) == dist a a0). rewrite (pfc a _). rewrite (pfc a0 _).
+    rewrite HPD. reflexivity. rewrite H7 in H5. rewrite H6 in H5.
+    assert (dist b0 b < eps2). apply H0 with (m := n0) (n := n). destruct H4. 
+    split. apply (lt_trans _ G _). auto. auto. apply (lt_trans _ G _). auto. auto.
+    split. auto. auto.
+    assert(dist a a0 < eps1). apply H with (m := n0) (n := n). destruct H4. split.
+    apply (lt_trans _ G _). auto. auto. apply (lt_trans _ G _). auto. auto.
+    split. auto. auto.
+    assert (dist b0 b + dist a a0 < eps2 + eps1). apply lt_two_plus_two. auto.
+    auto. auto. rewrite (pfc eps2 _) in H10. rewrite Heq in H10. apply le_lt_eq in H5.
+    destruct H5. apply lttr with (y := dist b0 b + dist a a0). auto. auto. auto.
+    rewrite H5. auto.
+Qed.
+End plus_pre.

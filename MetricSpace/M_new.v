@@ -258,7 +258,9 @@ Proof.
                                     auto. auto. auto. auto. auto. }
                                     { exists N1. intros. assert(exists a, cseqb n a).
                                     apply HCseq1. destruct H8 as [a]. apply lttr with (y := a).
-                                    auto. apply H2 with (n := n). auto. auto. auto. apply H3 with (n := n). apply le_lt_or_eq in H4. destruct H4. apply lt_trans with (p := n) in H4. auto. auto. rewrite H4. auto. auto. auto. }
+                                    auto. apply H2 with (n := n). auto. auto. auto. apply H3 with (n := n). 
+                                    apply le_lt_or_eq in H4. destruct H4. apply lt_trans with (p := n) in H4. 
+                                    auto. auto. rewrite H4. auto. auto. auto. }
      -intros. rewrite <- H. rewrite <- H0. auto.
      -intros. destruct (classic (equC a b)). {left. unfold leC. destruct a. destruct b. left. auto. }
            {unfold not in H. destruct a. destruct b. unfold equC in H. apply not_all_ex_not in H.
@@ -383,3 +385,44 @@ Proof.
            destruct H8. auto. }
 Qed.
 End leC_Field.
+Section plusC_playground.
+Variables X : Type.
+Variables eqX : relation X.
+Variables HE : Equivalence eqX.
+Variables A : Type.
+Variables eqA : relation A.
+Variables HEA : Equivalence eqA.
+Variables M : Metric eqX eqA.
+Variables HPA : Plus_Field eqA.
+        (**This Plus_Field is sometimes the same as the one in M**)
+Variables Dpd : Density eqX mof.
+Variables HPD : forall a b c, eqX (dist (a + b) (a + c)) (dist b c).
+Check plus_trans.
+Definition plusC (x y : Cauchilize eqX eqA) : Cauchilize eqX eqA.
+    destruct x. destruct y. assert (CauchySeq eqX eqA (@dibasic A eqA HPA Cseq Cseq0)).
+    apply plus_trans. auto. auto. auto. auto. auto. auto. apply (con_intro eqX eqA (dibasic Cseq Cseq0) H1).
+Defined.
+Instance plusC_rewrite : Proper (equC ==> equC ==> equC) plusC.
+    hnf. intros. hnf. intros. destruct x. destruct y. destruct x0. destruct y0. simpl in H0. simpl in H.
+    simpl. intros. destruct (division_of_eps _ eqX _ eps H5) as [eps1].
+    destruct H6 as [eps2[Heps1 [Heps2 Heq]]]. destruct H with (eps := eps1) as [N]. auto.
+    destruct H0 with (eps := eps2) as [N0]. auto. destruct (always_greater N N0) as [G]. destruct H8.
+    exists G. intros. destruct H11. destruct H12. rewrite He. rewrite He0.
+    assert(dist (a + b) (a0 + b0) <= dist (a + b) (a + b0) + dist (a + b0) (a0 + b0)). apply mtr.
+    rewrite HPD in H11. rewrite (pfc a b0) in H11. rewrite (pfc a0 b0) in H11. rewrite HPD in H11.
+    assert(dist b b0 < eps2). apply H7 with (n := n). apply (lt_trans _ G _). auto. auto. auto. auto.
+    assert (dist a a0 < eps1). apply H6 with (n := n). apply (lt_trans _ G _). auto. auto. auto. auto.
+    assert(dist b b0 + dist a a0 < eps2 + eps1). apply lt_two_plus_two. auto. auto. auto.
+    rewrite (pfc eps2 _) in H14. rewrite Heq in H14. apply le_lt_eq in H11. destruct H11. 
+    apply lttr with (y := dist b b0 + dist a a0). auto. rewrite (pfc a0 _ ). auto. auto.
+    rewrite (pfc a0 _). rewrite H11. auto.
+Defined.
+
+End plusC_playground.
+
+Section order_field_trans.
+Variables X : Type.
+Variables eqX : relation X.
+Variables HE : Equivalence eqX.
+Variables MX : Metric eqX eqX.
+End order_field_trans.
