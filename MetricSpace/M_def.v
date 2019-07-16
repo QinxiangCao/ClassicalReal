@@ -39,9 +39,9 @@ Class Density {X : Type} (eqX :  relation X) (PF : Plus_Field eqX) :={
 Notation "a + b" := (plus a b)
     (at level 50, left associativity).
 
-Class Metric {A : Type} {X : Type} (eqX : relation X) (eqA : relation A):={
+Class Metric {A : Type} {X : Type} (eqX : relation X) (eqA : relation A)
+    (mof : Plus_Field eqX):={
     dist : A -> A -> X;
-    mof :> Plus_Field eqX;
     mle : forall (p1 p2 : A), le x0 (dist p1 p2);
     msy : forall (p1 p2 : A), eqX (dist p1 p2) (dist p2 p1);
     mre : forall (p1 p2 : A), eqA p1 p2 -> eqX (dist p1 p2) x0;
@@ -57,7 +57,8 @@ Class well_seq {A : Type} {eqA : relation A} (s : prj_nat) :={
     HCseq2 : forall(m : nat) (a1 a2 : A), (eqA a1 a2) -> (s m a1 -> s m a2);(**equivalence class**)
     HCseq3 : forall(m : nat) (a1 a2 : A), s m a1 -> s m a2 -> (eqA a1 a2);(**injection**)
 }. (**bijection**)
-Class CauchySeq {A : Type} {X : Type} (eqX : relation X) (eqA : relation A) {M : Metric eqX eqA} (Cseq : prj_nat) : Prop :={
+Class CauchySeq {A : Type} {X : Type} (eqX : relation X) (eqA : relation A)
+    {mof : Plus_Field eqX} {M : Metric eqX eqA mof} (Cseq : prj_nat) : Prop :={
     HWS :> @well_seq A eqA Cseq;
     HCA : forall (eps : X), x0 < eps
       -> (exists (N : nat), forall (m n:nat), (N < m)%nat /\ (N < n)%nat

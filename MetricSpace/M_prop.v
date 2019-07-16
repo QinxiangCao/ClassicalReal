@@ -173,8 +173,8 @@ Proof.
     apply lt_not in H5. unfold not in H5. apply H5. auto. apply le_not in H3. auto.  
 Qed.
 End plus_prop.
-Instance dist_rewrite : forall (X A : Type) (eqX : relation X) (eqA : relation A) (Heq : Equivalence eqX) (HeqA : Equivalence eqA)
-      (Hm : Metric eqX eqA), Proper (eqA ==> eqA ==> eqX) dist.
+Instance dist_rewrite : forall (X A : Type) (eqX : relation X) (eqA : relation A) (Heq : Equivalence eqX) (HeqA : Equivalence eqA) (mof : Plus_Field eqX)
+      (Hm : Metric eqX eqA mof), Proper (eqA ==> eqA ==> eqX) dist.
 Proof.
     intros. hnf. intros. hnf. intros. apply meq. auto. auto.
 Defined.
@@ -196,13 +196,14 @@ Variables HE : Equivalence eqX.
 Variables A : Type.
 Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
+Variables mof : Plus_Field eqX.
 
 Notation "a == b" := (eqX a b)
     (at level 70, no associativity).
 Notation "a != b" := (~eqX a b)
     (at level 70, no associativity).
 Theorem c_trans :
-    forall {M : Metric eqX eqA} (a : A),
+    forall {M : Metric eqX eqA mof} (a : A),
       CauchySeq eqX eqA (@singleton A eqA a).
 Proof.
   intros. split. apply well_sig. auto.
@@ -239,7 +240,8 @@ Variables HE : Equivalence eqX.
 Variables A : Type.
 Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
-Variables M : Metric eqX eqA.
+Variables mof : Plus_Field eqX.
+Variables M : Metric eqX eqA mof.
 Variables HPA : Plus_Field eqA.
         (**This Plus_Field is sometimes the same as the one in M**)
 Variables Dpd : Density eqX mof.

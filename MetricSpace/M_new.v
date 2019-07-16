@@ -1,12 +1,15 @@
 From CReal.MetricSpace Require Export M_pack.
 From CReal.MetricSpace Require Export M_prop.
 (**definition and some propsition of new Cauchilized Space**)
-Inductive Cauchilize {A X : Type} (eqX : relation X) (eqA : relation A)  {M : Metric eqX eqA}  : Type :=
+Inductive Cauchilize {A X : Type} (eqX : relation X) (eqA : relation A) 
+                {mof : Plus_Field eqX}  {M : Metric eqX eqA mof}  : Type :=
   | con_intro (Cseq : prj_nat)(H : CauchySeq eqX eqA Cseq) .
-Definition sig_inv {A X : Type} {eqX : relation X} {eqA : relation A} {M : Metric eqX eqA}
+Definition sig_inv {A X : Type} {eqX : relation X} {eqA : relation A}
+                {mof : Plus_Field eqX} {M : Metric eqX eqA mof}
         {HEX : Equivalence eqX} {HEA : Equivalence eqA} (a : A) : Cauchilize eqX eqA := 
-        con_intro eqX eqA (@singleton A eqA a) (c_trans X eqX HEX A eqA HEA a).
-Definition equC {A X : Type} {eqX : relation X} {eqA : relation A} {M : Metric eqX eqA} 
+        con_intro eqX eqA (@singleton A eqA a) (c_trans X eqX HEX A eqA HEA mof a).
+Definition equC {A X : Type} {eqX : relation X} {eqA : relation A}
+                {mof : Plus_Field eqX} {M : Metric eqX eqA mof} 
         (x1 x2 : Cauchilize eqX eqA):  Prop  :=
   match x1,   x2 with
     | con_intro _ _ cseq1 C1, con_intro _ _ cseq2 C2 =>
@@ -18,16 +21,16 @@ Definition equC {A X : Type} {eqX : relation X} {eqA : relation A} {M : Metric e
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
 Lemma refl_equC : forall {A X : Type} {eqX : relation X} {eqA : relation A}
-      {HE : Equivalence eqX} {HEA : Equivalence eqA}
-      {M : Metric eqX eqA} (x : @Cauchilize A X eqX eqA M), equC x x.
+      {HE : Equivalence eqX} {HEA : Equivalence eqA} {mof : Plus_Field eqX}
+      {M : Metric eqX eqA mof} (x : @Cauchilize A X eqX eqA mof M), equC x x.
 Proof.
   intros. unfold equC. destruct x. intros. inversion H. apply HCA in H0.
   destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
   apply H0 with (a := a1) (b := a2) in H4 . apply H4. split. apply H2. apply H3.
 Qed.
 Instance EquR_trans : forall {X A : Type} {eqX : relation X} {eqA : relation A} 
-        {HE : Equivalence eqX} {HEA : Equivalence eqA} 
-        {M : Metric eqX eqA} {Dpd : Density eqX mof} , Equivalence (equC).
+        {HE : Equivalence eqX} {HEA : Equivalence eqA} {mof : Plus_Field eqX} 
+        {M : Metric eqX eqA mof} {Dpd : Density eqX mof} , Equivalence (equC).
 Proof.
   intros. split.
   -unfold Reflexive. apply refl_equC.
@@ -73,25 +76,32 @@ Proof.
   +auto.
 Defined.
 
-Inductive ball {X : Type} {eqX : relation X} {M : Metric eqX eqX} {HE : Equivalence eqX} 
+Inductive ball {X : Type} {eqX : relation X} 
+        {mof : Plus_Field eqX} {M : Metric eqX eqX mof} {HE : Equivalence eqX} 
     (a : X) (r : X) (x : X): Prop :=
     | ball_intro (L : x0 < r) (H : dist a x < r) : ball a r x.
-Definition leC {X : Type} {eqX : relation X} {M : Metric eqX eqX} {HE : Equivalence eqX} (x1 x2 : Cauchilize eqX eqX) : Prop :=
+Definition leC {X : Type} {eqX : relation X}
+        {mof : Plus_Field eqX}  {M : Metric eqX eqX mof} {HE : Equivalence eqX} 
+        (x1 x2 : Cauchilize eqX eqX) : Prop :=
     match x1,   x2 with
     | con_intro _ _ cseq1 _, con_intro _ _ cseq2 _ =>
          equC  x1 x2 \/ (exists (N : nat), forall (n : nat) (a1 a2 : X), (N < n)%nat -> cseq1 n a1
              -> cseq2 n a2 -> a1 < a2)
     end.
 Notation " x1 <= x2" := (leC x1 x2) : leC.
-Definition ltC {X : Type} {eqX : relation X} {M : Metric eqX eqX} {HE : Equivalence eqX} (x1 x2 : Cauchilize eqX eqX) : Prop := leC x1 x2 /\ ~equC x1 x2 .
+Definition ltC {X : Type} {eqX : relation X}
+        {mof : Plus_Field eqX}  {M : Metric eqX eqX mof} {HE : Equivalence eqX} 
+        (x1 x2 : Cauchilize eqX eqX) : Prop := leC x1 x2 /\ ~equC x1 x2 .
 Notation "x1 < x2" := (ltC x1 x2) : ltC.
-Class PropBucket {X : Type} {eqX : relation X} {M : Metric eqX eqX} {HE : Equivalence eqX} :={
+Class PropBucket {X : Type} {eqX : relation X}{mof : Plus_Field eqX}
+         {M : Metric eqX eqX mof} {HE : Equivalence eqX} :={
           inBall1 :  forall (a x eps y : X), ball a eps x -> ~ball a eps y -> a < y -> x < y ;
           inBall2 : forall (a x eps y : X), ball a eps x -> ~ball a eps y -> y < a -> y < x;
           orderPres1 : forall (a b c : X), a < b -> a < c -> dist a b < dist a c -> b < c;
           orderPres2 : forall (a b c : X), a < b -> a < c -> b < c -> dist a b < dist a c;
 }. 
-Theorem leC_pre : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) {Dpd : Density eqX mof}
+Theorem leC_pre : forall (X : Type) (eqX : relation X) 
+  {mof : Plus_Field eqX} (M : Metric eqX eqX mof) {Dpd : Density eqX mof}
   (HE : Equivalence eqX) (a b c d : Cauchilize eqX eqX) (HP : PropBucket), equC a b -> equC c d -> leC a c -> leC b d .
 Proof.
   intros.
@@ -217,7 +227,8 @@ Proof.
             apply inBall1 with (a0  := apin) (eps0 := eps1). auto. auto. auto.
 Qed.
 
-Instance leC_rewrite : forall (X : Type) (eqX : relation X) (M : Metric eqX eqX) 
+Instance leC_rewrite : forall (X : Type) (eqX : relation X) 
+  {mof : Plus_Field eqX} (M : Metric eqX eqX mof) 
  {Dpd : Density eqX mof} (HE : Equivalence eqX) (HP : PropBucket) ,
       Proper (equC ==> equC ==> iff) leC.
 Proof.
@@ -229,7 +240,8 @@ Section leC_Field.
 Variables X : Type.
 Variables eqX : relation X.
 Variables HE : Equivalence eqX.
-Variables M : Metric eqX eqX.
+Variables mof : Plus_Field eqX.
+Variables M : Metric eqX eqX mof.
 Variables Dpd : Density eqX mof.
 Variables HPB :PropBucket.
 Notation "a == b" := (eqX a b)
@@ -392,7 +404,8 @@ Variables HE : Equivalence eqX.
 Variables A : Type.
 Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
-Variables M : Metric eqX eqA.
+Variables mof : Plus_Field eqX.
+Variables M : Metric eqX eqA mof.
 Variables HPA : Plus_Field eqA.
         (**This Plus_Field is sometimes the same as the one in M**)
 Variables Dpd : Density eqX mof.
