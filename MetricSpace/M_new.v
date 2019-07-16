@@ -237,6 +237,7 @@ Proof.
     -apply leC_pre. auto. auto.  symmetry. auto. symmetry. auto.
 Defined.
 Section leC_Field.
+(**This section only talks about the pre_order_field on Cauchilize eqX eqX**)
 Variables X : Type.
 Variables eqX : relation X.
 Variables HE : Equivalence eqX.
@@ -407,7 +408,7 @@ Variables HEA : Equivalence eqA.
 Variables mof : Plus_Field eqX.
 Variables M : Metric eqX eqA mof.
 Variables HPA : Plus_Field eqA.
-        (**This Plus_Field is sometimes the same as the one in M**)
+        (**This Plus_Field is sometimes the same as the field mof**)
 Variables Dpd : Density eqX mof.
 Variables HPD : forall a b c, eqX (dist (a + b) (a + c)) (dist b c).
 Check plus_trans.
@@ -433,9 +434,62 @@ Defined.
 
 End plusC_playground.
 
-Section order_field_trans.
+Section plus_field_trans. 
+ (**This section only prove that the Group (S, plusC, zeroC) is a well Group.
+      S is the space of Type Cauchilize eqX eqX.**)
 Variables X : Type.
 Variables eqX : relation X.
 Variables HE : Equivalence eqX.
-Variables MX : Metric eqX eqX.
-End order_field_trans.
+Variables mof : Plus_Field eqX.
+Variables MX : Metric eqX eqX mof.
+Variables DX : Density eqX mof.
+Variables HPD : forall a b c : X, eqX (dist (a + b) (a + c)) (dist b c).
+Variables HPB :PropBucket.
+Variables HIN : forall a b, eqX (dist a b) (dist (inv a) (inv b)).
+
+Definition CX :Type := Cauchilize eqX eqX.
+Definition plusX :CX -> CX -> CX.
+    apply plusC with (HPA := mof); auto.
+Defined.
+Definition zeroX :CX.
+    apply (sig_inv x0).
+Defined.
+Definition invX (x : CX) :CX.
+    destruct x. pose proof inv_trans.
+    assert(CauchySeq eqX eqX (invseq Cseq)). apply H0;auto.
+    apply (con_intro eqX eqX (invseq Cseq) H1).
+Defined.
+Definition pofX :Pre_Order_Field equC.
+    apply preOrder_trans with (HE := HE). auto. auto.
+Defined.
+Theorem pf_trans : Plus_Field equC.
+Proof.
+  split with (plus := plusX) (p_pof := pofX) (x0 := zeroX).
+  -intros. destruct x. destruct y. simpl. intros. destruct H. destruct H0.
+    exists 0. intros. destruct H0. destruct H2. assert(eqX a b0).
+    destruct HWS. apply HCseq3 with (m := n). auto. auto.
+    assert(eqX a0 b). apply HCseq3 with (m := n). auto. auto.
+    rewrite He. rewrite He0. rewrite H0. rewrite H2.
+    rewrite pfc. rewrite mre. auto. reflexivity.
+  -intros. destruct x. destruct y. destruct z. simpl. intros. exists 0. intros. destruct H4. destruct H5.
+    rewrite He. rewrite He0. destruct Ha. destruct Hb0. rewrite He2. rewrite He1.
+    assert(eqX a a0). destruct H. destruct HWS. apply HCseq3 with (m := n). auto. auto.
+    assert(eqX b1 a1). destruct H0. destruct HWS. apply HCseq3 with (m := n). auto.
+    auto. assert(eqX b b0). destruct H1. apply HCseq3 with (m := n). auto. auto. 
+    rewrite H4. rewrite H5. rewrite H6. rewrite pfa. rewrite mre. auto.
+    reflexivity.
+    -intros. destruct x. simpl. intros. exists 0. intros. destruct H2. assert(eqX a x0).
+      destruct (@well_sig X eqX x0). auto. assert(@singleton X eqX x0 n x0). apply sig.
+      apply HCseq3 with (m := n). auto. auto. rewrite H2 in He. rewrite pfz in He. rewrite He.
+      assert(eqX a2 b). apply HCseq3 with (m := n). auto. auto. rewrite H4. rewrite mre. auto.
+      reflexivity.
+    -intros. exists(invX x). destruct x. simpl. intros. exists 0.
+      intros. assert(eqX a2 x0). destruct H3. reflexivity. symmetry;auto.
+      assert(eqX a1 x0). destruct H2. rewrite He. destruct Hb.
+      assert(eqX a a0). destruct H. apply HCseq3 with (m := n);auto.
+      rewrite <-H5. unfold inv. destruct pfi_strong;auto. rewrite He0.
+      assert(eqX a a0). destruct H. apply HCseq3 with (m := n);auto.
+      rewrite H5. unfold inv. destruct pfi_strong. auto. rewrite H5. rewrite H4.
+      rewrite mre;[auto |reflexivity].
+Admitted.
+End plus_field_trans.

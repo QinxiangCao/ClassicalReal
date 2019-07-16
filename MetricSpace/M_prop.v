@@ -172,6 +172,18 @@ Proof.
     rewrite pfc in H5. rewrite <- pfa in H5. rewrite (pfc ia a) in H5. rewrite H4 in H5. rewrite pfz in H5.
     apply lt_not in H5. unfold not in H5. apply H5. auto. apply le_not in H3. auto.  
 Qed.
+
+Theorem plus_same : forall {H : Plus_Field eqX} (a b c : X), eqX a b <->
+                eqX (c + a) (c + b).
+Proof.
+    intros. split.
+    -intros. rewrite H0. reflexivity.
+    -intros. assert(x0 + a == a). rewrite pfz. reflexivity.
+    rewrite <-H1. destruct (pfi_strong c) as [ic]. rewrite <-e.
+    rewrite pfc. rewrite <-pfa. rewrite (pfc a c). rewrite H0. rewrite pfa.
+    rewrite (pfc b _). rewrite <-pfa. rewrite e. rewrite pfz. reflexivity.
+Qed.
+
 End plus_prop.
 Instance dist_rewrite : forall (X A : Type) (eqX : relation X) (eqA : relation A) (Heq : Equivalence eqX) (HeqA : Equivalence eqA) (mof : Plus_Field eqX)
       (Hm : Metric eqX eqA mof), Proper (eqA ==> eqA ==> eqX) dist.
@@ -233,6 +245,37 @@ Proof.
       destruct H1. apply HCseq3 with (m := n). auto. auto.
       rewrite H2 in He. rewrite H3 in He. rewrite <- He in He0. symmetry. auto.
 Qed.
+Instance inv_rewrite : forall {A : Type} {eqA : relation A} {HP : Plus_Field eqA}
+        {HE : Equivalence eqA},
+    Proper (eqA ==> eqA) inv.
+Proof.
+    intros. hnf. intros. destruct (pfi_strong x) as [ix]. destruct (pfi_strong y) as [iy].
+    unfold inv. destruct pfi_strong as [ix']. destruct pfi_strong as [iy'].
+    rewrite <-e in e1. rewrite <-plus_same in e1.
+    rewrite <-e0 in e2. rewrite <- plus_same in e2.
+    rewrite <-e in e0. rewrite H in e0. rewrite <-plus_same in e0.
+    rewrite e0 in e2. rewrite <-e2 in e1. auto. auto. auto. auto.
+Defined.
+Lemma well_inv : forall {A : Type} {eqA : relation A} {HP : Plus_Field eqA} (P : @prj_nat A),
+    Equivalence eqA -> @well_seq A eqA P -> @well_seq A eqA (invseq P).
+Proof.
+    intros. split.
+    -intros. destruct (HCseq1 n). destruct (pfi_strong x) as [ix]. exists ix.
+      apply inveqv with (a := x). auto. assert(eqA (x + inv x) x0).
+      unfold inv. destruct pfi_strong. auto. rewrite <-H2 in e.
+      rewrite <-plus_same in e; auto.
+    -intros. destruct (HCseq1 m). apply inveqv with (a := x).
+    auto. destruct H2. assert(eqA a x). apply HCseq3 with (m := n);auto.
+     rewrite <-H4. symmetry. auto. rewrite <-H1.
+     assert(eqA a x). apply HCseq3 with (m := n);auto. rewrite <-H4;auto.
+   -intros. destruct H1. destruct H2. assert(eqA a a0).
+     apply HCseq3 with (m := n);auto. rewrite H3;reflexivity.
+     assert(eqA a a0). apply HCseq3 with (m := n);auto. rewrite H3;symmetry;auto.
+     destruct H2. assert(eqA a a0). apply HCseq3 with (m := n);auto. rewrite <-H3.
+     auto. assert(eqA a a0). apply HCseq3 with (m := n);auto. rewrite He0.
+     rewrite <-H3. auto.
+Qed.
+
 Section plus_pre.
 Variables X : Type.
 Variables eqX : relation X.
@@ -243,9 +286,10 @@ Variables HEA : Equivalence eqA.
 Variables mof : Plus_Field eqX.
 Variables M : Metric eqX eqA mof.
 Variables HPA : Plus_Field eqA.
-        (**This Plus_Field is sometimes the same as the one in M**)
+        (**This Plus_Field is sometimes the same as the mof**)
 Variables Dpd : Density eqX mof.
 Variables HPD : forall a b c, eqX (dist (a + b) (a + c)) (dist b c).
+Variables HIN : forall a b, eqX (dist a b) (dist (inv a) (inv b)).
 
 Notation "a == b" := (eqX a b)
     (at level 70, no associativity).
@@ -279,5 +323,17 @@ Proof.
     auto. auto. rewrite (pfc eps2 _) in H10. rewrite Heq in H10. apply le_lt_eq in H5.
     destruct H5. apply lttr with (y := dist b0 b + dist a a0). auto. auto. auto.
     rewrite H5. auto.
+Qed.
+
+Theorem inv_trans : forall (P : @prj_nat A),
+                CauchySeq eqX eqA P -> CauchySeq eqX eqA (invseq P).
+Proof.
+    intros. split. destruct H. apply well_inv; auto.
+    intros. destruct H. destruct HCA with (eps := eps) as [N];auto.
+    exists N. intros. destruct H2. destruct H2. destruct H3. rewrite <-HIN.
+    apply H with (m := n0) (n := n). auto. split;auto. rewrite He.
+    rewrite <-HIN. apply H with (m := n0) (n := n);auto. rewrite He.
+    destruct H3. rewrite <- HIN. apply H with (m := n0) (n := n); auto.
+    rewrite He0. rewrite <-HIN. apply H with (m := n0) (n := n); auto.
 Qed.
 End plus_pre.

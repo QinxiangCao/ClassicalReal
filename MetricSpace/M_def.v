@@ -32,6 +32,9 @@ Class Plus_Field {X : Type} (eqX : relation X):={
     pfeq : forall (a b c d : X), eqX a b -> eqX c d -> eqX (plus a c) (plus b d);
     ppof : forall (x y z : X), le x y -> le (plus x z) (plus y z);
 }.
+Definition inv {A : Type} {eqA : relation A} {HP : Plus_Field eqA} (a : A) :A.
+    destruct pfi_strong with (x := a). apply x.
+Defined.
 
 Class Density {X : Type} (eqX :  relation X) (PF : Plus_Field eqX) :={
     pd : forall (x1 x2 : X), lt x1 x2 -> (exists x3 : X, lt x1 x3 /\ lt x3 x2);
@@ -71,3 +74,7 @@ Inductive singleton {A : Type} {eqA : relation A} (a : A): nat -> A -> Prop :=
 Inductive dibasic {A :Type} {eqA : relation A} {HP : Plus_Field eqA} (Pa Pb : @prj_nat A)
     : nat -> A -> Prop :=
     | bin (n :nat) (a b c: A) (Ha : Pa n a) (Hb : Pb n b) (He : eqA c (plus a b)): dibasic Pa Pb n c.
+Inductive invseq {A : Type} {eqA : relation A} {HP : Plus_Field eqA} (P : @prj_nat A) 
+    : nat -> A -> Prop :=
+    | invsig (n : nat) (a : A) (H : P n a) : invseq P n (inv a)
+    | inveqv (n : nat) (a b : A) (H : P n a) (He : eqA b (inv a)) : invseq P n b.
