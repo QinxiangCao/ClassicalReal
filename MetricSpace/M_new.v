@@ -499,14 +499,17 @@ Instance plusC_rewrite : Proper (equC ==> equC ==> equC) plusC.
     destruct H6 as [eps2[Heps1 [Heps2 Heq]]]. destruct H with (eps := eps1) as [N]. auto.
     destruct H0 with (eps := eps2) as [N0]. auto. destruct (always_greater N N0) as [G]. destruct H8.
     exists G. intros. destruct H11. destruct H12. rewrite He. rewrite He0.
-    assert(dist (a + b) (a0 + b0) <= dist (a + b) (a + b0) + dist (a + b0) (a0 + b0)). apply mtr.
+    assert(dist (a + b) (a0 + b0) <= 
+        plusX (dist (a + b) (a + b0)) (dist (a + b0) (a0 + b0))). apply mtr.
     rewrite HPD in H11. rewrite (pfc a b0) in H11. rewrite (pfc a0 b0) in H11. rewrite HPD in H11.
     assert(dist b b0 < eps2). apply H7 with (n := n). apply (lt_trans _ G _). auto. auto. auto. auto.
-    assert (dist a a0 < eps1). apply H6 with (n := n). apply (lt_trans _ G _). auto. auto. auto. auto.
-    assert(dist b b0 + dist a a0 < eps2 + eps1). apply lt_two_plus_two. auto. auto. auto.
-    rewrite (pfc eps2 _) in H14. rewrite Heq in H14. apply le_lt_eq in H11. destruct H11. 
-    apply lttr with (y := dist b b0 + dist a a0). auto. rewrite (pfc a0 _ ). auto. auto.
-    rewrite (pfc a0 _). rewrite H11. auto.
+    assert (dist a a0 < eps1). apply H6 with (n := n). apply (lt_trans _ G _). auto. auto. auto. auto. auto.
+    assert(plusX (dist b b0) (dist a a0) <plusX eps2 eps1). apply lt_two_plus_two. auto. auto. auto.
+    rewrite (pfc eps2 _) in H14. rewrite Heq in H14.
+    destruct (le_lt_eq _ _ _  (dist (a + b) (b0 + a0)) (plusX (dist b b0) (dist a a0))) as [Hex1 Hex2].
+    apply Hex1 in H11. destruct H11. 
+    apply lttr with (y := plusX (dist b b0) (dist a a0)). auto. rewrite (pfc a0 _ ); auto. 
+    auto. rewrite (pfc a0 _). rewrite H11. auto.
 Defined.
 
 End plusC_playground.
@@ -517,16 +520,24 @@ Section plus_field_trans.
 Variables X : Type.
 Variables eqX : relation X.
 Variables HE : Equivalence eqX.
-Variables mof : Plus_Field eqX.
-Variables MX : Metric eqX eqX mof.
+Variables leX : relation X.
+Variables plusX : X -> X -> X.
+Notation "a + b" := (plusX a b)
+    (at level 50, left associativity).
+Notation "a <= b" := (leX a b)
+    (at level 70, no associativity).
+Notation "a >= b" := (leX b a)
+    (at level 70, no associativity).
+Variables mof : Plus_Field eqX leX plusX.
+Variables MX : Metric eqX eqX _ _ mof.
 Variables DX : Density eqX mof.
 Variables HPD : forall a b c : X, eqX (dist (a + b) (a + c)) (dist b c).
 Variables HPB :PropBucket.
 Variables HIN : forall a b, eqX (dist a b) (dist (inv a) (inv b)).
 
-Definition CX :Type := Cauchilize eqX eqX.
-Definition plusX :CX -> CX -> CX.
-    apply plusC with (HPA := mof); auto.
+Definition CX :Type := Cauchilize eqX eqX _ _.
+Definition plusCX :CX -> CX -> CX.
+    apply plusC with (leA := leX) (plusA := plusX); auto.
 Defined.
 Definition zeroX :CX.
     apply (sig_inv x0).
@@ -534,14 +545,15 @@ Defined.
 Definition invX (x : CX) :CX.
     destruct x. pose proof inv_trans.
     assert(CauchySeq eqX eqX (invseq Cseq)). apply H0;auto.
-    apply (con_intro eqX eqX (invseq Cseq) H1).
+    apply (con_intro eqX eqX _ _ (invseq Cseq) H1).
 Defined.
-Definition pofX :Pre_Order_Field equC.
+Definition pofX :Pre_Order_Field equC leC.
     apply preOrder_trans with (HE := HE). auto. auto.
 Defined.
-Theorem pf_trans : Plus_Field equC.
+Theorem pf_trans : Plus_Field equC leC plusCX.
 Proof.
-  split with (plus := plusX) (p_pof := pofX) (x0 := zeroX).
+  split with (x0 := zeroX).
+  -apply pofX.
   -intros. destruct x. destruct y. simpl. intros. destruct H. destruct H0.
     exists 0. intros. destruct H0. destruct H2. assert(eqX a b0).
     destruct HWS. apply HCseq3 with (m := n). auto. auto.
@@ -569,7 +581,7 @@ Proof.
       rewrite H5. unfold inv. destruct pfi_strong. auto. rewrite H5. rewrite H4.
       rewrite mre;[auto |reflexivity].
     -intros. destruct a. destruct b. destruct c. destruct d. simpl.
-      intros. destruct (division_of_eps _ _ _ eps) as [eps1];auto.
+      intros. destruct (division_of_eps _ _ _ _ _ eps) as [eps1];auto.
       destruct H6 as [eps2 [Heps1 [Heps2 Heq]]].
       destruct H with (eps := eps1) as [N1];auto.
       destruct H0 with (eps := eps2) as [N2];auto.
@@ -585,8 +597,20 @@ Proof.
       assert(dist b b0 + dist a a0 < eps2 + eps1). apply lt_two_plus_two;auto.
       apply H7 with (n := n) (a1 := b) (a2 := b0);auto. apply (lt_trans _ G _);auto.
       apply H6 with (n := n) (a1 := a) (a2 := a0);auto. apply(lt_trans _ G _);auto.
-      rewrite (pfc eps2 _) in H12. rewrite Heq in H12. apply le_lt_eq in H11.
+      rewrite (pfc eps2 _) in H12. rewrite Heq in H12.
+      destruct (le_lt_eq _ _ _ (dist (a + b) (a0 + b0)) (dist b b0 + dist a a0)) as [Hex3 Hex4].
+      apply Hex3 in H11.
       destruct H11. apply lttr with (y := (dist b b0 + dist a a0));auto.
       rewrite H11;auto.
-    -intros. 
+    -intros. destruct x. destruct y. destruct z. simpl. simpl in H. destruct H.
+      +left. intros. destruct H with (eps := eps) as [N];auto. exists N.
+        intros. destruct H6. destruct H7. rewrite He. rewrite He0.
+        assert(eqX b b0). destruct H2. apply HCseq3 with (m := n);auto.
+        rewrite H6. rewrite (pfc a _). rewrite (pfc a0 _). rewrite HPD.
+        apply H4 with (n := n);auto.
+      +right. destruct H as [N]. exists N. intros. destruct H4. destruct H5.
+        rewrite He. rewrite He0. assert(eqX b0 b). destruct H2.
+        apply HCseq3 with (m := n);auto. rewrite H4. apply HpOt;auto.
+        apply H with (n := n);auto.
+Qed.
 End plus_field_trans.
