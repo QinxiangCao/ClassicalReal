@@ -491,5 +491,25 @@ Proof.
       assert(eqX a a0). destruct H. apply HCseq3 with (m := n);auto.
       rewrite H5. unfold inv. destruct pfi_strong. auto. rewrite H5. rewrite H4.
       rewrite mre;[auto |reflexivity].
-Admitted.
+    -intros. destruct a. destruct b. destruct c. destruct d. simpl.
+      intros. destruct (division_of_eps _ _ _ eps) as [eps1];auto.
+      destruct H6 as [eps2 [Heps1 [Heps2 Heq]]].
+      destruct H with (eps := eps1) as [N1];auto.
+      destruct H0 with (eps := eps2) as [N2];auto.
+      destruct (always_greater N1 N2) as [G]. destruct H8. exists G.
+      intros. destruct H11. destruct H12. rewrite He. rewrite He0.
+      assert(dist (a + b) (a0 + b0) <= dist (a + b) (a + b0) + dist (a + b0) (a0 + b0)).
+      apply mtr. 
+      assert(eqX (dist (a + b) (a + b0)) (dist b b0)) as Hex1.
+      rewrite HPD. reflexivity.
+      assert(eqX (dist (a + b0) (a0 + b0)) (dist a a0)) as Hex2.
+      rewrite (pfc _ b0). rewrite (pfc _ b0). rewrite HPD;reflexivity.
+      rewrite Hex1 in H11. rewrite Hex2 in H11.
+      assert(dist b b0 + dist a a0 < eps2 + eps1). apply lt_two_plus_two;auto.
+      apply H7 with (n := n) (a1 := b) (a2 := b0);auto. apply (lt_trans _ G _);auto.
+      apply H6 with (n := n) (a1 := a) (a2 := a0);auto. apply(lt_trans _ G _);auto.
+      rewrite (pfc eps2 _) in H12. rewrite Heq in H12. apply le_lt_eq in H11.
+      destruct H11. apply lttr with (y := (dist b b0 + dist a a0));auto.
+      rewrite H11;auto.
+    -intros. 
 End plus_field_trans.
