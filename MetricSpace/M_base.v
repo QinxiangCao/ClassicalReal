@@ -1,3 +1,5 @@
+(**This document illustrate the space which we work in and the hypo we 
+     have already taken to construct this space**)
 From CReal.MetricSpace Require Export M_pack.
 From CReal.MetricSpace Require Export M_new.
 Section BaseSpace.
@@ -19,11 +21,11 @@ Variables HEA : Equivalence eqA.
 
 Variables M : Metric eqX eqA leX plusX pfX.
 
-Variables CX : Cauchilize eqX eqX _ _.
-Variables CA : Cauchilize eqX eqA _ _.
+Definition CX : Type := Cauchilize eqX eqX _ _.
+Definition CA : Type := Cauchilize eqX eqA _ _.
 
 Definition leCX :=@leC X eqX leX plusX pfX MX HE. 
-Definition plusCX :=
+Definition plusCX : CX -> CX -> CX :=
       @plusC X eqX leX plusX HE X eqX leX plusX HE pfX MX pfX Dp HPD.
 
 Variables PB : PropBucket.
@@ -32,3 +34,4 @@ Definition pofCX :=@preOrder_trans X eqX leX plusX HE pfX MX Dp PB.
 Variables HIN : (forall a b : X, eqX (dist a b) (dist (inv a) (inv b))).
 Definition pfCX :=@pf_trans X eqX HE leX plusX pfX MX Dp HPD PB HIN.
 End BaseSpace.
+(**Note that the leCX and plusCX are the same as the def used in M_new's proof**)
