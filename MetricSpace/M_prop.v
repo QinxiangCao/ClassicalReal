@@ -18,24 +18,24 @@ Proof.
       rewrite <-H1 in lteq. rewrite <-H0 in lteq. apply lt_intro. auto. auto.
 Defined.
 Theorem pfi : forall {X : Type} {eqX : relation X} {le : relation X} {plus : X -> X -> X}
-     {PF : Plus_Field eqX le plus} (x : X), 
+     {x0 : X} {PF : Plus_Field eqX le plus x0} (x : X), 
           (exists ix, eqX (plus x ix) x0).
 Proof.
-    intros. pose proof pfi_strong. destruct X0 with (x := x). exists x0. auto.
+    intros. pose proof pfi_strong. destruct X0 with (x := x). exists x1. auto.
 Qed.
 
 Instance plus_rewrite : forall (X : Type) (eqX : relation X) (H : Equivalence eqX)
- (le : relation X) (plus : X -> X -> X) (Hpf : Plus_Field eqX le plus),
+ (le : relation X) (plus : X -> X -> X) (x0 : X) (Hpf : Plus_Field eqX le plus x0),
     Proper (eqX ==> eqX ==> eqX) plus.
 Proof.
     intros. hnf. intros. hnf. intros. apply pfeq. auto. auto.
 Defined.
 Definition plus_le  {X : Type} {eqX : relation X}
-     {le : relation X} {plus : X -> X -> X} {Hpf : Plus_Field eqX le plus} :
+     {le : relation X} {plus : X -> X -> X} {x0 : X} {Hpf : Plus_Field eqX le plus x0} :
              X -> X -> X -> X -> Prop  :=
     fun a b c d => le (plus a b) (plus c d).
 Instance plus_le_rewrite : forall (X : Type) (eqX : relation X) (H : Equivalence eqX)     
-     (le : relation X) (plus : X -> X -> X) (Hpf : Plus_Field eqX le plus),
+     (le : relation X) (plus : X -> X -> X) (zero : X) (Hpf : Plus_Field eqX le plus zero),
     Proper (eqX ==> eqX ==> eqX ==> eqX ==> iff) plus_le.
 Proof.
     intros. hnf. intros. hnf. intros. hnf. intros. hnf. intros. split.
@@ -53,6 +53,7 @@ Variables eqX : relation X.
 Variables HE : Equivalence eqX.
 Variables le : relation X.
 Variables plus : X -> X -> X.
+Variables x0 : X.
 
 Notation "a == b" := (eqX a b)
     (at level 70, no associativity).
@@ -75,14 +76,14 @@ Proof.
                         { intros. destruct H0. inversion H0. auto. inversion H0. unfold not in lteq.
                            unfold not. intros. apply lteq. symmetry. auto. }
 Qed.
-Theorem le_two_plus_two : forall  {H : Plus_Field eqX le plus} (a b c d : X),
+Theorem le_two_plus_two : forall  {H : Plus_Field eqX le plus x0} (a b c d : X),
     a <= c -> b <= d -> a + b <= c + d.
 Proof.
     intros. assert(a + b <= c + b). apply ppof. auto. assert(c + b <= c + d). rewrite pfc. rewrite (pfc c d).
     apply ppof. auto. apply (poft _ (c + b) _). auto. auto.
 Qed.
 
-Lemma ppot : forall {H : Plus_Field eqX le plus}  (x y z : X), 
+Lemma ppot : forall {H : Plus_Field eqX le plus x0}  (x y z : X), 
         lt x y -> lt (plus x z) (plus y z).
 Proof.
     intros. apply lt_intro. inversion H0. apply ppof. auto. unfold not. intros. assert(exists iz , z + iz == x0).
@@ -141,7 +142,7 @@ Proof.
     unfold not in H4. apply H4. split. auto. auto.
 Qed.
 
-Theorem lt_two_plus_two : forall  {H : Plus_Field eqX le plus} (a b c d : X),
+Theorem lt_two_plus_two : forall  {H : Plus_Field eqX le plus x0} (a b c d : X),
     a < c -> b < d -> a + b < c + d.
 Proof.
     intros. assert(a + b < c + b).
@@ -155,7 +156,7 @@ Proof.
   unfold not. intros. apply H0. rewrite H. apply H1.
 Qed.
 
-Lemma HpOt : forall {H : Plus_Field eqX le plus} (x y z : X), 
+Lemma HpOt : forall {H : Plus_Field eqX le plus x0} (x y z : X), 
         lt x y -> lt (plus x z) (plus y z).
 Proof.
   intros. inversion H0. apply (ppof _ _ z) in ltle. assert(x + z != y  + z).
@@ -165,7 +166,7 @@ Proof.
    rewrite pfz in H3. rewrite pfc in H3. rewrite pfz in H3. auto. apply lt_intro. auto. auto.
 Qed.
 
-Theorem lt_inv :forall {H : Plus_Field eqX le plus} (x y ix iy: X) ,x + ix == x0 -> y + iy == x0 ->
+Theorem lt_inv :forall {H : Plus_Field eqX le plus x0} (x y ix iy: X) ,x + ix == x0 -> y + iy == x0 ->
    x < y -> ix > iy.
 Proof.
     intros. assert(x + ix < y + ix). apply HpOt. auto. rewrite H0 in H3.
@@ -174,7 +175,7 @@ Proof.
     rewrite pfz in H4. auto.
 Qed.
 
-Theorem division_of_eps : forall {H : Plus_Field eqX le plus} 
+Theorem division_of_eps : forall {H : Plus_Field eqX le plus x0} 
       {Dpd : Density eqX H} (eps : X ), lt x0 eps
     -> (exists (d1 d2 : X), lt x0 d1 /\ lt x0 d2 /\ eqX (plus d1 d2) eps) .
 Proof.
@@ -184,7 +185,7 @@ Proof.
     rewrite <-pfa. rewrite H3. rewrite pfz. reflexivity.
 Qed. 
 
-Theorem lt_div :  forall {H : Plus_Field eqX le plus} (a b c : X), 
+Theorem lt_div :  forall {H : Plus_Field eqX le plus x0} (a b c : X), 
         eqX (plus a b) c -> a > x0 -> b > x0 -> c  > a.
 Proof.
     intros. assert(c <= a -> False). intros. rewrite <-H0 in H3. assert(exists ia, a + ia == x0).
@@ -193,7 +194,7 @@ Proof.
     apply lt_not in H5. unfold not in H5. apply H5. auto. apply le_not in H3. auto.  
 Qed.
 
-Theorem plus_same : forall {H : Plus_Field eqX le plus} (a b c : X), eqX a b <->
+Theorem plus_same : forall {H : Plus_Field eqX le plus x0} (a b c : X), eqX a b <->
                 eqX (c + a) (c + b).
 Proof.
     intros. split.
@@ -206,9 +207,9 @@ Qed.
 
 End plus_prop.
 Instance dist_rewrite : forall (X A : Type) (eqX : relation X) (le : relation X)
-    (plus : X -> X -> X) (eqA : relation A) (Heq : Equivalence eqX) 
-        (HeqA : Equivalence eqA) (mof : Plus_Field eqX le plus)
-      (Hm : Metric eqX eqA le plus mof), Proper (eqA ==> eqA ==> eqX) dist.
+    (plus : X -> X -> X) (x0 : X) (eqA : relation A) (Heq : Equivalence eqX) 
+        (HeqA : Equivalence eqA) (mof : Plus_Field eqX le plus x0) (dist : A -> A -> X)
+      (Hm : Metric eqX eqA le plus _ mof dist), Proper (eqA ==> eqA ==> eqX) dist.
 Proof.
     intros. hnf. intros. hnf. intros. apply meq. auto. auto.
 Defined.
@@ -232,14 +233,15 @@ Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
 Variables le : relation X.
 Variables plus : X -> X -> X.
-Variables mof : Plus_Field eqX le plus.
+Variables x0 : X.
+Variables mof : Plus_Field eqX le plus x0.
 
 Notation "a == b" := (eqX a b)
     (at level 70, no associativity).
 Notation "a != b" := (~eqX a b)
     (at level 70, no associativity).
 Theorem c_trans :
-    forall {M : Metric eqX eqA le plus mof} (a : A),
+    forall {dist : A -> A -> X} {M : Metric eqX eqA le plus _ mof dist} (a : A),
       CauchySeq eqX eqA (@singleton A eqA a).
 Proof.
   intros. split. apply well_sig. auto.
@@ -256,7 +258,7 @@ Proof.
 Qed.
 End injectionC.
 Lemma well_dibasic : forall {A : Type} {eqA : relation A} 
-    {leA : relation A} {plusA : A -> A -> A} {HP : Plus_Field eqA leA plusA}
+    {leA : relation A} {plusA : A -> A -> A} {zero : A} {HP : Plus_Field eqA leA plusA zero}
         (Pa Pb : @prj_nat A),
     Equivalence eqA -> @well_seq A eqA Pa -> @well_seq A eqA Pb
       -> @well_seq A eqA (dibasic Pa Pb).
@@ -272,7 +274,7 @@ Proof.
       rewrite H2 in He. rewrite H3 in He. rewrite <- He in He0. symmetry. auto.
 Qed.
 Instance inv_rewrite : forall {A : Type} {eqA : relation A}
-        {leA : relation A} {plusA : A -> A -> A}  {HP : Plus_Field eqA leA plusA}
+        {leA : relation A} {plusA : A -> A -> A} {x0 : A} {HP : Plus_Field eqA leA plusA x0}
                {HE : Equivalence eqA},
     Proper (eqA ==> eqA) inv.
 Proof.
@@ -284,8 +286,8 @@ Proof.
     rewrite e0 in e2. rewrite <-e2 in e1. auto. auto. apply HP. auto. apply HP. auto.
     apply HP.
 Defined.
-Lemma well_inv : forall {A : Type} {eqA : relation A} {leA : relation A} {plusA : A -> A -> A} 
-    {HP : Plus_Field eqA leA plusA} (P : @prj_nat A),
+Lemma well_inv : forall {A : Type} {eqA : relation A} {leA : relation A} {plusA : A -> A -> A}  {x0 : A}
+    {HP : Plus_Field eqA leA plusA x0} (P : @prj_nat A),
           Equivalence eqA -> @well_seq A eqA P -> @well_seq A eqA (invseq P).
 Proof.
     intros. split.
@@ -304,21 +306,40 @@ Proof.
      auto. assert(eqA a a0). apply HCseq3 with (m := n);auto. rewrite He0.
      rewrite <-H3. auto.
 Qed.
+Lemma well_dis : forall {A X : Type} {eqX : relation X} {eqA : relation A} 
+  {leX : relation X} {plusX : X -> X -> X} {x0 : X} {pfX : Plus_Field eqX leX plusX x0} 
+       {dist : A -> A -> X} {M : Metric eqX eqA leX plusX x0 pfX dist}
+           (Pa Pb : @prj_nat A),
+              Equivalence eqX -> Equivalence eqA -> @well_seq A eqA Pa
+                  -> @well_seq A eqA Pb -> @well_seq X eqX (distseq Pa Pb).
+Proof.
+    intros. split.
+    -intros. destruct H1. destruct H2. destruct HCseq1 with (n := n) as [a].
+      destruct HCseq0 with (n := n) as [b]. exists(dist a b).
+      apply dit with (a0 := a) (b0 := b);auto. reflexivity.
+    -intros. destruct H4. apply dit with (a0 := a) (b0 := b);auto. rewrite <-H3;auto.
+    -intros. destruct H3. destruct H4. rewrite He, He0. assert (eqA a a0). destruct H1.
+     apply HCseq3 with (m:= n);auto. assert(eqA b b0). destruct H2.
+     apply HCseq3 with (m:=n);auto. rewrite H3. rewrite H4. reflexivity.
+Qed. 
 
 Section plus_pre.
 Variables X : Type.
 Variables eqX : relation X.
 Variables leX : relation X.
 Variables plusX : X -> X -> X.
+Variables x0 : X.
 Variables HE : Equivalence eqX.
 Variables A : Type.
 Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
-Variables mof : Plus_Field eqX leX plusX.
-Variables M : Metric eqX eqA leX plusX mof.
+Variables mof : Plus_Field eqX leX plusX x0.
+Variables dist : A -> A -> X.
+Variables M : Metric eqX eqA leX plusX _ mof dist.
 Variables leA : relation A.
 Variables plusA : A -> A -> A.
-Variables HPA : Plus_Field eqA leA plusA.
+Variables x0A : A.
+Variables HPA : Plus_Field eqA leA plusA x0A.
         (**This Plus_Field is sometimes the same as the mof**)
 Variables Dpd : Density eqX mof.
 Notation "a + b" := (plusA a b)
@@ -337,7 +358,7 @@ Notation "a != b" := (~eqX a b)
 
 Theorem plus_trans : forall {Pa Pb : @prj_nat A},
     CauchySeq eqX eqA Pa -> CauchySeq eqX eqA Pb
-        -> CauchySeq eqX eqA (@dibasic A eqA leA plusA HPA Pa Pb).
+        -> CauchySeq eqX eqA (@dibasic A eqA leA plusA _ HPA Pa Pb).
 Proof.
     intros. split. apply well_dibasic. auto. destruct H. apply HWS. destruct H0.
     apply HWS.
@@ -377,3 +398,58 @@ Proof.
     rewrite He0. rewrite <-HIN. apply H with (m := n0) (n := n); auto.
 Qed.
 End plus_pre.
+
+Section dist_pre.
+Variables X : Type.
+Variables eqX : relation X.
+Variables leX : relation X.
+Variables plusX : X -> X -> X.
+Variables x0 : X.
+Variables HE : Equivalence eqX.
+Variables A : Type.
+Variables eqA : relation A.
+Variables HEA : Equivalence eqA.
+Variables pfX : Plus_Field eqX leX plusX x0.
+Variables dist : A -> A -> X.
+Variables distX : X -> X -> X.
+Variables MX : Metric eqX eqX leX plusX _ pfX distX.
+Variables M : Metric eqX eqA leX plusX _ pfX dist.
+Variables Dpd : Density eqX pfX.
+Variables HDD : forall (a b c : A), eqX (distX (dist a b) (dist a c)) (dist b c). 
+
+Notation "a + b" := (plusX a b)
+  (at level 50, left associativity).
+Notation "a <= b" := (leX a b)
+  (at level 70, no associativity).
+Notation "a >= b" := (leX b a)
+  (at level 70, no associativity).
+Notation "a == b" := (eqX a b)
+    (at level 70, no associativity).
+Notation "a != b" := (~eqX a b)
+    (at level 70, no associativity).
+
+Theorem dist_trans : forall {Pa Pb : @prj_nat A},
+    CauchySeq eqX eqA Pa -> CauchySeq eqX eqA Pb
+        -> CauchySeq eqX eqX (@distseq A X eqX eqA leX plusX x0 pfX dist M Pa Pb).
+Proof.
+    intros. split.
+    -apply well_dis;auto. destruct H;auto. destruct H0;auto.
+    -intros. 
+      destruct (division_of_eps _ _ _ _ _ _ eps) as [eps1 [eps2 [Heps1 [Heps2 Heq]]]];auto.
+      destruct H. destruct HCA with (eps := eps1) as [N1];auto. destruct H0.
+      destruct HCA0 with (eps := eps2) as [N2];auto. destruct(always_greater N1 N2) as [G].
+      exists G. intros. destruct H4. destruct H4. destruct H5. rewrite He.
+      rewrite He0. 
+      assert(distX (dist a b0) (dist a0 b) <= distX (dist a b0) (dist a b) + distX (dist a b) (dist a0 b)). 
+      apply mtr. rewrite HDD in H4. rewrite (msy _ b), (msy a b) in H4.
+      rewrite HDD in H4. assert(dist b0 b < eps2). apply H0 with (m := n0) (n := n).
+      destruct H2, H3. split;apply (lt_trans _ G _);auto. split;auto.
+      assert(dist a a0 < eps1). apply H with (m := n0) (n := n).
+      destruct H2, H3. split;apply (lt_trans _ G _);auto. split;auto.
+      assert(dist b0 b + dist a a0 < eps2 + eps1). apply lt_two_plus_two;auto.
+      rewrite (pfc eps2 _),Heq in H7. destruct (le_lt_eq _ _ _ (distX (dist a b0) (dist b a0)) (dist b0 b + dist a a0)).
+      apply H8 in H4. destruct H4.
+          +apply lttr with (y := dist b0 b + dist a a0);auto. rewrite (msy a0 b);auto.
+          +rewrite (msy a0 b);rewrite H4;auto.
+Qed.
+End dist_pre.

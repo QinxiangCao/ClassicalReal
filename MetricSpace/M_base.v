@@ -9,29 +9,37 @@ Variables HE : Equivalence eqX.
 Variables leX : relation X.
 Variables pofX : Pre_Order_Field eqX leX.
 Variables plusX : X -> X -> X.
-Variables pfX : Plus_Field eqX leX plusX.
-Variables MX : Metric eqX eqX _ _ pfX.
+Variables zeroX : X.
+Variables pfX : Plus_Field eqX leX plusX zeroX.
+Variables distX : X -> X -> X.
+Variables MX : Metric eqX eqX _ _ _ pfX distX.
 
 Variables Dp : Density eqX pfX.
-Variables HPD : forall a b c : X, eqX (dist (plusX a b) (plusX a c)) (dist b c).
+Variables HPD : forall a b c : X, eqX (distX (plusX a b) (plusX a c)) (distX b c).
 
 Variables A : Type.
 Variables eqA : relation A.
 Variables HEA : Equivalence eqA.
+Variables dist : A -> A -> X.
 
-Variables M : Metric eqX eqA leX plusX pfX.
+Variables M : Metric eqX eqA leX plusX _ pfX dist.
 
-Definition CX : Type := Cauchilize eqX eqX _ _.
-Definition CA : Type := Cauchilize eqX eqA _ _.
-
-Definition leCX :=@leC X eqX leX plusX pfX MX HE. 
-Definition plusCX : CX -> CX -> CX :=
-      @plusC X eqX leX plusX HE X eqX leX plusX HE pfX MX pfX Dp HPD.
+Definition CX : Type := Cauchilize eqX eqX _ _ _ _.
+Definition CA : Type := Cauchilize eqX eqA _ _ _ _.
+Definition equCX : CX -> CX -> Prop :=@equC X X eqX eqX leX plusX zeroX distX pfX MX.
+Definition leCX :=@leC X eqX leX plusX _ _ pfX MX HE.
 
 Variables PB : PropBucket.
-Definition pofCX :=@preOrder_trans X eqX leX plusX HE pfX MX Dp PB.
+Definition pofCX :Pre_Order_Field equCX leCX :=@preOrder_trans X eqX leX plusX _ HE pfX _ MX Dp PB.
 
-Variables HIN : (forall a b : X, eqX (dist a b) (dist (inv a) (inv b))).
-Definition pfCX :=@pf_trans X eqX HE leX plusX pfX MX Dp HPD PB HIN.
+Definition plusCX :CX -> CX -> CX := M_new.plusCX X eqX HE leX plusX zeroX distX pfX MX Dp HPD .
+
+Definition zeroCX :CX := M_new.zeroX X eqX HE leX plusX zeroX distX pfX MX.
+
+Variables HIN : (forall a b : X, eqX (distX a b) (distX (inv a) (inv b))).
+Definition pfCX : Plus_Field equCX leCX plusCX zeroCX  :=@pf_trans X eqX HE leX plusX zeroX distX pfX MX Dp HPD PB HIN.
+
+Definition equCA : CA -> CA -> Prop := @equC A X eqX eqA leX plusX zeroX dist pfX M.
+
+
 End BaseSpace.
-(**Note that the leCX and plusCX are the same as the def used in M_new's proof**)

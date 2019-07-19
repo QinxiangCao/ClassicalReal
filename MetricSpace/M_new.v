@@ -2,23 +2,23 @@ From CReal.MetricSpace Require Export M_pack.
 From CReal.MetricSpace Require Export M_prop.
 (**definition and some propsition of new Cauchilized Space**)
 Inductive Cauchilize {A X : Type} (eqX : relation X) (eqA : relation A)
-                (leX : relation X) (plusX : X -> X -> X) 
-                    {mof : Plus_Field eqX leX plusX}  {M : Metric eqX eqA leX plusX mof}  
+                (leX : relation X) (plusX : X -> X -> X) (x0 : X) (dist : A -> A -> X)
+                    {mof : Plus_Field eqX leX plusX x0}  {M : Metric eqX eqA leX plusX _ mof dist}  
                         : Type :=
   | con_intro (Cseq : prj_nat)(H : CauchySeq eqX eqA Cseq) .
 Definition sig_inv {A X : Type} {eqX : relation X} {eqA : relation A}
-          {leX : relation X} {plusX : X -> X -> X} 
-                {mof : Plus_Field eqX leX plusX} {M : Metric eqX eqA leX plusX mof}
+          {leX : relation X} {plusX : X -> X -> X} {x0 : X} {dist : A -> A -> X}
+                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqA leX plusX _ mof dist}
                     {HEX : Equivalence eqX} {HEA : Equivalence eqA} (a : A) : 
-            Cauchilize eqX eqA leX plusX:= 
-        con_intro eqX eqA leX plusX (@singleton A eqA a) 
-                (c_trans X eqX HEX A eqA HEA leX plusX mof a).
+            Cauchilize eqX eqA leX plusX _ _:= 
+        con_intro eqX eqA leX plusX _ _ (@singleton A eqA a) 
+                (c_trans X eqX HEX A eqA HEA leX plusX _ mof a).
 Definition equC {A X : Type} {eqX : relation X} {eqA : relation A}
-           {leX : relation X} {plusX : X -> X -> X}
-                {mof : Plus_Field eqX leX plusX} {M : Metric eqX eqA leX plusX mof} 
-        (x1 x2 : Cauchilize eqX eqA leX plusX):  Prop  :=
+           {leX : relation X} {plusX : X -> X -> X} {x0 : X} {dist : A -> A -> X}
+                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqA leX plusX x0 mof dist} 
+        (x1 x2 : Cauchilize eqX eqA leX plusX _ _):  Prop  :=
   match x1,   x2 with
-    | con_intro _ _ _ _ cseq1 C1, con_intro _ _ _ _ cseq2 C2 =>
+    | con_intro _ _ _ _ _ _ cseq1 C1, con_intro _ _ _ _ _ _ cseq2 C2 =>
         (forall (eps : X), x0 < eps
              -> (exists (N : nat), forall (n :nat), (N < n)%nat
              -> forall (a1 a2 : A), cseq1 n a1  -> cseq2 n a2
@@ -27,10 +27,10 @@ Definition equC {A X : Type} {eqX : relation X} {eqA : relation A}
 Notation "a == b" := (equC a b)
     (at level 70, no associativity) : equC.
 Lemma refl_equC : forall {A X : Type} {eqX : relation X} {eqA : relation A}
-          {leX : relation X} {plusX : X -> X -> X} {HE : Equivalence eqX} 
-               {HEA : Equivalence eqA} {mof : Plus_Field eqX leX plusX} 
-                  {M : Metric eqX eqA leX plusX mof} 
-                      (x : @Cauchilize A X eqX eqA _ _ mof M), equC x x.
+          {leX : relation X} {plusX : X -> X -> X} {HE : Equivalence eqX} {x0 : X} {dist : A -> A -> X}
+               {HEA : Equivalence eqA} {mof : Plus_Field eqX leX plusX x0} 
+                  {M : Metric eqX eqA leX plusX _ mof dist} 
+                      (x : @Cauchilize A X eqX eqA _ _ _ _ mof M), equC x x.
 Proof.
   intros. unfold equC. destruct x. intros. inversion H. apply HCA in H0.
   destruct H0. exists x. intros. assert( (x < n) %nat /\  (x < n)%nat). split. auto. auto.
@@ -43,10 +43,12 @@ Variables eqX : relation X.
 Variables eqA : relation A. 
 Variables  leX : relation X.
 Variables plusX : X -> X -> X. 
+Variables zero : X.
 Variables HE : Equivalence eqX. 
 Variables HEA : Equivalence eqA.
-Variables mof : Plus_Field eqX leX plusX.
-Variables M : Metric eqX eqA leX plusX mof.
+Variables mof : Plus_Field eqX leX plusX zero.
+Variables dist : A -> A -> X.
+Variables M : Metric eqX eqA leX plusX _ mof dist.
 Variables Dpd : Density eqX mof.
 Notation "a + b" := (plusX a b)
   (at level 50, left associativity).
@@ -79,7 +81,7 @@ Proof.
   apply Hex1 in H14. destruct H14. 
   apply lttr with (y := (dist a1 a + dist a a2)). auto.
   auto. auto. rewrite H14. auto. apply H14. apply mtr. 
-  apply lt_intro. rewrite <- H6. apply le_two_plus_two with (eqX := eqX);auto.
+  apply lt_intro. rewrite <- H6. apply le_two_plus_two with (eqX := eqX) (x0 := zero);auto.
   rewrite <- H6. unfold not. intros. assert(dist a1 a + dist a a2 < d1 + d2).
   apply lt_two_plus_two. auto. apply lt_intro. auto. auto. 
   apply lt_intro. auto. auto. inversion H16.
@@ -104,25 +106,30 @@ Proof.
 Defined.
 End EquR_playground.
 Existing Instance EquR_trans.
-Inductive ball {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X}
-        {mof : Plus_Field eqX leX plusX} {M : Metric eqX eqX _ _ mof} {HE : Equivalence eqX} 
+Inductive ball {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
+        {dist : X -> X -> X}
+        {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
     (a : X) (r : X) (x : X): Prop :=
     | ball_intro (L : x0 < r) (H : dist a x < r) : ball a r x.
-Definition leC {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X}
-        {mof : Plus_Field eqX leX plusX}  {M : Metric eqX eqX _ _ mof} {HE : Equivalence eqX} 
-        (x1 x2 : Cauchilize eqX eqX _ _) : Prop :=
+Definition leC {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
+        {dist : X -> X -> X}
+        {mof : Plus_Field eqX leX plusX x0}  {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
+        (x1 x2 : Cauchilize eqX eqX _ _ _ _) : Prop :=
     match x1,   x2 with
-    | con_intro _ _ _ _ cseq1 _, con_intro _ _ _ _ cseq2 _ =>
+    | con_intro _ _ _ _ _ _ cseq1 _, con_intro _ _ _ _ _ _ cseq2 _ =>
          equC  x1 x2 \/ (exists (N : nat), forall (n : nat) (a1 a2 : X), (N < n)%nat -> cseq1 n a1
              -> cseq2 n a2 -> a1 < a2)
     end.
 Notation " x1 <= x2" := (leC x1 x2) : leC.
-Definition ltC {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X}
-        {mof : Plus_Field eqX leX plusX}  {M : Metric eqX eqX _ _ mof} {HE : Equivalence eqX} 
-        (x1 x2 : Cauchilize eqX eqX _ _) : Prop := leC x1 x2 /\ ~equC x1 x2 .
+Definition ltC {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
+        {dist : X -> X -> X}
+        {mof : Plus_Field eqX leX plusX x0}  {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
+        (x1 x2 : Cauchilize eqX eqX _ _ _ _) : Prop := leC x1 x2 /\ ~equC x1 x2 .
 Notation "x1 < x2" := (ltC x1 x2) : ltC.
-Class PropBucket {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X}
-                {mof : Plus_Field eqX leX plusX} {M : Metric eqX eqX _ _ mof} {HE : Equivalence eqX} :={
+Class PropBucket {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
+                {dist : X -> X -> X}
+                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqX _ _ _ mof dist}
+                {HE : Equivalence eqX} :={
           inBall1 :  forall (a x eps y : X), ball a eps x -> ~ball a eps y -> a < y -> x < y ;
           inBall2 : forall (a x eps y : X), ball a eps x -> ~ball a eps y -> y < a -> y < x;
           orderPres1 : forall (a b c : X), a < b -> a < c -> dist a b < dist a c -> b < c;
@@ -133,8 +140,10 @@ Variables X : Type.
 Variables eqX : relation X.
 Variables leX : relation X.
 Variables plusX : X -> X -> X.
-Variables mof : Plus_Field eqX leX plusX.
-Variables M : Metric eqX eqX _ _ mof.
+Variables zero : X.
+Variables mof : Plus_Field eqX leX plusX zero.
+Variables dist : X -> X -> X.
+Variables M : Metric eqX eqX _ _ _ mof dist.
 Variables Dpd : Density eqX mof.
 Variables HE : Equivalence eqX.
 
@@ -146,12 +155,12 @@ Notation "a >= b" := (leX b a)
 Notation "a + b" := (plusX a b)
   (at level 50, left associativity).
 
-Theorem leC_pre : forall (a b c d : Cauchilize eqX eqX _ _),
+Theorem leC_pre : forall (a b c d : Cauchilize eqX eqX _ _ _ _),
      equC a b -> equC c d -> leC a c -> leC b d .
 Proof.
   intros.
   destruct (classic (equC a c)). -unfold leC. destruct b. destruct d. left.
-  destruct (EquR_trans X X _ eqX leX plusX _ _ _ _); auto. rewrite <-H.
+  destruct (EquR_trans X X _ eqX leX plusX _ _ _ _ _ _); auto. rewrite <-H.
    rewrite  <-H0. auto.
     -unfold equC in H2. destruct a as [a ?], c as [c ?]. simpl in H1. destruct H1; [tauto |].
     apply not_all_ex_not in H2. destruct H2 as [eps]. apply not_all_ex_not in H2. destruct H2 as [Heps].
@@ -164,9 +173,9 @@ Proof.
        destruct H2. exists x3. apply not_all_ex_not in H2. destruct H2. apply not_all_ex_not in H2. 
        destruct H2. split. auto. split. auto. destruct (lt_not X eqX _ _ (dist x2 x3) eps) as [Hex1 Hex2].
        apply Hex1;auto. destruct H1 as [N].
-       destruct (division_of_eps _ _ _ _ _ eps) as [eps1 [eps2]]. auto. 
-       destruct (division_of_eps _ _ _ _ _ eps1) as [eps1a [eps1b]]. destruct H6. auto.
-        destruct (division_of_eps _ _ _ _ _ eps2) as [eps2a [eps2b]].
+       destruct (division_of_eps _ _ _ _ _ _ eps) as [eps1 [eps2]]. auto. 
+       destruct (division_of_eps _ _ _ _ _ _ eps1) as [eps1a [eps1b]]. destruct H6. auto.
+        destruct (division_of_eps _ _ _ _ _ _ eps2) as [eps2a [eps2b]].
         destruct H6. 
         destruct H8. auto. 
         assert(exists N : nat, forall m n : nat, (N < m)%nat /\ (N < n)%nat -> forall t1 t2 : X, a m t1 /\ a n t2 -> eps1a > dist t1 t2).
@@ -225,12 +234,12 @@ Proof.
           rewrite <-H21 in H22. auto. }
       assert(dist a1 cpin > eps2). {
           assert(dist a1 cpin + dist apin a1 >= dist apin cpin). rewrite pfc. 
-           apply mtr. assert(exists id_api_a1,eqX (dist apin a1 + id_api_a1) x0).
+           apply mtr. assert(exists id_api_a1,eqX (dist apin a1 + id_api_a1) zero).
            apply pfi. destruct H23 as [id_api_a1].
            assert(dist a1 cpin + dist apin a1 + id_api_a1 >= dist apin cpin + id_api_a1).
-           apply le_two_plus_two with (eqX := eqX);auto. apply pofr. reflexivity.
-           rewrite pfa in H24. rewrite H23 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
-           assert(exists ieps1, eqX (eps1 + ieps1) x0). apply pfi. destruct H25 as [ieps1].
+           apply le_two_plus_two with (eqX := eqX) (x0 := zero);auto. apply pofr. reflexivity.
+           rewrite pfa in H24. rewrite H23 in H24. rewrite (pfc _ zero) in H24. rewrite pfz in H24.
+           assert(exists ieps1, eqX (eps1 + ieps1) zero). apply pfi. destruct H25 as [ieps1].
            assert(id_api_a1 > ieps1). apply lt_inv with (x := dist apin a1) (y := eps1);auto.
            assert(dist apin cpin + id_api_a1 > eps + ieps1).
            destruct (le_lt_eq _ _ _ eps (dist apin cpin)) as [Hex1 Hex2].
@@ -246,12 +255,13 @@ Proof.
        assert(dist a2 apin > eps1). {
            assert(dist a2 apin + dist cpin a2 >= dist apin cpin). rewrite (msy a2 _).
            rewrite (msy cpin _). apply mtr. 
-           assert(exists id_cpi_a2, eqX (dist cpin a2 + id_cpi_a2) x0).
+           assert(exists id_cpi_a2, eqX (dist cpin a2 + id_cpi_a2) zero).
            apply pfi. destruct H24 as [id_cpi_a2].
            assert(dist a2 apin + dist cpin a2 + id_cpi_a2 >= dist apin cpin + id_cpi_a2).
-           apply le_two_plus_two with (eqX := eqX);auto. apply pofr. reflexivity. rewrite pfa in H25.
-           rewrite H24 in H25. rewrite (pfc _ x0) in H25. rewrite pfz in H25.
-           assert(exists ieps2, eqX (eps2 + ieps2) x0). apply pfi. destruct H26 as [ieps2].
+           apply le_two_plus_two with (eqX := eqX) (x0 := zero);auto. apply pofr. reflexivity.
+           rewrite pfa in H25.
+           rewrite H24 in H25. rewrite (pfc _ zero) in H25. rewrite pfz in H25.
+           assert(exists ieps2, eqX (eps2 + ieps2) zero). apply pfi. destruct H26 as [ieps2].
            assert(id_cpi_a2 > ieps2). apply lt_inv with (x := dist cpin a2) (y := eps2).
            auto. auto. auto. auto. assert(dist apin cpin + id_cpi_a2 > eps + ieps2).
            destruct (le_lt_eq _ _ _ eps (dist apin cpin)) as [Hex1 Hex2].
@@ -285,14 +295,15 @@ Proof.
             apply inBall1 with (a0  := apin) (eps0 := eps1). auto. auto. auto.
 Qed.
 End leCpre_playground.
-Instance leC_rewrite : forall (X : Type) (eqX : relation X) (leX : relation X) (plusX : X -> X -> X) 
-  {mof : Plus_Field eqX leX plusX} (M : Metric eqX eqX _ _ mof) 
+Instance leC_rewrite : forall (X : Type) (eqX : relation X) (leX : relation X) (plusX : X -> X -> X)
+  (x0 : X) (dist : X -> X -> X)
+  {mof : Plus_Field eqX leX plusX x0} (M : Metric eqX eqX _ _ _ mof dist) 
  {Dpd : Density eqX mof} (HE : Equivalence eqX) (HP : PropBucket) ,
       Proper (equC ==> equC ==> iff) leC.
     intros. hnf. intro x1. intro x2. intro. hnf. intro. intro. intro. split.
     -apply leC_pre. auto. auto. auto. auto.
-    -apply leC_pre. auto. auto. destruct (EquR_trans X X _ eqX leX plusX _ _ _ _);auto.
-      destruct (EquR_trans X X _ eqX leX plusX _ _ _ _);auto.
+    -apply leC_pre. auto. auto. destruct (EquR_trans X X _ eqX leX plusX _ _ _ _ _ _);auto.
+      destruct (EquR_trans X X _ eqX leX plusX _ _ _ _ _ _);auto.
 Defined.
 Section leC_Field.
 (**This section only talks about the pre_order_field on Cauchilize eqX eqX**)
@@ -300,9 +311,11 @@ Variables X : Type.
 Variables eqX : relation X.
 Variables leX : relation X.
 Variables plusX : X -> X -> X.
+Variables x0 : X.
 Variables HE : Equivalence eqX.
-Variables mof : Plus_Field eqX leX plusX.
-Variables M : Metric eqX eqX _ _ mof.
+Variables mof : Plus_Field eqX leX plusX x0.
+Variables dist : X -> X -> X.
+Variables M : Metric eqX eqX _ _ _ mof dist.
 Variables Dpd : Density eqX mof.
 Variables HPB :PropBucket.
 Notation "a == b" := (eqX a b)
@@ -319,7 +332,7 @@ Instance le_prop_inst : Proper (equC ==> equC ==> iff) leC.
 Proof.
        apply leC_rewrite;auto.
 Defined.
-Theorem preOrder_trans : @Pre_Order_Field (Cauchilize eqX eqX _ _) equC leC.
+Theorem preOrder_trans : @Pre_Order_Field (Cauchilize eqX eqX _ _ _ _) equC leC.
 Proof.
       split.
      -intros. destruct a. destruct b. left. auto.
@@ -349,7 +362,7 @@ Proof.
            assert(forall N : nat, ~( forall n : nat,  (N < n)%nat -> forall a1 a2 : X, Cseq n a1 -> 
             Cseq0 n a2 -> eps > dist a1 a2)).
             intros. unfold not. intros. unfold not in H. apply H. exists N. auto.
-            destruct (division_of_eps _ _ _ _ _ eps) as [eps1]. auto. destruct H3 as [eps2].
+            destruct (division_of_eps _ _ _ _ _ _ eps) as [eps1]. auto. destruct H3 as [eps2].
             destruct H3 as [Heps1 [Heps2 Hepseq ]]. assert(forall eps : X,
        eps > x0 -> exists N : nat, forall m n : nat, (N < m)%nat /\ (N < n)%nat -> forall a b : X,
          Cseq0 m a /\ Cseq0 n b -> eps > dist a b). apply HCA.
@@ -393,7 +406,7 @@ Proof.
            auto. auto.
           assert(dist pin0 float + dist pin float >= dist pin pin0). rewrite pfc. rewrite (msy pin0 _). apply mtr.
           assert(dist pin0 float + dist pin float + id_pin_float >= dist pin pin0 + id_pin_float).
-          apply le_two_plus_two with (eqX := eqX);auto. 
+          apply le_two_plus_two with (eqX := eqX) (x0 := x0);auto. 
           apply pofr. reflexivity. rewrite pfa in H24.
           rewrite H20 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
           assert(dist pin0 float > eps + ieps2). 
@@ -440,7 +453,7 @@ Proof.
            auto. auto.
           assert(dist pin0 float + dist pin float >= dist pin pin0). rewrite pfc. rewrite (msy pin0 _). apply mtr.
           assert(dist pin0 float + dist pin float + id_pin_float >= dist pin pin0 + id_pin_float).
-          apply le_two_plus_two with (eqX := eqX);auto. apply pofr. reflexivity. rewrite pfa in H24.
+          apply le_two_plus_two with (eqX := eqX) (x0 := x0);auto. apply pofr. reflexivity. rewrite pfa in H24.
           rewrite H20 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
           assert(dist pin0 float > eps + ieps2).
           destruct (le_lt_eq _ _ _ (dist pin pin0 + id_pin_float) (dist pin0 float)) as [Hex1 Hex2]. 
@@ -495,9 +508,12 @@ Variables eqA : relation A.
 Variables leA : relation A.
 Variables plusA : A -> A -> A.
 Variables HEA : Equivalence eqA.
-Variables mof : Plus_Field eqX leX plusX.
-Variables M : Metric eqX eqA _ _ mof.
-Variables HPA : Plus_Field eqA leA plusA.
+Variables zeroX : X.
+Variables mof : Plus_Field eqX leX plusX zeroX.
+Variables dist : A -> A -> X.
+Variables M : Metric eqX eqA _ _ _ mof dist.
+Variables zeroA : A.
+Variables HPA : Plus_Field eqA leA plusA zeroA.
         (**This Plus_Field is sometimes the same as the field mof**)
 Variables Dpd : Density eqX mof.
 Variables HPD : forall a b c, eqX (dist (plusA a b) (plusA a c)) (dist b c).
@@ -507,13 +523,13 @@ Notation "a <= b" := (leX a b)
     (at level 70, no associativity).
 Notation "a >= b" := (leX b a)
     (at level 70, no associativity).
-Definition plusC (x y : Cauchilize eqX eqA _ _) : Cauchilize eqX eqA _ _.
-    destruct x. destruct y. assert (CauchySeq eqX eqA (@dibasic A eqA _ _ HPA Cseq Cseq0)).
-    apply plus_trans;auto. apply (con_intro eqX eqA _ _ (dibasic Cseq Cseq0) H1).
+Definition plusC (x y : Cauchilize eqX eqA _ _ _ _) : Cauchilize eqX eqA _ _ _ _.
+    destruct x. destruct y. assert (CauchySeq eqX eqA (@dibasic A eqA _ _ _ HPA Cseq Cseq0)).
+    apply plus_trans;auto. apply (con_intro eqX eqA _ _ _ _ (dibasic Cseq Cseq0) H1).
 Defined.
 Instance plusC_rewrite : Proper (equC ==> equC ==> equC) plusC.
     hnf. intros. hnf. intros. destruct x. destruct y. destruct x0. destruct y0. simpl in H0. simpl in H.
-    simpl. intros. destruct (division_of_eps _ eqX _ _ _ eps H5) as [eps1].
+    simpl. intros. destruct (division_of_eps _ eqX _ _ _ _ eps H5) as [eps1].
     destruct H6 as [eps2[Heps1 [Heps2 Heq]]]. destruct H with (eps := eps1) as [N]. auto.
     destruct H0 with (eps := eps2) as [N0]. auto. destruct (always_greater N N0) as [G]. destruct H8.
     exists G. intros. destruct H11. destruct H12. rewrite He. rewrite He0.
@@ -531,7 +547,7 @@ Instance plusC_rewrite : Proper (equC ==> equC ==> equC) plusC.
 Defined.
 
 End plusC_playground.
-
+Existing Instance plusC_rewrite.
 Section plus_field_trans. 
  (**This section only prove that the Group (S, plusC, zeroC) is a well Group.
       S is the space of Type Cauchilize eqX eqX.**)
@@ -540,22 +556,24 @@ Variables eqX : relation X.
 Variables HE : Equivalence eqX.
 Variables leX : relation X.
 Variables plusX : X -> X -> X.
+Variables x0 : X.
+Variables dist : X -> X -> X.
 Notation "a + b" := (plusX a b)
     (at level 50, left associativity).
 Notation "a <= b" := (leX a b)
     (at level 70, no associativity).
 Notation "a >= b" := (leX b a)
     (at level 70, no associativity).
-Variables mof : Plus_Field eqX leX plusX.
-Variables MX : Metric eqX eqX _ _ mof.
+Variables mof : Plus_Field eqX leX plusX x0.
+Variables MX : Metric eqX eqX _ _ _ mof dist.
 Variables DX : Density eqX mof.
 Variables HPD : forall a b c : X, eqX (dist (a + b) (a + c)) (dist b c).
 Variables HPB :PropBucket.
 Variables HIN : forall a b, eqX (dist a b) (dist (inv a) (inv b)).
 
-Definition CX :Type := Cauchilize eqX eqX _ _.
+Definition CX :Type := Cauchilize eqX eqX _ _ _ _.
 Definition plusCX :CX -> CX -> CX.
-    apply plusC with (leA := leX) (plusA := plusX); auto.
+    apply plusC with (leA := leX) (plusA := plusX) (zeroA := x0); auto.
 Defined.
 Definition zeroX :CX.
     apply (sig_inv x0).
@@ -563,14 +581,14 @@ Defined.
 Definition invX (x : CX) :CX.
     destruct x. pose proof inv_trans.
     assert(CauchySeq eqX eqX (invseq Cseq)). apply H0;auto.
-    apply (con_intro eqX eqX _ _ (invseq Cseq) H1).
+    apply (con_intro eqX eqX _ _ _ _ (invseq Cseq) H1).
 Defined.
 Definition pofX :Pre_Order_Field equC leC.
     apply preOrder_trans with (HE := HE). auto. auto.
 Defined.
-Theorem pf_trans : Plus_Field equC leC plusCX.
+Theorem pf_trans : Plus_Field equC leC plusCX zeroX.
 Proof.
-  split with (x0 := zeroX).
+  split.
   -apply pofX.
   -intros. destruct x. destruct y. simpl. intros. destruct H. destruct H0.
     exists 0. intros. destruct H0. destruct H2. assert(eqX a b0).
@@ -599,7 +617,7 @@ Proof.
       rewrite H5. unfold inv. destruct pfi_strong. auto. rewrite H5. rewrite H4.
       rewrite mre;[auto |reflexivity].
     -intros. destruct a. destruct b. destruct c. destruct d. simpl.
-      intros. destruct (division_of_eps _ _ _ _ _ eps) as [eps1];auto.
+      intros. destruct (division_of_eps _ _ _ _ _ _ eps) as [eps1];auto.
       destruct H6 as [eps2 [Heps1 [Heps2 Heq]]].
       destruct H with (eps := eps1) as [N1];auto.
       destruct H0 with (eps := eps2) as [N2];auto.
@@ -632,3 +650,15 @@ Proof.
         apply H with (n := n);auto.
 Qed.
 End plus_field_trans.
+Definition distC  {A X : Type} {eqX : relation X} {eqA : relation A} {HE : Equivalence eqX} {HEA : Equivalence eqA}
+           {leX : relation X} {plusX : X -> X -> X} {x0 : X} {dist : A -> A -> X} {distX : X -> X -> X}
+                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqA leX plusX x0 mof dist} 
+                    {MX : Metric eqX eqX leX plusX x0 mof distX} {Dpd : Density eqX mof}
+                        {HDD : forall (a b c : A), eqX (distX (dist a b) (dist a c)) (dist b c)} 
+            (x1 x2 : Cauchilize eqX eqA leX plusX _ _) : Cauchilize eqX eqX leX plusX _ _ .
+Proof.
+  destruct x1. destruct x2.
+    assert(CauchySeq eqX eqX (@distseq A X eqX eqA leX plusX x0 mof dist M Cseq Cseq0)).
+    apply dist_trans;auto.
+    apply(con_intro eqX eqX _ _ _ _ (@distseq A X eqX eqA leX plusX x0 mof dist M Cseq Cseq0) H1).
+Defined.

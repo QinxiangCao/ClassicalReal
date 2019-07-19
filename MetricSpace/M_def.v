@@ -16,9 +16,8 @@ Notation "x < y" := (lt x y)
 Notation "y > x" := (lt x y)
     (at level 70, no associativity).
 
-Class Plus_Field {X : Type} (eqX : relation X) (le : relation X) (plus : X -> X -> X):={
+Class Plus_Field {X : Type} (eqX : relation X) (le : relation X) (plus : X -> X -> X) (x0 : X):={
     p_pof :> Pre_Order_Field eqX le;
-    x0 : X;
     pfc : forall (x y : X), eqX (plus x y) (plus y x);
     pfa : forall (x y z : X), eqX (plus (plus x y) z) (plus x (plus y z));
     pfz : forall (x : X), eqX (plus x0 x) x;
@@ -26,28 +25,24 @@ Class Plus_Field {X : Type} (eqX : relation X) (le : relation X) (plus : X -> X 
     pfeq : forall (a b c d : X), eqX a b -> eqX c d -> eqX (plus a c) (plus b d);
     ppof : forall (x y z : X), le x y -> le (plus x z) (plus y z);
 }.
-Definition inv {A : Type} {eqA : relation A} {le : relation A} {plus : A -> A -> A}
-     {HP : Plus_Field eqA le plus} (a : A) :A.
+Definition inv {A : Type} {eqA : relation A} {le : relation A} {plus : A -> A -> A} {x0 : A}
+     {HP : Plus_Field eqA le plus x0} (a : A) :A.
     destruct pfi_strong with (x := a). apply x.
 Defined.
 
-Class Density {X : Type} (eqX :  relation X) {le : relation X} {plus : X -> X -> X}
-        (PF : Plus_Field eqX le plus) :={
+Class Density {X : Type} (eqX :  relation X) {le : relation X} {plus : X -> X -> X} {x0 : X}
+        (PF : Plus_Field eqX le plus x0) :={
     pd : forall (x1 x2 : X), lt x1 x2 -> (exists x3 : X, lt x1 x3 /\ lt x3 x2);
 }.
 
 Class Metric {A : Type} {X : Type} (eqX : relation X) (eqA : relation A)
-    (le : relation X) (plus : X -> X -> X)  (mof : Plus_Field eqX le plus):={
-    dist : A -> A -> X;
+    (le : relation X) (plus : X -> X -> X) (x0 : X) (mof : Plus_Field eqX le plus x0) (dist : A -> A -> X):={
     mle : forall (p1 p2 : A), le x0 (dist p1 p2);
     msy : forall (p1 p2 : A), eqX (dist p1 p2) (dist p2 p1);
     mre : forall (p1 p2 : A), eqA p1 p2 -> eqX (dist p1 p2) x0;
     mtr : forall (p1 p2 p3 : A), le (dist p1 p3) (plus (dist p1 p2) (dist p2 p3));
     meq : forall (p1 p2 p3 p4 : A), eqA p1 p2 -> eqA p3 p4 -> eqX (dist p1 p3) (dist p2 p4);
 }.
-Notation "[ x , y ]" := (dist x y)
-    (at level 50, no associativity) : Metric.
-
 Definition prj_nat {A : Type} := nat -> A -> Prop. (**relation nRA**)
 Class well_seq {A : Type} {eqA : relation A} (s : prj_nat) :={
     HCseq1 : forall(n : nat), (exists (a : A), s n a); (**surjection**)
@@ -55,8 +50,8 @@ Class well_seq {A : Type} {eqA : relation A} (s : prj_nat) :={
     HCseq3 : forall(m : nat) (a1 a2 : A), s m a1 -> s m a2 -> (eqA a1 a2);(**injection**)
 }. (**bijection**)
 Class CauchySeq {A : Type} {X : Type} (eqX : relation X) (eqA : relation A) 
-    {le : relation X} {plus : X -> X -> X} {mof : Plus_Field eqX le plus}
-    {M : Metric eqX eqA le plus mof} (Cseq : prj_nat) : Prop :={
+    {le : relation X} {plus : X -> X -> X} {x0 : X} {mof : Plus_Field eqX le plus x0}
+    {dist : A -> A -> X}{M : Metric eqX eqA le plus _ mof dist} (Cseq : prj_nat) : Prop :={
     HWS :> @well_seq A eqA Cseq;
     HCA : forall (eps : X), x0 < eps
       -> (exists (N : nat), forall (m n:nat), (N < m)%nat /\ (N < n)%nat
@@ -66,12 +61,16 @@ Class CauchySeq {A : Type} {X : Type} (eqX : relation X) (eqA : relation A)
 Inductive singleton {A : Type} {eqA : relation A} (a : A): nat -> A -> Prop :=
     | sig (n : nat) : singleton a n a
     | sig_eqv (n : nat) (b : A) (H : eqA a b) : singleton a n b.
-Inductive dibasic {A :Type} {eqA : relation A} {le : relation A} {plus : A -> A -> A} 
-    {HP : Plus_Field eqA le plus} (Pa Pb : @prj_nat A)
+Inductive dibasic {A :Type} {eqA : relation A} {le : relation A} {plus : A -> A -> A} {x0 : A}
+    {HP : Plus_Field eqA le plus x0} (Pa Pb : @prj_nat A)
     : nat -> A -> Prop :=
     | bin (n :nat) (a b c: A) (Ha : Pa n a) (Hb : Pb n b) (He : eqA c (plus a b)): dibasic Pa Pb n c.
-Inductive invseq {A : Type} {eqA : relation A} {le : relation A} {plus : A -> A -> A}
-    {HP : Plus_Field eqA le plus} (P : @prj_nat A) 
+Inductive invseq {A : Type} {eqA : relation A} {le : relation A} {plus : A -> A -> A} {x0 : A}
+    {HP : Plus_Field eqA le plus x0} (P : @prj_nat A) 
     : nat -> A -> Prop :=
     | invsig (n : nat) (a : A) (H : P n a) : invseq P n (inv a)
     | inveqv (n : nat) (a b : A) (H : P n a) (He : eqA b (inv a)) : invseq P n b.
+Inductive distseq {A X : Type} {eqX : relation X} {eqA : relation A} {leX : relation X}
+  {plusX : X -> X -> X} {x0 : X} {pfX : Plus_Field eqX leX plusX x0} {dist : A -> A -> X}
+      {M : Metric eqX eqA leX plusX x0 pfX dist} (Pa Pb : @prj_nat A) : nat -> X -> Prop :=
+  | dit (n : nat) (a b : A) (c : X) (Ha : Pa n a) (Hb : Pb n b) (He : eqX c (dist a b)) :distseq Pa Pb n c.
