@@ -103,6 +103,7 @@ Proof.
   +auto.
 Defined.
 End EquR_playground.
+Existing Instance EquR_trans.
 Inductive ball {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X}
         {mof : Plus_Field eqX leX plusX} {M : Metric eqX eqX _ _ mof} {HE : Equivalence eqX} 
     (a : X) (r : X) (x : X): Prop :=
@@ -321,11 +322,10 @@ Defined.
 Theorem preOrder_trans : @Pre_Order_Field (Cauchilize eqX eqX _ _) equC leC.
 Proof.
       split.
-      destruct (EquR_trans X X _ eqX leX plusX _ _ _ _);auto.
      -intros. destruct a. destruct b. left. auto.
      -destruct a as [cseqa]. destruct b as [cseqb]. destruct c as [cseqc].
-       intros. destruct H2. destruct H3. Admitted.
-(**            +rewrite H2. rewrite H3. left. reflexivity.
+       intros. destruct H2. destruct H3.
+            +rewrite H2. rewrite H3. left. reflexivity.
             +rewrite H2. right. auto.
             +destruct H3. *rewrite <- H3. right. auto.
                                     *right. destruct H2 as [N1]. destruct H3 as [N2].
@@ -349,7 +349,7 @@ Proof.
            assert(forall N : nat, ~( forall n : nat,  (N < n)%nat -> forall a1 a2 : X, Cseq n a1 -> 
             Cseq0 n a2 -> eps > dist a1 a2)).
             intros. unfold not. intros. unfold not in H. apply H. exists N. auto.
-            destruct (division_of_eps _ _ _ eps) as [eps1]. auto. destruct H3 as [eps2].
+            destruct (division_of_eps _ _ _ _ _ eps) as [eps1]. auto. destruct H3 as [eps2].
             destruct H3 as [Heps1 [Heps2 Hepseq ]]. assert(forall eps : X,
        eps > x0 -> exists N : nat, forall m n : nat, (N < m)%nat /\ (N < n)%nat -> forall a b : X,
          Cseq0 m a /\ Cseq0 n b -> eps > dist a b). apply HCA.
@@ -365,7 +365,8 @@ Proof.
       apply not_all_ex_not in H9. destruct H9 as [pin0]. apply not_all_ex_not in H9.
       destruct H9 as [Hpin]. apply not_all_ex_not in H9. destruct H9 as [Hpin0].
       apply lt_not in H9. assert(~ pin == pin0). unfold not. intros. apply mre in H10.
-      rewrite H10 in H9. assert(~(x0 >= eps)). apply le_not. auto. auto. unfold not in H11.
+      rewrite H10 in H9. assert(~(x0 >= eps)). destruct (le_not _ _ _ _ x0 eps) as [Hex1 Hex2].
+      apply Hex1;auto. unfold not in H11.
       apply H11. auto. assert(pin < pin0 \/ pin > pin0). apply ltor. auto. auto.
       destruct H11. {left. unfold leC. right. exists N9. intro n. intro float. intro float0.
       intros. destruct H6 with (m := N9) (a := pin) (n := n) (b := float). split.
@@ -377,11 +378,13 @@ Proof.
       assert(ball pin0 eps1 float0). {apply ball_intro. auto. apply lt_intro. auto. auto. }
       assert(~ball pin eps2 pin0). {unfold not. intros. inversion H17. assert(eps > eps2).
       apply lt_div with (b := eps1). auto. rewrite pfc. auto. auto. auto.
-      assert(dist pin pin0 > dist pin pin0). apply le_lt_eq in H9. destruct H9.
+      assert(dist pin pin0 > dist pin pin0). destruct (le_lt_eq _ _ _ eps (dist pin pin0)) as [Hex1 Hex2].
+      apply Hex1 in H9. destruct H9.
       apply lttr with (y := eps). auto.
       apply lttr with (y := eps2). auto. auto. auto. auto.
-      rewrite H9 in H19. apply lttr with (y := eps2). auto. auto. auto. apply lt_not in H20.
-      destruct H20. auto. apply pofr. reflexivity. }
+      rewrite H9 in H19. apply lttr with (y := eps2);auto.
+      pose proof (lt_not _ _ _ _ (dist pin pin0) (dist pin pin0)) as [Hex1 Hex2];auto.
+      apply Hex2 in H20. destruct H20. auto. apply pofr. reflexivity. }
       assert(~ball pin0 eps1 float). {unfold not. intros. inversion H18.
           assert(eps1 < dist pin0 float). {assert(exists id_pin_float, dist pin float + id_pin_float == x0).
           apply pfi. destruct H20 as [id_pin_float]. assert(exists ieps2, eps2 + ieps2 == x0).
@@ -390,13 +393,19 @@ Proof.
            auto. auto.
           assert(dist pin0 float + dist pin float >= dist pin pin0). rewrite pfc. rewrite (msy pin0 _). apply mtr.
           assert(dist pin0 float + dist pin float + id_pin_float >= dist pin pin0 + id_pin_float).
-          apply le_two_plus_two. auto. auto. apply pofr. reflexivity. rewrite pfa in H24.
+          apply le_two_plus_two with (eqX := eqX);auto. 
+          apply pofr. reflexivity. rewrite pfa in H24.
           rewrite H20 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
-          assert(dist pin0 float > eps + ieps2). apply le_lt_eq in H24. destruct H24.
-          apply lttr with (y := dist pin pin0 + id_pin_float). auto. apply le_lt_eq in H9.
+          assert(dist pin0 float > eps + ieps2). 
+          destruct (le_lt_eq _ _ _ (dist pin pin0 + id_pin_float) (dist pin0 float)) as [Hex1 Hex2].
+          apply Hex1 in H24. destruct H24.
+          apply lttr with (y := dist pin pin0 + id_pin_float). auto. 
+          destruct (le_lt_eq _ _ _ eps (dist pin pin0)) as [Hex3 Hex4].
+          apply Hex3 in H9.
           destruct H9. apply lt_two_plus_two. auto. auto. auto. rewrite H9.
           rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt. auto. auto. auto.
-          rewrite <- H24. apply le_lt_eq in H9. destruct H9. apply lt_two_plus_two.
+          rewrite <- H24. destruct (le_lt_eq _ _ _ eps (dist pin pin0)) as [Hex3 Hex4].
+          apply Hex3 in H9. destruct H9. apply lt_two_plus_two.
           auto. auto. auto. rewrite H9. rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt.
           auto. auto. rewrite <-Hepseq in H25. rewrite pfa in H25. rewrite H21 in H25.
           rewrite pfc in H25. rewrite pfz in H25. auto. }
@@ -414,11 +423,15 @@ Proof.
       assert(ball pin0 eps1 float0). {apply ball_intro. auto. apply lt_intro. auto. auto. }
       assert(~ball pin eps2 pin0). {unfold not. intros. inversion H17. assert(eps > eps2).
       apply lt_div with (b := eps1). auto. rewrite pfc. auto. auto. auto.
-      assert(dist pin pin0 > dist pin pin0). apply le_lt_eq in H9. destruct H9.
+      assert(dist pin pin0 > dist pin pin0).
+      destruct (le_lt_eq _ _ _ eps (dist pin pin0)) as [Hex3 Hex4]. 
+      apply Hex3 in H9. destruct H9.
       apply lttr with (y := eps). auto.
       apply lttr with (y := eps2). auto. auto. auto. auto.
-      rewrite H9 in H19. apply lttr with (y := eps2). auto. auto. auto. apply lt_not in H20.
-      destruct H20. auto. apply pofr. reflexivity. }
+      rewrite H9 in H19. apply lttr with (y := eps2). auto. auto. auto. 
+      destruct (lt_not _ _ _ _ (dist pin pin0) (dist pin pin0)) as [Hex1 Hex2].
+      apply Hex2 in H20.
+      destruct H20. apply pofr. reflexivity. }
       assert(~ball pin0 eps1 float). {unfold not. intros. inversion H18.
           assert(eps1 < dist pin0 float). {assert(exists id_pin_float, dist pin float + id_pin_float == x0).
           apply pfi. destruct H20 as [id_pin_float]. assert(exists ieps2, eps2 + ieps2 == x0).
@@ -427,13 +440,18 @@ Proof.
            auto. auto.
           assert(dist pin0 float + dist pin float >= dist pin pin0). rewrite pfc. rewrite (msy pin0 _). apply mtr.
           assert(dist pin0 float + dist pin float + id_pin_float >= dist pin pin0 + id_pin_float).
-          apply le_two_plus_two. auto. auto. apply pofr. reflexivity. rewrite pfa in H24.
+          apply le_two_plus_two with (eqX := eqX);auto. apply pofr. reflexivity. rewrite pfa in H24.
           rewrite H20 in H24. rewrite (pfc _ x0) in H24. rewrite pfz in H24.
-          assert(dist pin0 float > eps + ieps2). apply le_lt_eq in H24. destruct H24.
-          apply lttr with (y := dist pin pin0 + id_pin_float). auto. apply le_lt_eq in H9.
+          assert(dist pin0 float > eps + ieps2).
+          destruct (le_lt_eq _ _ _ (dist pin pin0 + id_pin_float) (dist pin0 float)) as [Hex1 Hex2]. 
+          apply Hex1 in H24. destruct H24.
+          apply lttr with (y := dist pin pin0 + id_pin_float). auto.
+          destruct (le_lt_eq _ _ _ eps (dist pin pin0)) as [Hex3 Hex4]. 
+          apply Hex3 in H9.
           destruct H9. apply lt_two_plus_two. auto. auto. auto. rewrite H9.
           rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt. auto. auto. auto.
-          rewrite <- H24. apply le_lt_eq in H9. destruct H9. apply lt_two_plus_two.
+          rewrite <- H24. destruct (le_lt_eq _ _ _ eps (dist pin pin0)) as [Hex3 Hex4].
+          apply Hex3 in H9. destruct H9. apply lt_two_plus_two.
           auto. auto. auto. rewrite H9. rewrite pfc. rewrite (pfc _ id_pin_float). apply HpOt.
           auto. auto. rewrite <-Hepseq in H25. rewrite pfa in H25. rewrite H21 in H25.
           rewrite pfc in H25. rewrite pfz in H25. auto. }
@@ -464,7 +482,7 @@ Proof.
           assert(a1 == a2 /\ ~(a1 == a2)). split. auto. auto. apply PNP in H13. 
           destruct H13. apply H10 in H8.
            destruct H8. auto. }
-Qed. **)
+Qed.
 End leC_Field.
 Section plusC_playground.
 Variables X : Type.
