@@ -39,7 +39,7 @@ Class Metric {A : Type} {X : Type} (eqX : relation X) (eqA : relation A)
     (le : relation X) (plus : X -> X -> X) (x0 : X) (mof : Plus_Field eqX le plus x0) (dist : A -> A -> X):={
     mle : forall (p1 p2 : A), le x0 (dist p1 p2);
     msy : forall (p1 p2 : A), eqX (dist p1 p2) (dist p2 p1);
-    mre : forall (p1 p2 : A), eqA p1 p2 -> eqX (dist p1 p2) x0;
+    mre : forall (p1 p2 : A), eqA p1 p2 <-> eqX (dist p1 p2) x0;
     mtr : forall (p1 p2 p3 : A), le (dist p1 p3) (plus (dist p1 p2) (dist p2 p3));
     meq : forall (p1 p2 p3 p4 : A), eqA p1 p2 -> eqA p3 p4 -> eqX (dist p1 p3) (dist p2 p4);
 }.

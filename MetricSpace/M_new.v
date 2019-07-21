@@ -595,18 +595,21 @@ Proof.
     destruct HWS. apply HCseq3 with (m := n). auto. auto.
     assert(eqX a0 b). apply HCseq3 with (m := n). auto. auto.
     rewrite He. rewrite He0. rewrite H0. rewrite H2.
-    rewrite pfc. rewrite mre. auto. reflexivity.
+    rewrite pfc. pose proof mre. destruct H3 with (p1 := b + b0) (p2 := b + b0).
+    rewrite H4. auto. reflexivity.
   -intros. destruct x. destruct y. destruct z. simpl. intros. exists 0. intros. destruct H4. destruct H5.
     rewrite He. rewrite He0. destruct Ha. destruct Hb0. rewrite He2. rewrite He1.
     assert(eqX a a0). destruct H. destruct HWS. apply HCseq3 with (m := n). auto. auto.
     assert(eqX b1 a1). destruct H0. destruct HWS. apply HCseq3 with (m := n). auto.
     auto. assert(eqX b b0). destruct H1. apply HCseq3 with (m := n). auto. auto. 
-    rewrite H4. rewrite H5. rewrite H6. rewrite pfa. rewrite mre. auto.
-    reflexivity.
+    rewrite H4. rewrite H5. rewrite H6. rewrite pfa. 
+    pose proof (mre (a0 + (a1 + b0)) (a0 + (a1 + b0))) as [Hex1 Hex2].
+    rewrite Hex1. auto. reflexivity.
     -intros. destruct x. simpl. intros. exists 0. intros. destruct H2. assert(eqX a x0).
       destruct (@well_sig X eqX x0). auto. assert(@singleton X eqX x0 n x0). apply sig.
       apply HCseq3 with (m := n). auto. auto. rewrite H2 in He. rewrite pfz in He. rewrite He.
-      assert(eqX a2 b). apply HCseq3 with (m := n). auto. auto. rewrite H4. rewrite mre. auto.
+      assert(eqX a2 b). apply HCseq3 with (m := n). auto. auto. rewrite H4.
+      pose proof (mre b b) as [Hex1 Hex2];rewrite Hex1. auto.
       reflexivity.
     -intros. exists(invX x). destruct x. simpl. intros. exists 0.
       intros. assert(eqX a2 x0). destruct H3. reflexivity. symmetry;auto.
@@ -615,7 +618,7 @@ Proof.
       rewrite <-H5. unfold inv. destruct pfi_strong;auto. rewrite He0.
       assert(eqX a a0). destruct H. apply HCseq3 with (m := n);auto.
       rewrite H5. unfold inv. destruct pfi_strong. auto. rewrite H5. rewrite H4.
-      rewrite mre;[auto |reflexivity].
+      pose proof (mre x0 x0) as [Hex1 ?];rewrite Hex1;[auto |reflexivity].
     -intros. destruct a. destruct b. destruct c. destruct d. simpl.
       intros. destruct (division_of_eps _ _ _ _ _ _ eps) as [eps1];auto.
       destruct H6 as [eps2 [Heps1 [Heps2 Heq]]].
