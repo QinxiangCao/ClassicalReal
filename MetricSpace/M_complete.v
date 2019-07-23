@@ -415,6 +415,105 @@ Qed.
 Definition approx (r : CCA) (x : X) (Hb : x > zeroX) : CA :=
   con_intro _ _ _ _ _ _ (approxSeq r x Hb) (approxSeq_Cauchy r x Hb).
 
+Lemma less_sig : forall (epsC : CX), ltCX zeroCX epsC 
+      -> (exists eps : X, ltCX zeroCX (sig_inv eps) /\ ltCX (sig_inv eps) epsC).
+Proof.
+  intros. destruct H. destruct epsC. simpl in ltle. simpl in lteq.
+  destruct ltle. apply lteq in H0. destruct H0. destruct H0 as [N1].
+  apply not_all_ex_not in lteq. destruct lteq as [eps]. apply not_all_ex_not in H1. destruct H1 as [H2].
+  destruct(division_of_eps _ _ _ _ _ _ eps) as [eps1 [eps2 [Heps1 [Heps2 Heq]]]];auto.
+  destruct(division_of_eps _ _ _ _ _ _ eps1) as [epsex1 [epsex2 [Hex1 [Hex2 Hexeq]]]];auto.
+  destruct H. destruct HCA with (eps := epsex1) as [N3];auto.
+  destruct(always_greater N1 N3) as [N2[? ?]].
+  apply not_ex_all_not with (n := N2) in H1. apply not_all_ex_not in H1. destruct H1 as [N4].
+  apply not_all_ex_not in H1. destruct H1 as [H5]. apply not_all_ex_not in H1. destruct H1 as [a1].
+  apply not_all_ex_not in H1 as [a2]. apply not_all_ex_not in H1 as [H6]. apply not_all_ex_not in H1 as[H7].
+  apply lt_not in H1. assert(eqX a1 zeroX). pose proof (@well_sig X eqX zeroX _). destruct H8.
+  apply HCseq3 with (m := N4);auto. apply sig. rewrite H8 in H1. rewrite distX_eq_strong in H1.
+   exists eps2.
+  split. split. simpl. right. exists 0. intros. assert(eqX a0 zeroX).
+  pose proof (@well_sig X eqX zeroX _). destruct H12. 
+  apply(HCseq3 n a0 zeroX);auto. apply sig. assert(eqX a3 eps2).
+  pose proof (@well_sig X eqX eps2 _). destruct H13.
+  apply (HCseq3 n a3 eps2);auto. apply sig.
+  rewrite H12, H13. auto. unfold not. intros.
+  simpl in H9. assert(distX zeroX eps2 >= eps2). rewrite distX_eq_strong.
+  apply pofr. reflexivity. destruct (H9 eps2) as [N]. auto.
+  destruct H11 with (n := (S N)) (a1 :=  zeroX) (a2 := eps2). omega.
+  apply sig. apply sig.
+  assert(~(eps2 > distX zeroX eps2) /\ (eps2 > distX zeroX eps2)).
+  split. apply lt_not;auto. apply lt_intro;auto.
+  destruct H12. apply H12. auto. split. simpl. right.
+  exists N2. intros. assert(eqX eps2 a0). pose proof (@well_sig _ _ eps2 _).
+  destruct H12. apply (HCseq3 n);auto. apply sig. rewrite <-H12.
+  destruct H with (m := n) (n := N4) (a := a3) (b := a2). split.
+  apply (lt_trans _ N2 _);auto. apply (lt_trans _ N2 _);auto. split.
+  auto. auto. assert(epsex1 > distX a3 a2). apply lt_intro;auto.
+  assert(distX a2 zeroX >= eps). rewrite msy,distX_eq_strong.
+  auto. destruct (pfi epsex1) as [iepsex1].
+  assert(distX zeroX a3 + distX a3 a2 >= distX zeroX a2).
+  apply mtr. destruct(pfi (distX a3 a2)) as [id32].
+  assert(distX zeroX a3 + distX a3 a2 + id32 >=distX zeroX a2 + id32).
+  apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
+  apply pofr;reflexivity. rewrite pfa, H17,(pfc _ zeroX), pfz in H18.
+  assert(id32 > iepsex1). 
+  pose proof (lt_inv X eqX _ leX plusX zeroX (distX a3 a2) epsex1 id32 iepsex1). 
+  destruct H19 ;auto. apply lt_intro;apply H13. apply lt_intro;auto.
+  assert(distX zeroX a2 + id32 > eps + iepsex1). destruct (le_lt_eq _ _ _ eps (distX zeroX a2)).
+  rewrite msy in H14. apply H20 in H14. destruct H14.
+  pose proof (lt_two_plus_two X eqX _ leX plusX zeroX eps iepsex1 (distX zeroX a2) id32).
+  destruct H22. apply lt_intro;apply H14. apply lt_intro;apply H19. apply lt_intro; auto.
+  rewrite <-H14. rewrite pfc, (pfc eps _). pose proof (HpOt X eqX _ leX plusX _ iepsex1 id32 eps).
+  destruct H22. apply lt_intro;apply H19. apply lt_intro;auto.
+  rewrite <-Heq in H20. rewrite pfc, <-pfa, (pfc iepsex1 _), <-Hexeq in H20.
+  rewrite (pfa epsex1 epsex2 iepsex1), (pfc epsex2),<-pfa, H15 ,pfz in H20.
+  assert(distX zeroX a3 > epsex2 + eps2).
+  pose proof (le_lt_eq X eqX leX (distX zeroX a2 + id32) (distX zeroX a3)). apply H21 in H18.
+  destruct H18. apply lttr with (y := distX zeroX a2 + id32);auto.
+  rewrite <-H18;apply lt_intro;apply H20. rewrite distX_eq_strong in H21.
+  apply lttr with (y := epsex2 + eps2);auto.
+  pose proof (lt_div X eqX _ leX plusX _ eps2 (epsex2) (epsex2 + eps2)). destruct H22.
+  rewrite pfc;reflexivity. auto. auto. apply lt_intro;auto. apply lt_intro;apply H21.
+  simpl. unfold not. intros.
+  destruct H9 with (eps := epsex2) as [N];auto.
+  destruct (always_greater N N2) as [G [? ?]]. destruct HWS. destruct (HCseq1 G) as [a3].
+  destruct (@well_sig X eqX eps2);auto. destruct (HCseq0 G) as [a4].
+  destruct H10 with (n := G) (a1 := a4) (a2 := a3);auto.
+   assert(epsex2 > distX a4 a3). apply lt_intro;auto.
+  destruct H with (m := N4) (n := G) (a := a2) (b := a3).
+  split. apply (lt_trans _ N2 _);auto. apply (lt_trans _ N2 _);auto. split;auto.
+  assert(epsex1 > distX a2 a3). apply lt_intro;auto. assert(distX a2 zeroX >= eps).
+  rewrite msy, distX_eq_strong;auto. assert(eqX a4 eps2).
+  pose proof (@well_sig X eqX eps2 _). destruct H18. apply HCseq8 with (m := G);auto.
+  apply sig. rewrite H18 in H15. assert(distX eps2 a2 < eps1).
+  assert(distX eps2 a2 <= distX eps2 a3 + distX a3 a2). apply mtr.
+  rewrite (msy a3 _) in H19. assert(distX eps2 a3 + distX a2 a3 < eps1).
+  rewrite <-Hexeq. rewrite pfc.
+  pose proof (lt_two_plus_two X eqX _ leX plusX _ (distX a2 a3) (distX eps2 a3) epsex1 epsex2).
+  destruct H20. apply lt_intro; apply H16. apply lt_intro; apply H15. apply lt_intro;auto.
+  pose proof (le_lt_eq X eqX leX (distX eps2 a2) (distX eps2 a3 + distX a2 a3)).
+  apply H21 in H19. destruct H19. apply lttr with (y := distX eps2 a3 + distX a2 a3);auto.
+  rewrite H19. auto. destruct(pfi eps1) as [ieps1]. destruct(pfi (distX eps2 a2)) as [id22].
+  assert(ieps1 < id22). pose proof (lt_inv X eqX _ leX plusX _  (distX eps2 a2) eps1 id22 ieps1).
+  destruct H22;auto. apply lt_intro;apply H19. apply lt_intro;auto.
+  assert(distX eps2 zeroX + distX eps2 a2 >= distX a2 zeroX). rewrite pfc, (msy _ a2). apply mtr.
+  assert(distX eps2 zeroX + distX eps2 a2 + id22 > distX a2 zeroX + ieps1).
+  destruct (le_lt_eq _ _ _ (distX a2 zeroX) (distX eps2 zeroX + distX eps2 a2)).
+  apply H24 in H23. destruct H23.
+  destruct (lt_two_plus_two X eqX _ leX plusX _ (distX a2 zeroX) ieps1 (distX eps2 zeroX + distX eps2 a2) id22). 
+  apply lt_intro;apply H23. apply lt_intro;apply H22. apply lt_intro;auto.
+  rewrite <-H23. rewrite (pfc (distX a2 zeroX) _),(pfc (distX a2 zeroX) _).
+  pose proof (@HpOt X eqX _ leX plusX _ _ ieps1 id22 (distX a2 zeroX)). destruct H26.
+  apply lt_intro;apply H22. apply lt_intro;auto. rewrite pfa , H21, (pfc _ zeroX), pfz in H24.
+  assert(distX a2 zeroX + ieps1 >= eps + ieps1).
+  apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto. apply pofr;reflexivity.
+  rewrite <-Heq in H25. rewrite (pfc eps1 _), pfa, H20, (pfc _ zeroX), pfz in H25.
+  assert(distX eps2 zeroX > eps2). pose proof (le_lt_eq _ _ _ eps2 (distX a2 zeroX + ieps1)).
+  apply H26 in H25. destruct H25. apply lttr with (y := distX a2 zeroX + ieps1);auto.
+  rewrite <-H25 in H24;auto. rewrite msy, distX_eq_strong in H26.
+  pose proof (ltre X eqX _ leX eps2). apply H27, H26. auto.
+Qed.
+
 Theorem Complete : exists (f : CA -> CCA),(forall (r : CCA), (exists (p : CA), 
         equCCA (f p) r)).
 Proof.
