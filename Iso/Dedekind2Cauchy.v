@@ -16,11 +16,15 @@ From Coq Require Import Classes.Morphisms.
 From CReal Require Import Dedekind.RBase.
 From CReal Require Import Dedekind.ROrder.
 From CReal Require Import Dedekind.RArith.
-Require Import CReal.Cauchy.RBase.
+From CReal Require Import Cauchy.RBase.
+From CReal Require Import Cauchy.RArith.
+From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
 
 Module C := Cauchy.RBase.
+Module C2 := Cauchy.ROrder.
+Module C3 := Cauchy.RArith.
 Module D1 := Dedekind.RBase.
 Module D2 := Dedekind.ROrder.
 Module D3 := Dedekind.RArith.
@@ -38,12 +42,12 @@ Real_intro (fun n q=>exists N:Z,DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat
 (Cauchy_Dcut DCut H) end.
 
 Theorem C2D_properity1:forall (x y:D1.Real),
- C.Real_equiv(C.Rplus (D2C x)(D2C y))(D2C (D3.Rplus x y)).
+ C.Real_equiv(C3.Rplus (D2C x)(D2C y))(D2C (D3.Rplus x y)).
 Proof.
 Admitted.
 
 Theorem C2D_properity2:forall (x y:D1.Real),
- C.Real_equiv (C.Rmult(D2C x)(D2C y))(D2C (D3.Rmult x y)).
+ C.Real_equiv (C3.Rmult(D2C x)(D2C y))(D2C (D3.Rmult x y)).
 Proof.
 Admitted.
 
