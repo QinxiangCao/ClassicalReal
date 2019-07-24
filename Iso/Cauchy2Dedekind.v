@@ -16,11 +16,15 @@ From Coq Require Import Classes.Morphisms.
 From CReal Require Import Dedekind.RBase.
 From CReal Require Import Dedekind.ROrder.
 From CReal Require Import Dedekind.RArith.
-Require Import CReal.Cauchy.RBase.
+From CReal Require Import Cauchy.RBase.
+From CReal Require Import Cauchy.RArith.
+From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
 
 Module C := Cauchy.RBase.
+Module C2 := Cauchy.ROrder.
+Module C3 := Cauchy.RArith.
 Module D1 := Dedekind.RBase.
 Module D2 := Dedekind.ROrder.
 Module D3 := Dedekind.RArith.
@@ -41,7 +45,7 @@ Proof.
 Admitted.
 
 Theorem C2D_properity2:forall (x y:C.Real),
-  (D3.Rmult(C2D x)(C2D y))==C2D (C.Rmult x y).
+  (D3.Rmult(C2D x)(C2D y))==C2D (C3.Rmult x y).
 Proof.
 Admitted.
 

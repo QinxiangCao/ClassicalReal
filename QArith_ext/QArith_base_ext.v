@@ -313,3 +313,72 @@ Proof.
     unfold not. intros. apply Qlt_not_eq in H1. destruct H1. rewrite H4. reflexivity.
     unfold not. intros. apply Qlt_not_eq in H3. destruct H3. rewrite H4. reflexivity. } auto.
 Qed.
+
+Lemma Qplus_le_lt_compat:forall x y z t, x<=y -> z<t -> x+z < y+t.
+Proof. intros.
+  rewrite (Qplus_comm x). rewrite (Qplus_comm y).
+  apply Qplus_lt_le_compat.
+  auto. auto.
+Qed.
+
+Lemma Qopp_Qlt_compat: forall p q, p<q -> -q < -p.
+Proof. intros. apply (Qplus_lt_r _ _ (p+q)).
+  rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
+  rewrite Qplus_0_r. rewrite Qplus_comm.
+  rewrite Qplus_assoc. rewrite (Qplus_comm _ p). rewrite Qplus_opp_r.
+  rewrite Qplus_0_l. auto.
+Qed.
+
+Lemma Qle_lt_minus (a b c d:Q): a <= b -> c < d -> a - d < b - c.
+Proof. intros.
+  apply Qplus_le_lt_compat. auto. apply Qopp_Qlt_compat. auto.
+Qed.
+
+
+Lemma Qdiv_lt_compat (a b c :Q): c> 0 ->a < b ->  a/c < b/c.
+Proof. intros. apply Qinv_lt_0_compat in H.
+  apply (Qmult_lt_r _ _ _ H). auto.
+Qed.
+
+
+Lemma Qdiv_le_compat (a b c :Q):  c> 0 ->a <= b -> a/c <= b/c.
+Proof. intros. apply Qinv_lt_0_compat in H.
+  apply (Qmult_le_r _ _ _ H). auto.
+Qed.
+
+
+Lemma Qabs_Qlt_condition x y: Qabs x < y <-> -y < x /\ x < y.
+Proof.
+ split.
+  split.
+   rewrite <- (Qopp_opp x).
+   apply Qopp_lt_compat.
+   apply Qle_lt_trans with (Qabs (-x)).
+   apply Qle_Qabs.
+   now rewrite Qabs_opp.
+  apply Qle_lt_trans with (Qabs x); auto using Qle_Qabs.
+ intros (H,H').
+ apply Qabs_case; trivial.
+ intros. rewrite <- (Qopp_opp y). now apply Qopp_lt_compat.
+Qed.
+
+
+Lemma Qabs_diff_Qlt_condition:
+  forall x y r : Q, Qabs (x - y) < r <-> (x - r < y /\ y < x + r)%Q.
+Proof.
+ intros. unfold Qminus.
+ rewrite Qabs_Qlt_condition.
+ rewrite <- (Qplus_lt_l (-r) (x+-y) (y+r)).
+ rewrite <- (Qplus_lt_l (x+-y) r (y-r)).
+ setoid_replace (-r + (y + r)) with y by ring.
+ setoid_replace (r + (y - r)) with y by ring.
+ setoid_replace (x + - y + (y + r)) with (x + r) by ring.
+ setoid_replace (x + - y + (y - r)) with (x - r) by ring.
+ intuition.
+Qed.
+
+Lemma max_lt_lub_l: forall n m p, (max n m < p -> n < p)%nat.
+Proof. intros. apply (le_lt_trans _ (max n m)).
+  apply Nat.le_max_l. auto.
+Qed.
+
