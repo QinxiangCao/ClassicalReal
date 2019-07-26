@@ -13,16 +13,14 @@ Proof. intros.
     apply Qabs_triangle.
 Qed.
 Lemma eps_divide_2_positive: forall (eps:Q), 0 < eps -> eps * (1 # 2) > 0.
-Proof. intros. unfold Qmult. unfold Qlt. simpl.
-    rewrite <- Zmult_assoc. simpl. apply H.
-Qed.
+Proof. intros. lra. Qed.
 
 Lemma eps_divide_2M_positive: forall (eps M:Q), 0 < eps -> 0 < M -> eps * (1 # 2) *(/M) > 0.
-Proof. intros.
-  apply (Qmult_lt_r _ _ _ H0). rewrite Qmult_0_l.
-  rewrite <- (Qmult_assoc (eps * (1 # 2))). rewrite (Qmult_comm _ M). rewrite Qmult_inv_r.
-  rewrite Qmult_1_r. apply eps_divide_2_positive. apply H.
-  intros contra. rewrite contra in H0. discriminate.
+Proof.
+  intros. 
+  apply (Qmult_lt_r _ _ _ H0).
+  pose proof Qmult_inv_r M ltac:(lra).
+  rewrite <- !Qmult_assoc. rewrite (Qmult_comm (/M) M), H1. lra.
 Qed.
 Lemma Qabs_0: forall q, Qabs q == 0 -> q==0.
 Proof. intros. assert (Qabs q <= 0) by lra.
@@ -116,56 +114,19 @@ Qed.
 
 Lemma Qmult_lt_compat : forall x y z t : Q,
 0 <= x -> 0 <= z -> x < y -> z < t -> x * z < y * t .
-Proof.
-  intros. apply Qle_lt_trans with (y:= y*z).
-  - apply Qmult_le_compat_r. apply Qlt_le_weak. auto. auto.
-  - rewrite Qmult_comm. rewrite (Qmult_comm y t).
-    apply Qmult_lt_compat_r.
-    apply Qle_lt_trans with (y:=x). auto. auto. auto.
-Qed.
+Proof. intros. nra. Qed.
 
 Lemma Qplus_opp_assoc : forall x y : Q, (-(x + y)== - x + - y)%Q.
-Proof.
-  intros. rewrite <- Qplus_inj_l with (z:=(x+y)).
-  rewrite Qplus_opp_r. rewrite (Qplus_comm x y).
-  rewrite <- Qplus_assoc. rewrite (Qplus_assoc x (-x) (-y)).
-  rewrite Qplus_opp_r. rewrite Qplus_0_l. rewrite Qplus_opp_r.
-  reflexivity.
-Qed.
+Proof. intros. nra. Qed.
 
 Lemma Qdensity : forall p q : Q, p<q-> exists x : Q, p<x/\x<q.
-Proof.
-  intros. exists ((p+q)/(2#1)). split.
-  - apply Qlt_shift_div_l. reflexivity.
-    assert(p * (2 # 1)==p+p)%Q.
-    { rewrite <- Qmult_inj_r with (z:=/(2#1)).
-    { assert(p * (2 # 1) * / (2 # 1)==p)%Q.
-    { apply Qdiv_mult_l. unfold not. intros. inversion H0. }
-      rewrite H0. rewrite Qmult_plus_distr_l.
-      rewrite <- Qdiv2. reflexivity. }
-    { unfold not. intros. inversion H0. } }
-    rewrite H0. rewrite Qplus_lt_r. auto.
-  - apply Qlt_shift_div_r. reflexivity.
-    assert(q * (2 # 1)==q+q)%Q.
-    { rewrite <- Qmult_inj_r with (z:=/(2#1)).
-    { assert(q * (2 # 1) * / (2 # 1)==q)%Q.
-    { apply Qdiv_mult_l. unfold not. intros. inversion H0. }
-      rewrite H0. rewrite Qmult_plus_distr_l.
-      rewrite <- Qdiv2. reflexivity. }
-    { unfold not. intros. inversion H0. } }
-    rewrite H0. rewrite Qplus_lt_l. auto.
-Qed.
+Proof. intros. exists ((p+q)*(1#2)). lra. Qed.
 
 Lemma Qlt_mult0 : forall x y : Q, 0 < x -> 0 < y -> 0 < x * y.
-Proof.
-  intros. rewrite <- (Qmult_0_r 0).
- apply Qmult_lt_compat; try apply Qle_refl;try auto.
-Qed.
+Proof. intros. nra. Qed.
 
 Lemma Qmult_le_compat_l: forall x y z : Q, x <= y -> 0 <= z -> z * x <= z * y.
-Proof.
-  intros. rewrite Qmult_comm. rewrite (Qmult_comm z y). apply Qmult_le_compat_r. auto. auto.
-Qed.
+Proof. intros. nra. Qed.
 
 Lemma Qdiv_lt_P : forall x y : Q , x > 0 -> x < y -> /y < /x.
 Proof.
@@ -192,13 +153,7 @@ Proof.
 Qed.
 
 Lemma Qmult_opp_assoc : forall x y : Q, -x*-y==x*y.
-Proof.
-  intros.
-  rewrite <- Qplus_inj_l with (z:=x*-y).
-  rewrite <- Qmult_plus_distr_r. rewrite <- Qmult_plus_distr_l.
-  rewrite Qplus_opp_r. rewrite Qplus_comm. rewrite Qplus_opp_r.
-  rewrite Qmult_0_r. apply Qmult_0_l.
-Qed.
+Proof. intros. nra. Qed.
 
 Lemma Qinv_0_le_compat: forall a : Q, a < 0 -> / a <= 0.
 Proof.
@@ -214,13 +169,7 @@ Proof.
 Qed.
 
 Lemma Qmult_opp_assoc_l : forall x y : Q, -(x*y)==-x*y.
-Proof.
-  intros. 
-  rewrite <- Qplus_inj_l with (z:=x*y).
-  rewrite <- Qmult_plus_distr_l.
-  rewrite Qplus_opp_r. rewrite Qplus_opp_r.
-  rewrite Qmult_0_l. reflexivity.
-Qed.
+Proof. intros. nra. Qed.
 
 Lemma Qinv_opp : forall a:Q,(~a==0->-/a==/-a)%Q.
 Proof.
@@ -276,37 +225,23 @@ Proof.
 Qed.
 
 Lemma Qplus_le_lt_compat:forall x y z t, x<=y -> z<t -> x+z < y+t.
-Proof. intros.
-  rewrite (Qplus_comm x). rewrite (Qplus_comm y).
-  apply Qplus_lt_le_compat.
-  auto. auto.
-Qed.
+Proof. intros. lra. Qed.
 
 Lemma Qopp_Qlt_compat: forall p q, p<q -> -q < -p.
-Proof. intros. apply (Qplus_lt_r _ _ (p+q)).
-  rewrite <- Qplus_assoc. rewrite Qplus_opp_r.
-  rewrite Qplus_0_r. rewrite Qplus_comm.
-  rewrite Qplus_assoc. rewrite (Qplus_comm _ p). rewrite Qplus_opp_r.
-  rewrite Qplus_0_l. auto.
-Qed.
+Proof. intros. lra. Qed.
 
 Lemma Qle_lt_minus (a b c d:Q): a <= b -> c < d -> a - d < b - c.
-Proof. intros.
-  apply Qplus_le_lt_compat. auto. apply Qopp_Qlt_compat. auto.
-Qed.
-
+Proof. intros. lra. Qed.
 
 Lemma Qdiv_lt_compat (a b c :Q): c> 0 ->a < b ->  a/c < b/c.
 Proof. intros. apply Qinv_lt_0_compat in H.
   apply (Qmult_lt_r _ _ _ H). auto.
 Qed.
 
-
 Lemma Qdiv_le_compat (a b c :Q):  c> 0 ->a <= b -> a/c <= b/c.
 Proof. intros. apply Qinv_lt_0_compat in H.
   apply (Qmult_le_r _ _ _ H). auto.
 Qed.
-
 
 Lemma Qabs_Qlt_condition x y: Qabs x < y <-> -y < x /\ x < y.
 Proof.
