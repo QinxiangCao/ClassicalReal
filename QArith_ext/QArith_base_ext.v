@@ -5,13 +5,30 @@ From Coq Require Import QArith.Qminmax.
 From Coq Require Import Logic.Classical.
 From Coq Require Import micromega.Psatz.
 
+Ltac elim_Qabs_pre x :=
+  pose proof Qabs_pos x;
+  pose proof Qabs_neg x;
+  first
+    [ let y := fresh x in
+      set (y := Qabs x) in *;
+      clearbody y
+    | let y := fresh "q" in
+      set (y := Qabs x) in *;
+      clearbody y ].
+
+Ltac elim_Qabs :=
+  match goal with
+  | |- context [Qabs ?x] => elim_Qabs_pre x
+  | H: context [Qabs ?x] |- _ => elim_Qabs_pre x
+  end.
+
+Ltac lra_Qabs := repeat elim_Qabs; lra.
+Ltac nra_Qabs := repeat elim_Qabs; nra.
+
 Lemma Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
    Qabs (a - b) + Qabs (b - c).
-Proof. intros.
-    assert (Heq: a - c == (a - b) + (b - c)) by ring.
-    rewrite Heq.
-    apply Qabs_triangle.
-Qed.
+Proof. intros. lra_Qabs. Qed.
+
 Lemma eps_divide_2_positive: forall (eps:Q), 0 < eps -> eps * (1 # 2) > 0.
 Proof. intros. lra. Qed.
 
@@ -22,10 +39,9 @@ Proof.
   pose proof Qmult_inv_r M ltac:(lra).
   rewrite <- !Qmult_assoc. rewrite (Qmult_comm (/M) M), H1. lra.
 Qed.
+
 Lemma Qabs_0: forall q, Qabs q == 0 -> q==0.
-Proof. intros. assert (Qabs q <= 0) by lra.
-apply Qabs_Qle_condition in H0. lra.
-Qed.
+Proof. intros. lra_Qabs. Qed.
 
 Lemma Qnot_0_abs: forall (q:Q), ~(q==0) -> ~(Qabs q == 0).
 Proof.
@@ -244,34 +260,11 @@ Proof. intros. apply Qinv_lt_0_compat in H.
 Qed.
 
 Lemma Qabs_Qlt_condition x y: Qabs x < y <-> -y < x /\ x < y.
-Proof.
- split.
-  split.
-   rewrite <- (Qopp_opp x).
-   apply Qopp_lt_compat.
-   apply Qle_lt_trans with (Qabs (-x)).
-   apply Qle_Qabs.
-   now rewrite Qabs_opp.
-  apply Qle_lt_trans with (Qabs x); auto using Qle_Qabs.
- intros (H,H').
- apply Qabs_case; trivial.
- intros. rewrite <- (Qopp_opp y). now apply Qopp_lt_compat.
-Qed.
-
+Proof. intros. lra_Qabs. Qed.
 
 Lemma Qabs_diff_Qlt_condition:
   forall x y r : Q, Qabs (x - y) < r <-> (x - r < y /\ y < x + r)%Q.
-Proof.
- intros. unfold Qminus.
- rewrite Qabs_Qlt_condition.
- rewrite <- (Qplus_lt_l (-r) (x+-y) (y+r)).
- rewrite <- (Qplus_lt_l (x+-y) r (y-r)).
- setoid_replace (-r + (y + r)) with y by ring.
- setoid_replace (r + (y - r)) with y by ring.
- setoid_replace (x + - y + (y + r)) with (x + r) by ring.
- setoid_replace (x + - y + (y - r)) with (x - r) by ring.
- intuition.
-Qed.
+Proof. intros. lra_Qabs. Qed.
 
 Lemma max_lt_lub_l: forall n m p, (max n m < p -> n < p)%nat.
 Proof. intros. apply (le_lt_trans _ (max n m)).
