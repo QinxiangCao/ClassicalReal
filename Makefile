@@ -1,5 +1,4 @@
 CURRENT_DIR=.
-COQBIN= /cygdrive/c/Coq/bin/
 
 -include CONFIGURE
 

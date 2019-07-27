@@ -3,4 +3,5 @@
 *.v.d
 *.aux
 .depend
+*.cache
 CONFIGURE
