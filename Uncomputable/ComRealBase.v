@@ -17,47 +17,10 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Classes.Equivalence.
 From Coq Require Import Classes.Morphisms.
 From Coq Require Export Field.
+From Coq Require Export Omega.
+From CReal Require Export Uncomputable.TMSet.
 Import ListNotations.
-
-(** The definition of Turing machine *)
-Parameter A : Type.
-Parameter TM : nat -> nat -> nat.
-Parameter TM_input : nat -> A -> nat -> nat.
-Definition Halting : Type := forall i : nat , {exists j, TM i j = 1%nat} + {forall j , TM i j = 0%nat}.
-Definition Halting_easy : Type := exists f : Halting , True.
-Definition Halting_easy' : Type := forall i : nat , exists f : ({exists j, TM i j = 1%nat} + {forall j , TM i j = 0%nat}), True.
-(** forall n,exists b : {P n} +{~ P n} , True *)
-
-Theorem Halting_arrow : Halting -> Halting_easy.
-Proof.
-  unfold Halting_easy.
-  unfold Halting.
-  intros.
-  exists H ; auto.
-Qed.
-
-Theorem Halting_arrow' : Halting_easy -> Halting_easy'.
-Proof.
-  unfold Halting_easy.
-  unfold Halting_easy'.
-  unfold Halting.
-  intros.
-  destruct H.
-  exists (x i) ; auto.
-Qed.
-
-Axiom Turing_proper0 : forall (i j : nat) , TM i j = 0%nat \/ TM i j = 1%nat.
-Axiom Turing_proper1 : forall (i j k: nat), (j <= k)%nat -> TM i j = 1%nat -> TM i k = 1%nat.
-Theorem Turing_proper2 : forall (i j k: nat), (k <= j)%nat -> TM i j = 0%nat -> TM i k = 0%nat.
-Proof.
-  unfold not in *.
-  intros.
-  destruct (Turing_proper0 i k) ; auto.
-  apply (Turing_proper1 i k j) in H1 ; auto.
-  rewrite H0 in H1.
-  discriminate H1.
-Qed.
-
+Import TM_0_0.
 Module Type Vir_R.
   Parameter R : Type.
   Delimit Scope R_scope with R.
@@ -548,7 +511,7 @@ Module Type Vir_R.
   Definition CR2 (r : R) := exists f : nat -> Q, limit f r.
   (** exists a Cauthy sequence of rational number limits to r *)
   Definition CR3 (r : R) :=
-      {f : nat -> Q & {N : Q -> nat | limit f r /\ (forall eps : Q , forall (n m : nat) , (n >= N eps)%nat /\ (n >= 1) %nat -> (m >= n)%nat -> (Qabs(f n - f m) < eps)%Q)} }.
+      {f : nat -> Q & {N : Q -> nat | limit f r /\ (forall eps : Q , (eps > 0)%Q -> forall (n m : nat) , (n >= N eps)%nat /\ (n >= 1) %nat -> (m >= n)%nat -> (Qabs(f n - f m) < eps)%Q)} }.
  
   Theorem CR1_CR : forall r : R , CR1 r -> CR r.
   Proof.
@@ -575,7 +538,7 @@ Module Type Vir_R.
  
   Axiom sum_f_limit_r : forall (f : nat -> nat) (r : R) , limit (sum_f f) r <-> (forall n : nat , Bin_R r n (f n)).
   
-  Axiom sum_f_limit_eps : forall (f : nat -> nat) (r : R) (n m : nat) , (n <= m) % nat -> (Qabs(sum_f f n - sum_f f m) < 1%Z # Pos.of_nat (2^n))%Q.
+  Axiom sum_f_limit_eps : forall (f : nat -> nat)(n m : nat) , (n <= m) % nat -> (Qabs(sum_f f n - sum_f f m) < 1%Z # Pos.of_nat (2^n))%Q.
 
   Theorem CR_CR2 : forall r : R , CR r -> CR2 r.
   Proof.
@@ -587,6 +550,14 @@ Module Type Vir_R.
     rewrite sum_f_limit_r.
     apply H.
   Qed.
+
+  Lemma Mult_pow2 : forall n : nat,(2 ^ (S n) = 2 ^ n * 2)%nat.
+  Proof.
+    intros.
+    replace (S n) with ((n + 1)%nat).
+    - apply Nat.pow_add_r.
+    - apply Nat.add_1_r.
+  Qed.
   
   Lemma Max_powSn_1 : forall n : nat , ( n >= 1 -> 2 ^ n > 1)%nat.
   Proof.
@@ -596,7 +567,8 @@ Module Type Vir_R.
     - assert (H' : forall p : nat , (2 ^ p > 0) %nat).
       { intros. induction p.
         + simpl. apply Nat.lt_0_1.
-        + simpl. rewrite <- plus_n_O. apply lt_plus_trans ; auto.  
+        + rewrite Mult_pow2.
+          apply Nat.mul_pos_pos ; auto.
       }
       simpl. rewrite <- plus_n_O.
       apply Nat.lt_le_trans with (m := (1 + 2 ^ n) % nat).
@@ -622,20 +594,11 @@ Module Type Vir_R.
     - apply plus_lt_compat_r. auto.
   Qed.
 
-  Lemma ge_pow_ge : forall n: nat , (n >= 1 -> 2 ^ n > n)%nat.
+  Lemma ge_pow_ge : forall n: nat , (2 ^ n > n)%nat.
   Proof.
     intros.
-    induction n.
-    - simpl. inversion H.
-    - simpl. destruct n.
-      + simpl. apply Nat.lt_succ_diag_r.
-      + rewrite <- plus_n_O.
-        replace (S (S n))%nat with ((S n) + 1)%nat.
-        * apply nat_lt_four.
-          apply IHn. apply le_n_S. apply Nat.le_0_l. 
-          apply Max_powSn_1.
-          apply le_n_S. apply Nat.le_0_l.
-        * simpl. rewrite Nat.add_1_r. reflexivity.
+    apply Nat.pow_gt_lin_r.
+    auto.
   Qed.
   
   Lemma Z_le_lt_trans : forall z1 z2 z3 :Z , (z1 <= z2 -> z2 < z3 -> z1 < z3)%Z.
@@ -648,8 +611,10 @@ Module Type Vir_R.
     - inversion H.
   Qed.
   
-  Axiom eps_lemma : forall eps : Q , (1 # Pos.of_nat (2 ^ S (Pos.to_nat (Qden eps) / Z.to_nat (Qnum eps))) <
+  Lemma eps_lemma : forall eps : Q , (eps > 0)%Q -> (1 # Pos.of_nat (2 ^ S (Pos.to_nat (Qden eps) / Z.to_nat (Qnum eps))) <
  eps)%Q.
+  Proof.
+  Admitted.
   
   Theorem CR1_CR3 : forall r : R , CR1 r -> CR3 r.
   Proof.
@@ -672,14 +637,15 @@ Module Type Vir_R.
           repeat rewrite Nat2Pos.id_max.
           replace (max 1 (2 ^ n))%nat with (2 ^ n)%nat.
           destruct H.
-          pose proof ge_pow_ge n H1.
+          destruct H0.
+          pose proof ge_pow_ge n.
           apply le_lt_trans with (m := n) ; auto.
           apply Nat.max_lub ; auto.
           symmetry.
           apply max_r.
           apply Nat.lt_le_incl.
-          apply Max_powSn_1. apply H.
-      + apply eps_lemma.
+          apply Max_powSn_1. apply H0.
+      + apply eps_lemma. auto.
   Qed.
   
   Parameter TM'r : nat -> R.
@@ -851,6 +817,190 @@ Module Type Vir_R.
       + apply eq_add_S in H. discriminate H.
       + discriminate H.
   Qed.
+  
+  Parameter Dec_R : R -> nat -> nat -> Prop.
+  Parameter TM'r' : nat -> R.
+  Axiom TM'r'_pro : forall (n m: nat), Dec_R (TM'r' n) m (TM m n).
+  Axiom Dec_TM'r'_pro1 : forall (n m: nat), Dec_R (TM'r' n) m 1 <-> ~ Dec_R (TM'r' n) m 0.
+  Axiom Dec_TM'r'_pro1' : forall (n m: nat), Dec_R (TM'r' n) m 0 <-> ~ Dec_R (TM'r' n) m 1.
+  Theorem TM'r'_pro0 : forall (n m : nat), Dec_R (TM'r' n) m 1 <-> TM m n = 1%nat.
+  Proof.
+    intros.
+    pose proof TM'r'_pro n m.
+    unfold not in *.
+    split ; intros. 
+    - apply Dec_TM'r'_pro1 in H0 ; auto.
+      destruct (Turing_proper0 m n) ; auto.
+      rewrite H1 in H. exfalso. apply H0 ; auto.
+    - rewrite H0 in H; auto.
+  Qed.
+
+  Theorem TM'r'_pro0' : forall (n m : nat), Dec_R (TM'r' n) m 0 <-> TM m n = 0%nat.
+  Proof.
+    intros.
+    pose proof TM'r'_pro n m.
+    unfold not in *.
+    split ; intros. 
+    - apply Dec_TM'r'_pro1' in H0 ; auto.
+      destruct (Turing_proper0 m n) ; auto.
+      rewrite H1 in H. exfalso. apply H0 ; auto.
+    - rewrite H0 in H; auto.
+  Qed.
+
+  Theorem TM'r'_pro1 : forall (n m : nat) , Dec_R (TM'r' n) m 1 -> (forall (r : nat) , (r >= n)%nat -> Dec_R (TM'r' r) m 1).
+  Proof.
+    intros.
+    apply TM'r'_pro0 in H.
+    apply TM'r'_pro0.
+    pose proof Turing_proper1 m n r.
+    apply H1 ; auto.
+  Qed.
+  
+  Theorem TM'r'_pro1' : forall (n m : nat) , Dec_R (TM'r' n) m 0 -> (forall (r : nat) , (r <= n)%nat -> Dec_R (TM'r' r) m 0).
+  Proof.
+    intros.
+    apply TM'r'_pro0' in H.
+    apply TM'r'_pro0'.
+    pose proof Turing_proper2 m n r.
+    apply H1 ; auto.
+  Qed.
+
+  Parameter limitTM'r' : R.
+  Axiom limit_of_TM'r' : Un_cv TM'r' limitTM'r'.
+  Axiom Dec_Q : forall (q : Q) (n:nat) , {Dec_R (QTR q) n 0} + {~Dec_R (QTR q) n 0}.
+  Axiom limit_TM'r'_pro_pre : forall (f : nat -> Q) (n n0 m : nat), limit f limitTM'r' -> 
+      (Qabs (f n0 - f m) < 1 # Pos.of_nat (10 ^ n))%Q -> (Dec_R (QTR(f n0)) n 0 <-> Dec_R limitTM'r' n 0).
+  Axiom Dec_limitTM'r'_pro1 : forall (m: nat), Dec_R limitTM'r' m 1 <-> ~ Dec_R limitTM'r' m 0.
+  Axiom Dec_limitTM'r'_pro1' : forall (m: nat), Dec_R limitTM'r' m 0 <-> ~ Dec_R limitTM'r' m 1.
+  Axiom limitTM'r'_pro : forall (n : nat) , Dec_R limitTM'r' n 1 <-> exists j : nat , TM n j = 1%nat.
+  Theorem limitTM'r'_pro' : forall (n : nat) , Dec_R limitTM'r' n 0 <-> forall j : nat , TM n j = 0%nat. 
+  Proof.
+    intros.
+    pose proof limitTM'r'_pro n.
+    unfold not in *.
+    split ; intros.
+    - destruct (Turing_proper0 n j) ; auto.
+      apply Dec_limitTM'r'_pro1 in H0 ; try inversion H0. 
+      apply H. exists j ; auto. 
+    - apply Dec_limitTM'r'_pro1'. unfold not . intros.
+      apply H in H1.
+      destruct H1.
+      rewrite (H0 x) in H1.
+      discriminate H1.
+  Qed.
+
+  Theorem limitTM'r'_pro1 : (forall (n : nat) , {Dec_R limitTM'r' n 0} + {Dec_R limitTM'r' n 1}) -> Halting.
+  Proof.
+    unfold Halting.
+    intros.
+    pose proof H i.
+    destruct H0.
+    - rewrite (limitTM'r'_pro' i) in d. auto.
+    - rewrite (limitTM'r'_pro i) in d. auto.
+  Qed.
+
+  Fixpoint sum_f' (f : nat -> nat) (n : nat) : Q :=
+    match n with
+      | 0%nat => Z_of_nat (f 0%nat) # 1%positive
+      | S n' => (sum_f' f n' + (Z_of_nat (f n) # Pos.of_nat (10 ^ n)))%Q
+    end.
+ 
+  Axiom sum_f'_limit_r : forall (f : nat -> nat) (r : R) , limit (sum_f' f) r <-> (forall n : nat , Dec_R r n (f n)).
+  
+  Axiom sum_f'_limit_eps : forall (f : nat -> nat)(n m : nat) , (n <= m) % nat -> (Qabs(sum_f' f n - sum_f' f m) < 1%Z # Pos.of_nat (10^n))%Q.
+
+  Lemma pow2_ge_pow10 : forall n : nat , (10 ^ n >= 2 ^ n)%nat.
+  Proof.
+    intros.
+    induction n ; auto.
+    replace (S n) with ((n + 1)%nat).
+    - rewrite Nat.pow_add_r. rewrite Nat.pow_add_r.
+      apply Nat.mul_le_mono ; auto.
+      simpl. apply le_n_S. apply le_n_S. apply le_0_n.
+    - apply Nat.add_1_r.
+  Qed.
+
+  Theorem TM'r'_is_computable3 : forall n : nat , CR3 (TM'r' n).
+  Proof.
+    intros.
+    unfold CR3.
+    exists (sum_f' (fun m => TM m n)).
+    exists (fun eps => S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps))).
+    split.
+    - rewrite sum_f'_limit_r.
+      apply TM'r'_pro.
+    - intros.
+      rewrite sum_f'_limit_eps ; auto.
+      apply Qle_lt_trans with (y := (1%Z # Pos.of_nat(2 ^ S (Pos.to_nat(Qden eps) / Z.to_nat (Qnum eps)))%nat)).
+      + apply Qle_trans with (y := (1%Z # Pos.of_nat (2^n0))%Q).
+        * unfold Qle. simpl.
+          apply Pos2Z.pos_le_pos.
+          apply Pos2Nat.inj_le.
+          repeat rewrite Nat2Pos.id_max.
+          destruct H0.
+          pose proof Max_powSn_1 n0 H2.
+          apply Nat.lt_le_incl in H3.
+          pose proof max_r 1 (2 ^ n0) H3.
+          pose proof le_trans 1 (2 ^ n0) (10^n0) H3 (pow2_ge_pow10 n0).
+          pose proof max_r 1 (10 ^ n0) H5.
+          rewrite H4,H6. apply pow2_ge_pow10.
+        * unfold Qle. simpl.
+          apply Pos2Z.pos_le_pos.
+          apply Pos2Nat.inj_le.
+          repeat rewrite Nat2Pos.id_max.
+          destruct H0.
+          pose proof Max_powSn_1 n0 H2.
+          apply Nat.lt_le_incl in H3 as H4.
+          pose proof max_r 1 (2 ^ n0) H4.
+          rewrite H5.
+          destruct H.
+          pose proof ge_pow_ge n0.
+          apply Nat.max_lub ; auto.
+          replace ((2 ^ (Pos.to_nat (Qden eps) / Z.to_nat (Qnum eps)) +
+ (2 ^ (Pos.to_nat (Qden eps) / Z.to_nat (Qnum eps)) + 0))%nat) 
+          with ((2 ^ S (Pos.to_nat (Qden eps) / Z.to_nat (Qnum eps)))%nat) by reflexivity.
+          apply Nat.pow_le_mono_r ; auto.
+      + apply eps_lemma. auto.
+  Qed.
+  
+  Theorem lim_CN3_NCN : (forall (Un:nat -> R) (l1:R), Un_cv Un l1 -> (forall n : nat ,CR3 (Un n)) -> CR3 l1) -> Halting.
+  Proof.
+    intros.
+    apply limitTM'r'_pro1.
+    intros.
+    pose proof X TM'r' limitTM'r' limit_of_TM'r' TM'r'_is_computable3.
+    clear X.
+    unfold CR3 in *.
+    destruct H as [f [N [? ?]]].
+    assert (H' : (0 < 1 # Pos.of_nat (10 ^ n))%Q).
+    {
+      unfold Qlt. simpl. apply Z.lt_0_1.
+    }
+    pose proof H0 (1 # Pos.of_nat (10 ^ n))%Q H'.
+    clear H' H0.
+    remember (N (1 # Pos.of_nat (10 ^ n))) as n1.
+    remember (S n1) as n0. remember (S n0) as m.
+    pose proof H1 n0 m.
+    clear H1.
+    assert (H' : (n0 >= n1 /\ n0 >= 1)%nat).
+    {
+      split ; rewrite Heqn0.
+      - apply le_S. apply le_n.
+      - apply le_n_S. apply Nat.le_0_l.
+    }
+    assert (H'' : (m >= n0) % nat).
+    {
+      rewrite Heqm. apply le_S. apply le_n.
+    }
+    pose proof H0 H' H''.
+    clear H0.
+    pose proof limit_TM'r'_pro_pre _ _ _ _ H H1.
+    destruct (Dec_Q (f n0) n).
+    - rewrite H0 in d. auto.
+    - rewrite H0 in n2.
+      rewrite <- Dec_limitTM'r'_pro1 in n2. auto.
+  Qed.
+  
 End Vir_R.
 
 
