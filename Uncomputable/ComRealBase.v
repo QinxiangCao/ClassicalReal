@@ -552,23 +552,7 @@ Module Type Vir_R.
     rewrite sum_f_limit_r.
     apply H.
   Qed.
-
-  Lemma nat_le_four : forall (n m q p : nat) , (n <= m)%nat -> (p <= q)%nat -> (n + p <= m + q)%nat.
-  Proof.
-    intros.
-    apply Nat.le_trans with (m := (n + q)%nat).
-    - apply plus_le_compat_l. auto.
-    - apply plus_le_compat_r. auto.
-  Qed.
   
-  Lemma nat_lt_four : forall (n m q p : nat) , (n < m)%nat -> (p < q)%nat -> (n + p < m + q)%nat.
-  Proof.
-    intros.
-    apply Nat.lt_trans with (m := (n + q)%nat).
-    - apply plus_lt_compat_l. auto.
-    - apply plus_lt_compat_r. auto.
-  Qed.
-
   Lemma ge_pow_ge : forall n: nat , (2 ^ n > n)%nat.
   Proof.
     intros.

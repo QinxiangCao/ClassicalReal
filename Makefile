@@ -30,7 +30,7 @@ MetricSpace_FILES = \
   MS_Def.v
 
 Uncomputable_FILES = \
-  TMSet.v ComRealBase.v
+  TMSet.v ComRealBase.v ComRealBase1_2.v
 
 FILES = \
   $(QArith_ext_FILES:%.v=QArith_ext/%.v) \
