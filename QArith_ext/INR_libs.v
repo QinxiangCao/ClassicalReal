@@ -174,8 +174,9 @@ Lemma eps_arrow_correct : forall eps : Q , (INR(eps_arrow_nat eps ) >  1 / eps)%
 Proof.
   intros.
   unfold eps_arrow_nat.
-  pose proof eps_lemma_total eps.
-Admitted.
+  destruct (eps_lemma_total eps).
+  auto.
+Qed.
   
 Lemma eps_arrow_pro : forall eps : Q, (eps > 0)%Q -> (INR(eps_arrow_nat eps) > 0)%Q.
 Proof.
