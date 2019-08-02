@@ -22,7 +22,7 @@ From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
 
-Module C := Cauchy.RBase.
+Module C1 := Cauchy.RBase.
 Module C2 := Cauchy.ROrder.
 Module C3 := Cauchy.RArith.
 Module D1 := Dedekind.RBase.
@@ -40,8 +40,8 @@ Notation "a == b" :=(D2.Req a b):DReal_Scope.
 Notation "a + b" :=(D3.Rplus a b):DReal_Scope.
 Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
 Notation "a == b" :=(C1.Real_equiv a b):CReal_Scope.
-Notation "a + b" :=(C1.Rplus a b):CReal_Scope.
-Notation "a * b" :=(C1.Rmult a b):CReal_Scope.
+Notation "a + b" :=(C3.Rplus a b):CReal_Scope.
+Notation "a * b" :=(C3.Rmult a b):CReal_Scope.
 Notation "a <= b" :=(D2.Rle a b):DReal_Scope.
 
 Lemma Dcut_lt :forall(Dcut:Q->Prop),Dedekind Dcut->forall (p q:Q),
@@ -210,17 +210,13 @@ Real_intro (fun n q=>exists N:Z,DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat
 (Cauchy_Dcut DCut H) end.
 
 Theorem C2D_properity1:forall (x y:D1.Real),
-<<<<<<< HEAD
   ((D2C x)+(D2C y))==(D2C ( x+ y)).
-=======
- C.Real_equiv(C3.Rplus (D2C x)(D2C y))(D2C (D3.Rplus x y)).
->>>>>>> origin/master
 Proof.
   intros. destruct x,y. unfold "==". unfold D2C. hnf. intros.
   assert(exists n:nat,(1/eps+1/eps<=inject_Z(Z.of_nat n))).
   apply Inject_lemmas.inject_Z_of_nat_le. destruct H2.
   exists (x+1)%nat. intros.
-  destruct H5. unfold C1.CauchySeqPlus in H4.
+  destruct H5. unfold C3.CauchySeqPlus in H4.
   assert(exists (t:Z),A (t#2 ^ of_nat m)/\~A (t+1#2 ^ of_nat m)).
   apply Dcut_P. auto. destruct H6.
   assert(exists (t:Z),A0 (t#2 ^ of_nat m)/\~A0 (t+1#2 ^ of_nat m)).
@@ -243,17 +239,13 @@ Proof.
   admit.
 Admitted. 
 Theorem C2D_properity2:forall (x y:D1.Real),
-<<<<<<< HEAD
  (D2C x)*(D2C y)==(D2C (x * y)).
-=======
- C.Real_equiv (C3.Rmult(D2C x)(D2C y))(D2C (D3.Rmult x y)).
->>>>>>> origin/master
 Proof.
   intros. destruct x,y. unfold "==". hnf. intros.
   exists 0%nat. (*remaining*)
   intros.
   destruct H4. destruct H4. destruct H5.
-  unfold C1.CauchySeqMult in H3.
+  unfold C3.CauchySeqMult in H3.
   assert(exists N : Z,
         A (N # 2 ^ of_nat m) /\
         ~ A (N + 1 # 2 ^ of_nat m) ). apply Dcut_P.
@@ -305,7 +297,6 @@ Proof.
   rewrite H9. assert(Z.abs 0 # Qden q1 * Qden q2 ==0)%Q.
   assert (Z.abs 0=0)%Z. reflexivity. rewrite H10. reflexivity.
   rewrite H10. apply H2.
-(* Qed.
- *)
+Qed.
 
 

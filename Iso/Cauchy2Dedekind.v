@@ -22,7 +22,7 @@ From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
 
-Module C := Cauchy.RBase.
+Module C1:= Cauchy.RBase.
 Module C2 := Cauchy.ROrder.
 Module C3 := Cauchy.RArith.
 Module D1 := Dedekind.RBase.
@@ -39,8 +39,8 @@ Notation "a == b" :=(D2.Req a b):DReal_Scope.
 Notation "a + b" :=(D3.Rplus a b):DReal_Scope.
 Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
 Notation "a == b" :=(C1.Real_equiv a b):CReal_Scope.
-Notation "a + b" :=(C1.Rplus a b):CReal_Scope.
-Notation "a * b" :=(C1.Rmult a b):CReal_Scope.
+Notation "a + b" :=(C3.Rplus a b):CReal_Scope.
+Notation "a * b" :=(C3.Rmult a b):CReal_Scope.
 Lemma Z_1_mult: forall(a:Z),(1*a=a)%Z.
 Proof.
   intros. simpl. induction a. omega. omega. omega.
@@ -119,14 +119,13 @@ Real_cons (fun q=>exists (t:Q),(t>0)%Q/\(exists(N:nat),forall (n:nat)(p:Q),(n>N)
 Theorem C2D_properity1:forall (x y:C1.Real),
   ( (C2D x)+(C2D y)==C2D (x+y))%D.
 Proof.
-<<<<<<< HEAD
   intros. destruct x. destruct y. unfold "=="%D. split.
 - unfold Rle. unfold "+"%D. simpl. intros. destruct H1.
   destruct H1. destruct H1. destruct H1. destruct H1. destruct H2.
   destruct H2. destruct H2.  exists (x2+x3)%Q.
   split. assert(0==0+0)%Q. symmetry. apply Qplus_0_r. rewrite H6.
   apply Qplus_lt_le_compat. apply H1. apply Qlt_le_weak. apply H2.
-  destruct H3. destruct H5. exists (x4+x5)%nat. intros. unfold C1.CauchySeqPlus in H7.
+  destruct H3. destruct H5. exists (x4+x5)%nat. intros. unfold C3.CauchySeqPlus in H7.
   destruct H. destruct H0. destruct Cauchy_exists with n. destruct Cauchy_exists0 with n.
   assert(p==x6+x7)%Q. apply H7. auto. auto. rewrite H8. rewrite<-H4. 
   assert(x0 + x2 < x6)%Q. apply H3 with n.
@@ -203,7 +202,7 @@ Proof.
       apply Qplus_lt_l.
       apply Qplus_lt_l.  apply Qplus_lt_l. 
       assert(x+x0<x4+x5)%Q. apply H2 with (x1+x2+x3+1)%nat.
-      omega. unfold C1.CauchySeqPlus. intros.
+      omega. unfold C3.CauchySeqPlus. intros.
       assert(x4==q1)%Q. apply Cauchy_unique with (x1+x2+x3+1)%nat.
       apply H3. apply H7. assert(x5==q2)%Q. apply Cauchy_unique0 with (x1+x2+x3+1)%nat.
       apply H4. apply H8. rewrite H9. rewrite H10. reflexivity.
@@ -279,12 +278,6 @@ Proof.
 Qed.
 Theorem C2D_properity2:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
-=======
-Admitted.
-
-Theorem C2D_properity2:forall (x y:C.Real),
-  (D3.Rmult(C2D x)(C2D y))==C2D (C3.Rmult x y).
->>>>>>> origin/master
 Proof.
   intros.
   unfold "==". split.
