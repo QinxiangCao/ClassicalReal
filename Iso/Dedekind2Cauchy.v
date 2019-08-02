@@ -66,6 +66,8 @@ Proof.
   induction n.
   - simpl. reflexivity.
   - assert(2 ^ of_nat (S n) =2 ^ of_nat n+2 ^ of_nat n)%positive.
+    Locate "^".
+    Search BinPos.Pos.pow.
     admit.
     assert(of_nat (S n) =(of_nat n)+1)%positive.
     admit.

@@ -10,7 +10,7 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Classes.Equivalence.
 From CReal Require Import QArith_ext.QArith_base_ext.
 From Coq Require Import Classes.Morphisms.
-From CReal Require Import RBase.
+From CReal Require Import Cauchy.RBase.
 
 Definition Rpositive (A:Real):Prop:=
   exists eps0:Q, (eps0>0) /\ 
