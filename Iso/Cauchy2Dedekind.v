@@ -338,8 +338,7 @@ unfold "==". split.
   apply Nat.le_lt_trans with (x1+x2)%nat. omega. apply H5. apply H1.
   assert(Qabs(p-x3)<(1 # 2) * x0). apply H4 with n. apply Nat.le_lt_trans with (x1+x2)%nat. omega.
   apply H5. auto. auto. assert(x3 -(1#2)*x0<=p). 
-  assert(x3-p<=(1 # 2) * x0). Search Qle "trans". 
-  apply QOrderedType.QOrder.le_trans with (Qabs (x3 - p)).
+  assert(x3-p<=(1 # 2) * x0). apply QOrderedType.QOrder.le_trans with (Qabs (x3 - p)).
   apply Qle_Qabs. rewrite Qabs_Qminus. apply Qlt_le_weak. auto. rewrite<-Qminus_Qplus.
   rewrite<-Qminus_Qplus in H9. rewrite Qplus_comm. auto.
   rewrite<- Qminus_Qplus in H9. assert(x + x0 <(1 # 2) * x0 + p).
