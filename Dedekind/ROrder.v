@@ -9,6 +9,7 @@ From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import QArith.QArith_base.
 From CReal Require Import Dedekind.RBase.
+From CReal Require Import QArith_ext.QArith_base_ext.
 Import ListNotations.
 
 (** Next, we will define the plus operation and the mult operation. *)
@@ -299,3 +300,4 @@ Proof.
   - apply Rle_lt_trans with (y := y);auto.
     apply Rlt_le_trans with (y := y0);auto.
 Qed.
+

@@ -16,12 +16,15 @@ From Coq Require Import Classes.Morphisms.
 From CReal Require Import Dedekind.RBase.
 From CReal Require Import Dedekind.ROrder.
 From CReal Require Import Dedekind.RArith.
-Require Import CReal.Cauchy.RBase.
-Require Import CReal.Cauchy.ROrder.
+From CReal Require Import Cauchy.RBase.
+From CReal Require Import Cauchy.RArith.
+From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
 Import Pos.
-Module C1:=Cauchy.RBase.
-Module C2:=Cauchy.ROrder.
+
+Module C := Cauchy.RBase.
+Module C2 := Cauchy.ROrder.
+Module C3 := Cauchy.RArith.
 Module D1 := Dedekind.RBase.
 Module D2 := Dedekind.ROrder.
 Module D3 := Dedekind.RArith.
@@ -116,6 +119,7 @@ Real_cons (fun q=>exists (t:Q),(t>0)%Q/\(exists(N:nat),forall (n:nat)(p:Q),(n>N)
 Theorem C2D_properity1:forall (x y:C1.Real),
   ( (C2D x)+(C2D y)==C2D (x+y))%D.
 Proof.
+<<<<<<< HEAD
   intros. destruct x. destruct y. unfold "=="%D. split.
 - unfold Rle. unfold "+"%D. simpl. intros. destruct H1.
   destruct H1. destruct H1. destruct H1. destruct H1. destruct H2.
@@ -275,6 +279,12 @@ Proof.
 Qed.
 Theorem C2D_properity2:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
+=======
+Admitted.
+
+Theorem C2D_properity2:forall (x y:C.Real),
+  (D3.Rmult(C2D x)(C2D y))==C2D (C3.Rmult x y).
+>>>>>>> origin/master
 Proof.
   intros.
   unfold "==". split.
