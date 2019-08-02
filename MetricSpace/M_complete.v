@@ -145,15 +145,13 @@ Variables Archimedian : forall (x y : X), x > zeroX -> y > zeroX -> x < y
 Variables pd_strong : forall (x1 x2 : X), x1 < x2 -> {x3 : X | x1 < x3 /\  x3 < x2}.
 
 
-Lemma eq_prj : forall (x1 x2 x1' x2' : X) (Heq1 : eqX x1 x1') (Heq2 : eqX x2 x2')
+Variable eq_prj : forall (x1 x2 x1' x2' : X) (Heq1 : eqX x1 x1') (Heq2 : eqX x2 x2')
    (H : x1 < x2) (H' : x1' < x2'),
    eqX (proj1_sig (pd_strong x1 x2 H)) (proj1_sig (pd_strong x1' x2' H')).
-Proof.
-  intros. pose proof (@respecting_equiv X eqX _ X eqX _).
-Admitted.
+
 Definition pairX := prod X X.
 
-Theorem division_of_eps_strong : forall (eps : X),  zeroX < eps ->
+Definition division_of_eps_strong : forall (eps : X),  zeroX < eps ->
   {pr : pairX | zeroX < (fst pr) /\ zeroX < (snd pr) /\ eqX ((fst pr) + (snd pr)) eps}.
 Proof.
   intros. destruct (pd_strong zeroX eps) as [x H1]. auto. destruct H1.
@@ -163,7 +161,17 @@ Proof.
     assert(eps + x' > x + x'). apply lt_intro;auto.
     rewrite e in H2. auto. simpl. rewrite (pfc eps x').
     rewrite <-pfa. rewrite e. rewrite pfz. reflexivity.
-Qed.
+Defined.
+Definition eqXp (px1 px2 : pairX) : Prop := (eqX (fst px1) (fst px2)) /\
+                                         (eqX (snd px1) (snd px2)).
+Lemma eq_div_eps_strong :
+  forall (eps1 eps2 : X) (H1 : zeroX < eps1) (H2 : zeroX < eps2),
+    eqX eps1 eps2 ->
+    eqXp (proj1_sig (division_of_eps_strong eps1 H1))
+         (proj1_sig (division_of_eps_strong eps2 H2)).
+Proof.
+  intros. Admitted.
+
 
 Variables poor_strong :  forall (a b : X), {a <= b} + {b <= a}.
 (**The succ has to make the same division for all the equivalence class of a**)
@@ -172,6 +180,9 @@ Definition succ (a : X) (H : a > zeroX) : X.
   destruct a0 as [Heps1 [Heps2 Hepseq]]. destruct (poor_strong eps1 eps2).
   apply eps1. apply eps2.
 Defined.
+Definition succ' (a :{a : X | a > zeroX}) : X := succ (proj1_sig a) (proj2_sig a).
+Definition eqX' (a b : {a : X | a  > zeroX}) : Prop := eqX (proj1_sig a) (proj1_sig b).
+
 
 Inductive zeroSeq (x : X) (H : x > zeroX) : nat -> X -> Prop :=
   | ini (x' : X) (Heq : eqX x x') : zeroSeq x H 0 x'
