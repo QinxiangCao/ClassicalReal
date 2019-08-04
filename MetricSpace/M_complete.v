@@ -391,6 +391,41 @@ Qed.
 (**up to now, we have constructed a sequence, which is equivalent to zeroX while each
      a_n is greater than zeroX. Meanwhile, we have proved that this sequence exists if there
      is at least one elements x in X s.t. ~eqX x zeroX**)
+(**trivial work of constructing a split of r : CCA **)
+Definition skel := @prj_nat (@prj_nat A).
+Definition bone := @prj_nat A.
+Definition CCA_split (r : @prj_nat CA) (t : skel) :Prop:=
+  forall (l : bone) (m : nat) (s:CA) (H:CauchySeq eqX eqA l),
+    t m l -> r m s -> equCA s (con_intro _ _ _ _ _ _ l H).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Lemma Select_CA : forall (x x' : X) (Hb : x > zeroX) (Cseq : @prj_nat A) (H : CauchySeq eqX eqA Cseq) (m : nat), 
     zeroSeq x Hb m x' ->
