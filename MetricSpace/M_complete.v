@@ -170,9 +170,19 @@ Lemma eq_div_eps_strong :
     eqXp (proj1_sig (division_of_eps_strong eps1 H1))
          (proj1_sig (division_of_eps_strong eps2 H2)).
 Proof.
-  intros. Admitted.
-
-
+  intros. unfold division_of_eps_strong.
+  specialize (eq_prj zeroX eps1 zeroX eps2 ltac:(reflexivity) H H1 H2) .
+  destruct (pd_strong zeroX eps1 H1), (pd_strong zeroX eps2 H2).
+  destruct a, a0. destruct (pfi_strong x), (pfi_strong x0).
+  simpl. simpl in eq_prj. unfold eqXp.
+  split;simpl;auto. assert (eqX x1 x2).
+  rewrite eq_prj in e. rewrite <-e0 in e.
+  assert (eqX (x2 + x0 + x1) (x2 + x0 + x2)).
+  rewrite pfa,pfa. rewrite e. reflexivity.
+  rewrite pfc in e0. rewrite e0 in H0. rewrite pfz, pfz in H0.
+  auto. rewrite H0. rewrite H. reflexivity.
+Qed.
+  
 Variables poor_strong :  forall (a b : X), {a <= b} + {b <= a}.
 (**The succ has to make the same division for all the equivalence class of a**)
 Definition succ (a : X) (H : a > zeroX) : X.
@@ -182,7 +192,23 @@ Definition succ (a : X) (H : a > zeroX) : X.
 Defined.
 Definition succ' (a :{a : X | a > zeroX}) : X := succ (proj1_sig a) (proj2_sig a).
 Definition eqX' (a b : {a : X | a  > zeroX}) : Prop := eqX (proj1_sig a) (proj1_sig b).
-
+Lemma succ_proper :
+  forall (a b : X) (H1 : a > zeroX) (H2 : b > zeroX), eqX a b ->
+               eqX (succ a H1) (succ b H2).
+Proof.
+  intros. unfold succ. pose proof eq_div_eps_strong.
+  specialize (H0 a b H1 H2 H).
+  destruct (division_of_eps_strong a H1), (division_of_eps_strong b H2).
+  simpl. simpl in H0. destruct a0 as [? [? ?]].
+  destruct a1 as [? [? ?]]. destruct x, x0.
+  simpl in l, l0, e, l1, l2, e0, H0.
+  unfold eqXp in H0. simpl in H0. destruct H0 as [? ?].
+  destruct (poor_strong x x1). destruct (poor_strong x0 x2).
+  auto. rewrite <-H3. apply pore. auto. rewrite H0, H3;auto.
+  destruct (poor_strong x0 x2). rewrite H3.
+  apply pore. rewrite <-H0, <-H3. auto. auto.
+  auto.
+Qed.
 
 Inductive zeroSeq (x : X) (H : x > zeroX) : nat -> X -> Prop :=
   | ini (x' : X) (Heq : eqX x x') : zeroSeq x H 0 x'
@@ -221,9 +247,11 @@ Proof.
   -intro m. induction m. intros. inversion H0. inversion H1. rewrite <-Heq. auto.
     intros. inversion H0. inversion H1. assert(eqX a0 a3). apply IHm;auto.
     assert(eqX (succ a0 IHg) (succ a3 IHg0)). 
-      +admit.
-      +rewrite H7 in Heq. rewrite Heq in Heq0. auto.
-Admitted.
+   +pose proof succ_proper.
+    specialize (H7 a0 a3 IHg IHg0 H6).
+    auto.
+   +rewrite H7 in Heq. rewrite Heq in Heq0. auto.
+Qed.
 
 Lemma succ_dual : forall (a x1 x2: X) (H : a > zeroX) (n1 n2 : nat) (Hs1 : zeroSeq a H n1 x1)
   (Hs2 : zeroSeq a H n2 x2),
@@ -393,7 +421,6 @@ Proof.
    intros. rewrite msy. destruct (H4 n2 a1);auto. apply lt_intro;auto.
   -intros. destruct H0. apply aps with (n1 := n1) (Cseq := Cseq) (HC := HC)(a := a) (x1 := x1). auto. auto. auto.
    rewrite <-H. auto. intros. apply (H3 n2);auto.
-  -admit.
 Admitted.
 
 Definition sig_X_CX (x : X) : CX :=@sig_inv X X eqX eqX leX plusX zeroX distX pfX MX _ _ x.
@@ -629,11 +656,11 @@ Proof.
   apply MC.
 Defined.
 
-Theorem Complete : exists (f : CA -> CCA),(forall (r : CCA), (exists (p : CA), 
-        equCCA (f p) r)).
+Theorem Complete : forall (r : CCA), (exists (p : CA), 
+        equCCA (sig_C_CC p) r).
 Proof.
   destruct(classic (exists a : X, (~eqX a zeroX))).
-  -apply greater_ext in H. destruct H as [x Hb]. exists sig_C_CC. intros. destruct r as [CCseq HCC].
+  -apply greater_ext in H. destruct H as [x Hb]. intros. destruct r as [CCseq HCC].
    exists(approx CCseq HCC x Hb).
     simpl. intros. destruct (less_sig eps) as [eps0 [Heps0 Heps1]]. split; apply H.
     unfold ltCX in Heps0. unfold ltCX in Heps1. assert(eps0 > zeroX).
@@ -671,7 +698,7 @@ Proof.
        +apply (@le_lt_eq CX equCX leCX pofCX) in H8. destruct H8.
           pose proof ltCtr. unfold ltCX in H9. destruct(H9 (distCA a1 a2) (sig_inv eps0) eps).
           auto. auto. apply lt_intro;auto. rewrite H8. apply lt_intro;apply Heps1.
-  -unfold not in H. exists sig_C_CC. intros. assert(forall a : X, eqX a zeroX).
+  -unfold not in H. intros. assert(forall a : X, eqX a zeroX).
     intros. apply not_ex_all_not with (n := a) in H. apply NNPP in H. auto.
     assert(forall p : CA,equCCA (sig_C_CC p) r). intros. destruct r. simpl. intros.
     assert(equCX eps zeroCX). destruct eps. simpl. intros. exists 0. intros.
