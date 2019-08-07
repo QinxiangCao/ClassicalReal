@@ -397,36 +397,25 @@ Definition bone := @prj_nat A.
 Definition CCA_split (r : @prj_nat CA) (t : skel) :Prop:=
   forall (l : bone) (m : nat) (s:CA) (H:CauchySeq eqX eqA l),
     t m l -> r m s -> equCA s (con_intro _ _ _ _ _ _ l H).
+Definition CA_split (p : CA) (b : bone) (H : CauchySeq eqX eqA b) : Prop :=
+  equCA p (con_intro _ _ _ _ _ _ b H).
+Check @well_seq.
+Inductive CCA_cros_split (r : @prj_nat CA) (Hw : @well_seq CA equCA r)
+  : skel :=
+| dst (n : nat) (p : CA) (Hin : r n p) (b : bone) (H : CauchySeq eqX eqA b)
+      (Hs : CA_split p b H) : CCA_cros_split r Hw n b.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Lemma CCA_split_ext : forall (r : @prj_nat CA) (Hw : @well_seq CA equCA r),
+    (exists t : skel, CCA_split r t).
+Proof.
+  intros. exists (CCA_cros_split r Hw). unfold CCA_split.
+  intros. destruct H0. assert(equCA p s). apply HCseq3 with (m := n);auto.
+  rewrite <-H2. unfold CA_split in Hs. rewrite Hs.
+  simpl. intros. exists 0. intros. assert (eqA a1 a2). destruct H.
+  destruct HWS. apply HCseq3 with (m := n0);auto.
+  rewrite H7. assert (eqX (dist a2 a2) zeroX). rewrite <-mre.
+  reflexivity. rewrite H8. auto.
+Qed.
 Lemma Select_CA : forall (x x' : X) (Hb : x > zeroX) (Cseq : @prj_nat A) (H : CauchySeq eqX eqA Cseq) (m : nat), 
     zeroSeq x Hb m x' ->
         (exists (n0 : nat) (a0 : A) (H : Cseq n0 a0), (forall (n : nat) (a : A), Cseq n a -> (n > n0)%nat ->  dist a a0 < x')).
@@ -437,6 +426,9 @@ Proof.
   intros. destruct H2 with (m := (S N)) (n := n) (a := x0) (b := a). split. omega. omega.
   split;auto. apply lt_intro;auto. rewrite msy;auto. rewrite msy. auto.
 Qed.
+
+
+
 
 Inductive approxSeq (CCseq : @prj_nat CA) (x : X) (Hb : x > zeroX) : nat -> A -> Prop :=
   | aps (n n1 : nat) (Cseq : @prj_nat A) (HC : CauchySeq eqX eqA Cseq) (a aeq: A) (x1 : X) (H : zeroSeq x Hb n x1) 
