@@ -399,7 +399,8 @@ Definition CCA_split (r : @prj_nat CA) (t : skel) :Prop:=
     t m l -> r m s -> equCA s (con_intro _ _ _ _ _ _ l H).
 Definition CA_split (p : CA) (b : bone) (H : CauchySeq eqX eqA b) : Prop :=
   equCA p (con_intro _ _ _ _ _ _ b H).
-Check @well_seq.
+
+
 Inductive CCA_cros_split (r : @prj_nat CA) (Hw : @well_seq CA equCA r)
   : skel :=
 | dst (n : nat) (p : CA) (Hin : r n p) (b : bone) (H : CauchySeq eqX eqA b)
@@ -427,29 +428,33 @@ Proof.
   split;auto. apply lt_intro;auto. rewrite msy;auto. rewrite msy. auto.
 Qed.
 
+Inductive approxSeq (SSeq : skel) (x : X) (Hb : x > zeroX):@prj_nat A :=
+ |aps (n n1 : nat) (Seq : bone) (a aeq: A) (x1 : X) (H : zeroSeq x Hb n x1) 
+    (H1 : SSeq n Seq) (H2 : Seq n1 a) (HeqA : eqA a aeq)
+    (H3 : forall (n2 : nat) (a1 : A), Seq n2 a1 -> (n2 > n1)%nat -> dist a a1< x1)
+  : approxSeq SSeq x Hb n aeq.
 
+Definition Cws (CCseq : @prj_nat CA)
+  (HCC : @CauchySeq CA CX equCX equCA leCX plusCX zeroCX pfCX distCA MC CCseq): (@well_seq CA equCA CCseq).
+destruct HCC. apply HWS.
+Defined.
 
-
-Inductive approxSeq (CCseq : @prj_nat CA) (x : X) (Hb : x > zeroX) : nat -> A -> Prop :=
-  | aps (n n1 : nat) (Cseq : @prj_nat A) (HC : CauchySeq eqX eqA Cseq) (a aeq: A) (x1 : X) (H : zeroSeq x Hb n x1) 
-    (H1 : CCseq n (con_intro _ _ _ _ _ _ Cseq HC)) (H2 : Cseq n1 a) (HeqA : eqA a aeq)
-        (H3 : forall (n2 : nat) (a1 : A), Cseq n2 a1 -> (n2 > n1)%nat -> dist a a1< x1) : approxSeq CCseq x Hb n aeq.
+Lemma Cauchy_sub :
+  forall (CCseq : @prj_nat CA) (HCC : @CauchySeq CA CX equCX equCA leCX plusCX
+                                            zeroCX pfCX distCA MC CCseq),
+    (forall (b : bone) (n : nat),
+        (CCA_cros_split CCseq (Cws CCseq HCC)) n b ->
+    @CauchySeq A X eqX eqA leX plusX zeroX pfX dist M b).
+Proof.
+  intros. destruct H. auto.
+Qed.
 
 Lemma approxSeq_well : forall (CCseq : @prj_nat CA)
     (HCC : @CauchySeq CA CX equCX equCA leCX plusCX zeroCX pfCX distCA MC CCseq)
-     (x : X) (Hb : x > zeroX), @well_seq A eqA (approxSeq CCseq x Hb).
+    (x : X) (Hb : x > zeroX),
+    @well_seq A eqA (approxSeq (CCA_cros_split CCseq (Cws CCseq HCC)) x Hb).
 Proof.
-  intros. split.
-  -intros. pose proof Select_CA. pose proof (HCseq1 n) as [p].
-   pose proof (zeroSeq_well x Hb). pose proof (HCseq1 n) as [x1]. destruct p.
-   destruct (H x x1 Hb Cseq H3 n) as [n1]. auto. destruct H4 as [a]. 
-   destruct H4 as [H1_]. exists a.
-   apply aps with (n := n) (n1 := n1) (x1 := x1) (Cseq := Cseq) (HC := H3) (a := a). auto. auto. auto. reflexivity.
-   intros. rewrite msy. destruct (H4 n2 a1);auto. apply lt_intro;auto.
-  -intros. destruct H0. apply aps with (n1 := n1) (Cseq := Cseq) (HC := HC)(a := a) (x1 := x1). auto. auto. auto.
-   rewrite <-H. auto. intros. apply (H3 n2);auto.
 Admitted.
-
 Definition sig_X_CX (x : X) : CX :=@sig_inv X X eqX eqX leX plusX zeroX distX pfX MX _ _ x.
 
 Lemma distC_dist : forall (cq1 cq2 : @prj_nat A) (HC1 : CauchySeq _ _ cq1) (HC2 : CauchySeq _ _ cq2) 
