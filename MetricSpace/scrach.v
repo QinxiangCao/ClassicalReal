@@ -517,29 +517,46 @@ Qed.
 Theorem fst_nCauchy_ext : forall (seq : @prj_nat A) (eps : X)
                             (HC : CauchySeq eqX eqA seq)
                             (He : eps > zeroX),
-    exists (n : nat),
+    exists! (n : nat),
       (bound_prop seq n eps) /\ (forall (m : nat), (m < n)%nat -> not_bound_prop seq m eps).
 Proof.
-  intros. apply NNPP. unfold not. intros.
-  assert (forall n : nat, (not_bound_prop seq n eps) \/
-                   (exists (m : nat) (H : (m < n)%nat), bound_prop seq m eps)).
-  intros. apply not_ex_all_not  with (n := n) in H.
-  apply not_and_or in H. destruct H.
-  left. specialize (bp_not_bp seq n eps).
-  intros. apply not_iff_compat in H0. apply NNPP, H0; auto.
-  right. apply not_all_ex_not in H. destruct H as [m].
-  exists m. apply not_all_ex_not in H as [H']. exists H'. apply bp_not_bp.
-  auto. destruct (HCA eps) as [n1]. apply lt_intro; apply He.
-  assert(forall n : nat,(bound_prop seq n eps /\ not_bound_prop seq n eps)-> False).
-  intros. specialize (bp_not_bp seq n eps). intros. destruct H2.
-  apply H3 in H2. destruct H2;auto. 
+  intros. destruct (HCA eps) as [n1]. apply lt_intro; apply He.
+  pose proof dec_inh_nat_subset_has_unique_least_element.
+  pose proof classic.
+  specialize (H0 (fun (n : nat) => bound_prop seq n eps)).
+  destruct H0. intros. apply H1. exists n1. unfold bound_prop.
+  intros. destruct H with (m := j) (n := k) (a := a) (b := b).
+  split;auto. split;auto. apply lt_intro;auto.
+  exists x. split. split.
+  unfold unique in H0. destruct H0. apply H0.
+  intros m H2. unfold unique in H0. destruct H0.
+  apply NNPP. unfold not. intros. apply bp_not_bp in H4.
+  specialize (H3 m). assert (x = m).
+  apply H3. split. destruct H0. auto. destruct H0.
+  intros. assert (x <= x')%nat.
+  apply H5. auto. omega.
+  assert ((m < x)%nat -> m <> x). omega.
+  apply H6 in H2. apply H2. symmetry. auto.
+  intros. destruct H0. apply H3. split.
+  destruct H2. auto. intros. destruct H2.
+  apply NNPP. unfold not. intros. apply not_le in H6.
+  apply H5 in H6. apply bp_not_bp in H6.
+  auto. auto.
+Qed.
 
-Admitted.(** TODO **)
+Definition fst_nCauchy (seq : @prj_nat A) (n : nat) (eps : X):Prop:=
+  (bound_prop seq n eps) /\ (forall (m : nat), (m < n)%nat -> not_bound_prop seq m eps).
+Definition snd_nCauchy (seq : @prj_nat A)(n : nat)(eps : X)(a : A)(H:seq n a):Prop:=
+  forall (n1 : nat) (a1 : A), seq n1 a1 -> (n1 > n)%nat -> dist a a1 < eps.
+Lemma fst_snd_prop :
+  forall (seq : @prj_nat A) (n : nat) (eps : X) (a : A) (H : seq (S n) a),
+    fst_nCauchy seq n eps -> snd_nCauchy seq (S n) eps a H.
+Proof.
+  intros. unfold snd_nCauchy. intros. destruct H0. unfold bound_prop in H0.
+  specialize (H0 (S n) n1 a a1). destruct H0;auto. omega.
+  apply lt_intro;auto.
+Qed.
 
-
-
-
-  
 Inductive approxSeq (CCseq : @prj_nat CA) (x : X) (Hb : x > zeroX) : nat -> A -> Prop :=
 | aps (n n1 : nat) (Cseq : @prj_nat A) (t : CA) (a aeq: A) (x1 : X)
       (H : zeroSeq x Hb n x1) 

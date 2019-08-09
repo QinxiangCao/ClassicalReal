@@ -494,7 +494,7 @@ Proof.
    apply lt_intro;apply H6.
 Qed.   
 
-Lemma partial_bound_tr : forall (seq : @prj_nat A) (eps : X)
+Lemma partial_bound_tr1 : forall (seq : @prj_nat A) (eps : X)
                            (HC : CauchySeq eqX eqA seq) (n m : nat)
                            (Hb : bound_prop seq n eps),
     (m >= n)%nat -> bound_prop seq m eps.
@@ -502,8 +502,17 @@ Proof.
   intros. unfold bound_prop in Hb. unfold bound_prop.
   intros. apply (Hb j k);[omega| omega| auto| auto].
 Qed.
-
-
+Lemma partial_bound_tr2 : forall (seq : @prj_nat A) (eps : X)
+                           (HC : CauchySeq eqX eqA seq) (n m : nat)
+                           (Hb : not_bound_prop seq n eps),
+    (m <= n)%nat -> not_bound_prop seq m eps.
+Proof.
+  intros. unfold not_bound_prop in Hb. unfold not_bound_prop.
+  destruct Hb as [j [k [a [b [? [? [? [? ?]]]]]]]].
+  exists j, k, a, b. assert (j > m)%nat. omega.
+  assert (k > m)%nat. omega.
+  exists H1, H2, x1, x2. auto.
+Qed.
 
 Theorem fst_nCauchy_ext : forall (seq : @prj_nat A) (eps : X)
                             (HC : CauchySeq eqX eqA seq)
@@ -521,7 +530,11 @@ Proof.
   right. apply not_all_ex_not in H. destruct H as [m].
   exists m. apply not_all_ex_not in H as [H']. exists H'. apply bp_not_bp.
   auto. destruct (HCA eps) as [n1]. apply lt_intro; apply He.
-  Admitted.(** TODO **)
+  assert(forall n : nat,(bound_prop seq n eps /\ not_bound_prop seq n eps)-> False).
+  intros. specialize (bp_not_bp seq n eps). intros. destruct H2.
+  apply H3 in H2. destruct H2;auto. 
+
+Admitted.(** TODO **)
 
 
 
