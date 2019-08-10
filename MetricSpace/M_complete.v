@@ -64,6 +64,16 @@ Defined.
 Definition MCX : Metric equCX equCX leCX plusCX zeroCX pfCX distCX.
   apply ms_trans_X;auto.
 Defined.
+Instance distCA_rewrite : Proper (equCA ==> equCA ==> equCX) distCA.
+Proof.
+  apply (dist_rewrite _ _ equCX leCX plusCX zeroCX equCA _ _ pfCX _).
+  apply MC.
+Defined.
+Instance distCX_rewrite : Proper (equCX ==> equCX ==> equCX) distCX.
+Proof.
+  apply (dist_rewrite _ _ equCX leCX plusCX zeroCX equCX _ _ pfCX _).
+  apply MCX.
+Defined.  
 
 Definition CCA : Type :=@Cauchilize CA CX equCX equCA leCX plusCX zeroCX distCA pfCX MC.
 Definition equCCA :CCA -> CCA -> Prop :=
@@ -391,112 +401,223 @@ Qed.
 (**up to now, we have constructed a sequence, which is equivalent to zeroX while each
      a_n is greater than zeroX. Meanwhile, we have proved that this sequence exists if there
      is at least one elements x in X s.t. ~eqX x zeroX**)
-(**trivial work of constructing a split of r : CCA **)
-Definition skel := @prj_nat (@prj_nat A).
-Definition bone := @prj_nat A.
-Definition CCA_split (r : @prj_nat CA) (t : skel) :Prop:=
-  forall (l : bone) (m : nat) (s:CA) (H:CauchySeq eqX eqA l),
-    t m l -> r m s -> equCA s (con_intro _ _ _ _ _ _ l H).
-Definition CA_split (p : CA) (b : bone) (H : CauchySeq eqX eqA b) : Prop :=
-  equCA p (con_intro _ _ _ _ _ _ b H).
 
-
-Inductive CCA_cros_split (r : @prj_nat CA) (Hw : @well_seq CA equCA r)
-  : skel :=
-| dst (n : nat) (p : CA) (Hin : r n p) (b : bone) (H : CauchySeq eqX eqA b)
-      (Hs : CA_split p b H) : CCA_cros_split r Hw n b.
-
-Lemma CCA_split_ext : forall (r : @prj_nat CA) (Hw : @well_seq CA equCA r),
-    (exists t : skel, CCA_split r t).
-Proof.
-  intros. exists (CCA_cros_split r Hw). unfold CCA_split.
-  intros. destruct H0. assert(equCA p s). apply HCseq3 with (m := n);auto.
-  rewrite <-H2. unfold CA_split in Hs. rewrite Hs.
-  simpl. intros. exists 0. intros. assert (eqA a1 a2). destruct H.
-  destruct HWS. apply HCseq3 with (m := n0);auto.
-  rewrite H7. assert (eqX (dist a2 a2) zeroX). rewrite <-mre.
-  reflexivity. rewrite H8. auto.
-Qed.
-Lemma Select_CA : forall (x x' : X) (Hb : x > zeroX) (Cseq : @prj_nat A) (H : CauchySeq eqX eqA Cseq) (m : nat), 
-    zeroSeq x Hb m x' ->
-        (exists (n0 : nat) (a0 : A) (H : Cseq n0 a0), (forall (n : nat) (a : A), Cseq n a -> (n > n0)%nat ->  dist a a0 < x')).
-Proof.
-  intros. simpl. pose proof HCA. destruct H1 with (eps := x') as [N].
-  pose proof (zeroSeq_nonzero x x' Hb m). apply H2 in H0. apply lt_intro;apply H0.
-  exists (S N). pose proof HCseq1. destruct H3 with (n := S N). exists x0. exists H4.
-  intros. destruct H2 with (m := (S N)) (n := n) (a := x0) (b := a). split. omega. omega.
-  split;auto. apply lt_intro;auto. rewrite msy;auto. rewrite msy. auto.
-Qed.
-
-Inductive approxSeq (SSeq : skel) (x : X) (Hb : x > zeroX):@prj_nat A :=
- |aps (n n1 : nat) (Seq : bone) (a aeq: A) (x1 : X) (H : zeroSeq x Hb n x1) 
-    (H1 : SSeq n Seq) (H2 : Seq n1 a) (HeqA : eqA a aeq)
-    (H3 : forall (n2 : nat) (a1 : A), Seq n2 a1 -> (n2 > n1)%nat -> dist a a1< x1)
-  : approxSeq SSeq x Hb n aeq.
-
-Definition Cws (CCseq : @prj_nat CA)
-  (HCC : @CauchySeq CA CX equCX equCA leCX plusCX zeroCX pfCX distCA MC CCseq): (@well_seq CA equCA CCseq).
-destruct HCC. apply HWS.
+Definition appropriate (a b : @prj_nat A) : Prop :=
+  forall (n: nat) (x y : A), a n x -> b n y -> eqA x y.
+Class select_function (f : CA -> @prj_nat A -> Prop) :Prop:=
+  {
+    sfe : forall (a b : CA) (x y : @prj_nat A),
+      equCA a b -> f a x -> f b y -> appropriate x y;
+    sfs : forall (a : CA), exists (x : @prj_nat A), f a x;
+    sfi1 : forall (a : CA) (x y : @prj_nat A),
+        appropriate x y -> f a x -> f a y;
+    sfi2 : forall (a b : CA) (x : @prj_nat A),
+        equCA a b -> f a x -> f b x;
+    sfc : forall (a : CA) (x : @prj_nat A),
+        f a x -> CauchySeq eqX eqA x;
+    sfp : forall (a : CA) (x : @prj_nat A) (H : f a x),
+        equCA a (con_intro _ _ _ _ _ _ x (sfc a x H));
+                                                 }.
+Variable sf :CA -> @prj_nat A -> Prop.
+Variable sfs_f : select_function sf.
+Instance sf_ins : select_function sf.
+apply sfs_f.
 Defined.
 
-Lemma Cauchy_sub :
-  forall (CCseq : @prj_nat CA) (HCC : @CauchySeq CA CX equCX equCA leCX plusCX
-                                            zeroCX pfCX distCA MC CCseq),
-    (forall (b : bone) (n : nat),
-        (CCA_cros_split CCseq (Cws CCseq HCC)) n b ->
-    @CauchySeq A X eqX eqA leX plusX zeroX pfX dist M b).
+Definition bound_prop (seq : @prj_nat A) (n : nat) (eps : X) : Prop :=
+  forall (j k : nat) (a b : A), (j > n)%nat -> (k > n)%nat -> seq j a -> seq k b ->
+    dist a b < eps.
+
+Definition not_bound_prop (seq : @prj_nat A) (n : nat) (eps : X) : Prop :=
+  exists (j k : nat) (a b : A) (H1 : (j > n)%nat) (H2 : (k > n)%nat)
+    (H3 : seq j a) (H4 : seq k b), dist a b >= eps.
+
+Lemma bp_not_bp : forall (seq : @prj_nat A) (n : nat) (eps : X),
+    bound_prop seq n eps <-> not(not_bound_prop seq n eps).
 Proof.
-  intros. destruct H. auto.
+  intros. split.
+  -intros. unfold bound_prop in H. unfold not_bound_prop.
+   apply all_not_not_ex. intros.
+   apply all_not_not_ex. intros. 
+   apply all_not_not_ex. intros.
+   apply all_not_not_ex. intros.
+   apply all_not_not_ex. intros.
+   apply all_not_not_ex. intros.
+   apply all_not_not_ex. intros.
+   apply all_not_not_ex. intros.
+   assert (dist n2 n3 < eps).
+   specialize (H n0 n1 n2 n3 n4 n5 n6 n7).
+   apply lt_intro;apply H.
+   unfold not. intros. assert (not(eps > dist n2 n3)).
+   apply lt_not;auto. apply H2. auto.
+  -intros. unfold not_bound_prop in H.
+   unfold bound_prop. intros.
+   apply not_ex_all_not with (n := j) in H.
+   apply not_ex_all_not with (n := k) in H.
+   apply not_ex_all_not with (n := a) in H.
+   apply not_ex_all_not with (n := b) in H.
+   apply not_ex_all_not with (n := H0) in H.
+   apply not_ex_all_not with (n := H1) in H.
+   apply not_ex_all_not with (n := H2) in H.
+   apply not_ex_all_not with (n := H3) in H.
+   pose proof not_iff_compat. pose proof lt_not.
+   specialize (H5 X eqX _ leX _ (dist a b) (eps)).
+   apply H4 in H5. assert(~ ~ eps > dist a b).
+   apply H5. apply H. apply NNPP in H6.
+   apply lt_intro;apply H6.
+Qed.   
+
+Lemma partial_bound_tr1 : forall (seq : @prj_nat A) (eps : X)
+                           (HC : CauchySeq eqX eqA seq) (n m : nat)
+                           (Hb : bound_prop seq n eps),
+    (m >= n)%nat -> bound_prop seq m eps.
+Proof.
+  intros. unfold bound_prop in Hb. unfold bound_prop.
+  intros. apply (Hb j k);[omega| omega| auto| auto].
+Qed.
+Lemma partial_bound_tr2 : forall (seq : @prj_nat A) (eps : X)
+                           (HC : CauchySeq eqX eqA seq) (n m : nat)
+                           (Hb : not_bound_prop seq n eps),
+    (m <= n)%nat -> not_bound_prop seq m eps.
+Proof.
+  intros. unfold not_bound_prop in Hb. unfold not_bound_prop.
+  destruct Hb as [j [k [a [b [? [? [? [? ?]]]]]]]].
+  exists j, k, a, b. assert (j > m)%nat. omega.
+  assert (k > m)%nat. omega.
+  exists H1, H2, x1, x2. auto.
 Qed.
 
+Theorem fst_nCauchy_ext : forall (seq : @prj_nat A) (eps : X)
+                            (HC : CauchySeq eqX eqA seq)
+                            (He : eps > zeroX),
+    exists! (n : nat),
+      (bound_prop seq n eps) /\ (forall (m : nat), (m < n)%nat -> not_bound_prop seq m eps).
+Proof.
+  intros. destruct (HCA eps) as [n1]. apply lt_intro; apply He.
+  pose proof dec_inh_nat_subset_has_unique_least_element.
+  pose proof classic.
+  specialize (H0 (fun (n : nat) => bound_prop seq n eps)).
+  destruct H0. intros. apply H1. exists n1. unfold bound_prop.
+  intros. destruct H with (m := j) (n := k) (a := a) (b := b).
+  split;auto. split;auto. apply lt_intro;auto.
+  exists x. split. split.
+  unfold unique in H0. destruct H0. apply H0.
+  intros m H2. unfold unique in H0. destruct H0.
+  apply NNPP. unfold not. intros. apply bp_not_bp in H4.
+  specialize (H3 m). assert (x = m).
+  apply H3. split. destruct H0. auto. destruct H0.
+  intros. assert (x <= x')%nat.
+  apply H5. auto. omega.
+  assert ((m < x)%nat -> m <> x). omega.
+  apply H6 in H2. apply H2. symmetry. auto.
+  intros. destruct H0. apply H3. split.
+  destruct H2. auto. intros. destruct H2.
+  apply NNPP. unfold not. intros. apply not_le in H6.
+  apply H5 in H6. apply bp_not_bp in H6.
+  auto. auto.
+Qed.
+
+Definition fst_nCauchy (seq : @prj_nat A) (n : nat) (eps : X):Prop:=
+  (bound_prop seq n eps) /\ (forall (m : nat), (m < n)%nat -> not_bound_prop seq m eps).
+Definition snd_nCauchy (seq : @prj_nat A)(n : nat)(eps : X)(a : A)(H:seq n a):Prop:=
+  forall (n1 : nat) (a1 : A), seq n1 a1 -> (n1 > n)%nat -> dist a a1 < eps.
+Lemma fst_snd_prop :
+  forall (seq : @prj_nat A) (n : nat) (eps : X) (a : A) (H : seq (S n) a),
+    fst_nCauchy seq n eps -> snd_nCauchy seq (S n) eps a H.
+Proof.
+  intros. unfold snd_nCauchy. intros. destruct H0. unfold bound_prop in H0.
+  specialize (H0 (S n) n1 a a1). destruct H0;auto. omega.
+  apply lt_intro;auto.
+Qed.
+
+Lemma Select_CA : forall (x x' : X) (Hb : x > zeroX) (Cseq : @prj_nat A) (H : CauchySeq eqX eqA Cseq) (m : nat), 
+    zeroSeq x Hb m x' ->
+        (exists! (n : nat),fst_nCauchy Cseq n x') .
+Proof.
+  intros. pose proof fst_nCauchy_ext. unfold fst_nCauchy. apply H1.
+  auto. apply (zeroSeq_nonzero x x' Hb m);auto.
+Qed.
+
+Lemma appro_eq_eqX : forall (seq1 seq2 : @prj_nat A) (n1 n2 : nat) (eps1 eps2 : X)
+                       (H1:CauchySeq eqX eqA seq1) (H2:CauchySeq eqX eqA seq2),
+    appropriate seq1 seq2 -> eqX eps1 eps2 -> eps1 > zeroX ->
+    eps2 > zeroX-> fst_nCauchy seq1 n1 eps1 -> fst_nCauchy seq2 n2 eps2 -> n1 = n2.
+Proof.
+  intros. pose proof fst_nCauchy_ext.
+  specialize (fst_nCauchy_ext seq2 eps2 H2 H4).
+  specialize (fst_nCauchy_ext seq1 eps1 H1 H3).
+  intros. destruct H8 as [n]. destruct H9 as [n0].
+  assert (n1 = n). destruct H8. symmetry. apply H10.
+  auto. assert (n2 = n0). destruct H9. symmetry. apply H11.
+  auto. rewrite H10, H11. destruct H8. apply H12.
+  split.
+  -unfold bound_prop. intros. specialize (HCseq1 j).
+   specialize (HCseq1 k). intros. destruct H17 as [b0].
+   destruct H18 as [a0]. assert (eqA a a0). apply (H j a a0);auto.
+   assert (eqA b b0). apply (H k b b0);auto. rewrite H19, H20.
+   rewrite H0.  destruct H9. destruct H9. unfold bound_prop in H9.
+   apply (H9 j k a0 b0 H13 H14 H18 H17).
+  -intros. unfold not_bound_prop. destruct H9.
+   destruct H9. specialize (H15 m H13). unfold not_bound_prop in H15.
+   destruct H15 as [j [k [a [b [? [? [? ?]]]]]]].
+   exists j, k, a, b, x, x0. assert (seq1 j a).
+   destruct H1. specialize (HCseq1 j).
+   specialize (HCseq1 k). intros. destruct H1 as [b0].
+   destruct H15. destruct H16 as [a0].
+   assert (eqA a a0). symmetry. pose proof (H j a0 a).
+   apply H17;auto. destruct HWS. apply HCseq2 with (a1 := a0).
+   symmetry. auto. auto. exists H16. destruct H15.
+   assert (seq1 k b). destruct H1. specialize (HCseq1 k) as [b0].
+   apply HCseq2 with (a1 := b0). apply (H k);auto. auto.
+   exists H17. rewrite H0. auto.
+Qed.
+
+
+
+
+Inductive approxSeq (CCseq : @prj_nat CA) (x : X) (Hb : x > zeroX) : nat -> A -> Prop :=
+| aps (n n1 : nat) (Cseq : @prj_nat A) (t : CA) (a aeq: A) (x1 : X)
+      (H : zeroSeq x Hb n x1) 
+    (H1 : CCseq n t)(Hsf : sf t Cseq) (H2 : Cseq (S n1) a) (HeqA : eqA a aeq)
+        (H3 : fst_nCauchy Cseq n1 x1) : approxSeq CCseq x Hb n aeq.
+(*n1 is certain, hence the (S n1) is the very same nat of each Equivalent class*)
 Lemma approxSeq_well : forall (CCseq : @prj_nat CA)
     (HCC : @CauchySeq CA CX equCX equCA leCX plusCX zeroCX pfCX distCA MC CCseq)
-    (x : X) (Hb : x > zeroX),
-    @well_seq A eqA (approxSeq (CCA_cros_split CCseq (Cws CCseq HCC)) x Hb).
+     (x : X) (Hb : x > zeroX), @well_seq A eqA (approxSeq CCseq x Hb).
 Proof.
-Admitted.
+  intros. split.
+  -intros. pose proof Select_CA. pose proof (HCseq1 n) as [p].
+   pose proof (zeroSeq_well x Hb). pose proof (HCseq1 n) as [x1].
+   pose proof sfs. specialize (H3 p) as [Cseq].
+   specialize (H x x1 Hb Cseq (sfc p Cseq H3) n H2) as [n1 ?].
+   destruct H. pose proof (sfc p Cseq H3). assert (exists a, Cseq (S n1) a).
+   apply H5. destruct H6 as [a].
+   exists a.
+   apply aps with (n := n) (n1 := n1) (x1 := x1) (Cseq := Cseq) (a := a)
+                  (t := con_intro eqX eqA leX plusX zeroX dist Cseq (sfc p Cseq H3)).
+   auto. pose proof (sfp p Cseq H3). apply HCseq2 with (a1 := p).
+   auto. auto. pose proof sfi2.
+   apply (H7 p _ Cseq). apply sfp. auto. auto.
+   reflexivity. auto.
+  -intros. destruct H0.
+   apply aps with (n1 := n1) (Cseq := Cseq)(a := a) (x1 := x1) (t := t).
+   auto. auto. auto. auto.
+   rewrite <-H. auto. auto.
+  -intros. destruct H, H0. assert (equCA t t0).
+   apply HCseq3 with (m := n);auto. assert (appropriate Cseq Cseq0).
+   apply (sfe t t0);auto. assert (n0 = n1). assert (eqX x1 x0).
+   pose proof (zeroSeq_well x Hb). apply HCseq3 with (m := n);auto.
+   symmetry. apply (appro_eq_eqX Cseq Cseq0 _ _ x1 x0);auto.
+   apply (sfc t Cseq);auto. apply (sfc t0 Cseq0);auto.
+   apply (zeroSeq_nonzero x x1 Hb n); auto.
+   apply (zeroSeq_nonzero x x0 Hb n); auto.
+   rewrite H9 in H5. rewrite <-HeqA, <-HeqA0.
+   apply (H8 (S n1));auto.
+Qed.   
+
+
 Definition sig_X_CX (x : X) : CX :=@sig_inv X X eqX eqX leX plusX zeroX distX pfX MX _ _ x.
 
-Lemma distC_dist : forall (cq1 cq2 : @prj_nat A) (HC1 : CauchySeq _ _ cq1) (HC2 : CauchySeq _ _ cq2) 
-  (x y z : X) (N1 N2 : nat), x > zeroX ->ltCX (distCA (con_intro _ _ _ _ _ _ cq1 HC1) (con_intro _ _ _ _ _ _ cq2 HC2)) (sig_X_CX x) 
-    -> (forall (n1 n2 : nat) (a1 a2 : A),(n1 > N1)%nat -> (n2 > N1)%nat
-                     -> cq1 n1 a1 -> cq1 n2 a2 -> dist a1 a2 < y)
-    -> (forall (n3 n4 : nat) (a3 a4 : A),(n3 > N2)%nat -> (n4 > N2)%nat
-                     -> cq2 n3 a3 -> cq2 n4 a4 -> dist a3 a4 < z)
-    -> (forall (n : nat) (a5 a6 : A), (n > (max N1 N2))%nat 
-                     -> cq1 n a5 -> cq2 n a6 -> dist a5 a6 <= x + y + z ).
-Proof.
-  intros. apply lt_lt_prop in H0. simpl in H0. destruct H0 as [N]. destruct(always_greater N (max N1 N2)) as [G].
-  destruct H6 as [Hex1 Hex2].
-  assert(exists atmp, cq1 G atmp). apply HCseq1. assert(exists btmp, cq2 G btmp).
-  apply HCseq1. destruct H6 as [atmp]. destruct H7 as [btmp].
-  assert(exists dab, distseq cq1 cq2 G dab). pose proof (well_dis cq1 cq2 _ _ _ _) as [?].
-  apply HCseq1. destruct H8 as [dab]. destruct (H0 G dab x). omega. apply dit with (a := atmp) (b := btmp);auto.
-  destruct H8. rewrite He. assert(eqA a atmp). destruct HC1. apply (HCseq3 n0);auto.
-  assert(eqA b btmp). destruct HC2. apply (HCseq3 n0);auto. rewrite H8, H9. reflexivity.
-  apply sig. assert(x > dab). apply lt_intro;auto. assert(eqX dab (dist atmp btmp)). destruct H8. rewrite He.
-  assert(eqA a atmp). destruct HC1. apply (HCseq3 n0);auto. assert(eqA b btmp). destruct HC2. apply (HCseq3 n0);auto.
-  rewrite H8. rewrite H10. reflexivity. rewrite H10 in H9. assert(dist a5 atmp < y). apply (H1 n G).
-  assert(max N1 N2 >= N1)%nat. apply Nat.le_max_l. apply le_lt_or_eq in H11. destruct H11.
-  apply (lt_trans _ (max N1 N2) _);auto. rewrite H11. auto. assert(max N1 N2 >= N1)%nat. apply Nat.le_max_l.
-  apply le_lt_or_eq in H11; destruct H11. apply (lt_trans _ (max N1 N2) _);auto. rewrite H11;auto. auto. auto.
-  assert(dist a6 btmp < z). assert(max N1 N2 >= N2)%nat. apply Nat.le_max_r. apply (H2 n G).
-  apply le_lt_or_eq in H12. destruct H12. apply (lt_trans _ (max N1 N2) _);auto. rewrite H12;auto.
-  apply le_lt_or_eq in H12. destruct H12. apply (lt_trans _ (max N1 N2) _);auto. rewrite H12;auto.
-  auto. auto. assert(dist a5 a6 <= dist a5 atmp + dist atmp btmp + dist btmp a6).
-  assert(dist a5 a6 <= dist a5 atmp + dist atmp a6). apply mtr.
-  assert(dist a5 atmp + dist atmp a6 <= dist a5 atmp + dist atmp btmp + dist btmp a6). rewrite pfa.
-  apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto. apply pofr;reflexivity.
-  apply mtr. apply (poft _ (dist a5 atmp + dist atmp a6) _);auto.
-  assert(dist a5 atmp + dist atmp btmp + dist btmp a6 < x + y + z).
-  assert(dist a5 atmp + dist atmp btmp < x + y).
-  pose proof (lt_two_plus_two X eqX _ leX plusX _ (dist atmp btmp) (dist a5 atmp) x y). destruct H14.
-  apply lt_intro;apply H9. apply lt_intro;apply H11. rewrite (pfc (dist a5 atmp) _). apply lt_intro;auto.
-  apply lt_plus; auto. rewrite msy;auto. apply le_or in H13 as [? | ?].
-  apply lt_t with (b := dist a5 atmp + dist atmp btmp + dist btmp a6). auto. auto.
-  rewrite H13. apply H14.
-Qed.
-  
 Lemma distC_dist_fixed : forall (cq1 cq2 : @prj_nat A) (HC1 : CauchySeq _ _ cq1) (HC2 : CauchySeq _ _ cq2)
   (x y z : X) (a1 a2 : A) (N1 N2 : nat),
     x > zeroX ->ltCX (distCA (con_intro _ _ _ _ _ _ cq1 HC1) (con_intro _ _ _ _ _ _ cq2 HC2)) (sig_X_CX x) -> cq1 N1 a1 -> cq2 N2 a2
@@ -518,7 +639,6 @@ Proof.
   rewrite (pfc x _). apply lt_plus;auto. apply lt_plus;auto. rewrite msy;auto. apply le_or in H12.
   destruct H12. apply (lt_t _ (dist a1 a + dist a b + dist b a2) _);auto. rewrite H12;auto. apply H13.
 Qed.
-
 Theorem approxSeq_Cauchy : forall (CCseq : @prj_nat CA) 
  (H0 : @CauchySeq CA CX equCX equCA leCX plusCX zeroCX pfCX distCA MC CCseq)
  (x : X) (Hb : x > zeroX), 
@@ -542,12 +662,27 @@ Proof.
    destruct H5. destruct H6. destruct H4. assert(x1 < epsex). apply (H1 n0 _). apply (lt_trans _ G _);auto.
    exact H5. assert(x0 < epsex). apply (H1 n _). apply (lt_trans _ G _);auto. exact H6. rewrite <-HeqA.
    rewrite <-HeqA0. assert(dist a a0 <= eps1 + epsex + epsex). pose proof distC_dist_fixed.
-   apply (H16 Cseq Cseq0 _ _ eps1 epsex epsex a a0 n1 n2). apply lt_intro;apply Heps1. simpl in H7.
-   simpl in H10.
-   destruct H0 with (m := n0) (n := n) (a := (con_intro _ _ _ _ _ _ Cseq _)) (b := (con_intro _ _ _ _ _ _ Cseq0 _)). split;apply (lt_trans _ G _);auto.
-   split;auto. apply lt_intro;auto. auto. auto. intros. destruct (H9 n3 a3). auto. auto.
+   apply (H16 Cseq Cseq0 (sfc t Cseq Hsf) (sfc t0 Cseq0 Hsf0) eps1 epsex epsex a a0 (S n1) (S n2)). apply lt_intro;apply Heps1. 
+   destruct H0 with (m := n0) (n := n) (a := t) (b := t0). split;apply (lt_trans _ G _);auto.
+   split;auto. 
+   assert (equCA t (con_intro eqX eqA leX plusX zeroX dist Cseq
+                              (sfc t Cseq Hsf))). apply sfp.
+   assert (equCA t0 (con_intro eqX eqA leX plusX zeroX dist Cseq0
+                               (sfc t0 Cseq0 Hsf0))). apply sfp.
+   rewrite <-H17. rewrite <-H18.
+   apply lt_intro;auto.
+   auto. auto. intros.
+   assert (forall (n2 : nat) (a1 : A),
+              Cseq n2 a1 ->(n2 > S n1)%nat -> x1 > dist a a1).
+   pose proof fst_snd_prop. unfold snd_nCauchy in H19.
+   apply H19;auto.
+   destruct (H19 n3 a3). auto. auto.
    apply lttr with (y := x1);auto. rewrite msy. apply lt_intro;auto. intros.
-   destruct (H12 n3 a4);auto. apply lttr with (y := x0);auto. rewrite msy. apply lt_intro;auto.
+   assert(forall (n3 : nat) (a1 : A),
+             Cseq0 n3 a1 -> (n3 > S n2)%nat -> x0 > dist a0 a1).
+   pose proof fst_snd_prop. unfold snd_nCauchy in H19.
+   apply H19;auto.
+   destruct (H19 n3 a4);auto. apply lttr with (y := x0);auto. rewrite msy. apply lt_intro;auto.
    assert(epsex + epsex < eps2). rewrite <-Hexeq.
    pose proof (lt_two_plus_two X eqX _ leX plusX zeroX epsex epsex epsex1 epsex2).
    destruct H17. apply lt_intro;apply Heex1. apply lt_intro;apply Heex2. apply lt_intro;auto.
@@ -682,11 +817,6 @@ Proof.
   omega. apply sig. apply sig. apply lt_intro;auto.
 Qed.
 
-Instance distCA_rewrite : Proper (equCA ==> equCA ==> equCX) distCA.
-Proof.
-  apply (dist_rewrite CX CA equCX leCX plusCX zeroCX equCA _ _ pfCX).
-  apply MC.
-Defined.
 
 Theorem Complete : forall (r : CCA), (exists (p : CA), 
         equCCA (sig_C_CC p) r).
@@ -708,14 +838,19 @@ Proof.
           destruct H8. apply (HCseq3 n). auto. apply sig. rewrite H8.
           assert(exists t, approxSeq CCseq x Hb n t). pose proof(@approxSeq_well CCseq _ x Hb).
           destruct H9. apply HCseq1. destruct H9. assert(approxSeq CCseq x Hb n x0) as Hv. apply H9. 
-          destruct H9. 
-          assert(leCX (distCA (approx CCseq HCC x Hb) ((con_intro eqX eqA leX plusX zeroX dist Cseq HC))) (sig_inv eps0)).
-          simpl. right. destruct(always_greater n n1) as [G2 [? ?]].
+          destruct H9.
+          assert (CauchySeq eqX eqA Cseq) as HC. apply (sfc t);auto.
+          assert(leCX (distCA (approx CCseq HCC x Hb) (con_intro eqX eqA leX plusX zeroX dist Cseq HC)) (sig_inv eps0)).
+          simpl. right. destruct(always_greater n (S n1)) as [G2 [? ?]].
           exists G2. intros. assert(eqX a3 eps0). destruct H17; [reflexivity| symmetry; auto]. rewrite H18.
           destruct H16. rewrite He. assert(dist aeq a0 < eps2).
           destruct H2 with (m := n) (n := n0) (a := aeq) (b := a0). split;apply (lt_trans _ G _);auto.
           apply (lt_trans _ n _);auto. apply (lt_trans _ G2 _);auto. split;auto. apply lt_intro;auto.
-          assert(dist a b < x1). destruct (H12 n0 b). auto. apply (lt_trans _ G2 _);auto. apply lt_intro;auto.
+          assert(dist a b < x1).
+          assert (forall (n2 : nat) (a1 : A),
+                     Cseq n2 a1 -> (n2 >S n1)%nat -> x1 > dist a a1).
+          apply fst_snd_prop;auto.
+          destruct (H19 n0 b). auto. apply (lt_trans _ G2 _);auto. apply lt_intro;auto.
           rewrite <-HeqA in H16. assert(x1 < eps1). apply (H1 n).
           apply (lt_trans _ G _);auto. auto. assert(dist a b < eps1). apply lttr with (y := x1);auto.
           assert(dist a b + dist a a0 < eps1 + eps2).
@@ -726,7 +861,9 @@ Proof.
           destruct H23. apply lttr with (y := dist a b + dist a a0);auto. apply lt_intro;apply H23.
           apply lt_intro;apply H22. rewrite H23. apply lt_intro;apply H22.
           assert(equCA (con_intro eqX eqA leX plusX zeroX dist Cseq HC) a2).
-          destruct HCC. destruct HWS0. apply (HCseq3 n);auto. rewrite <-H14. auto.
+          destruct HCC. destruct HWS0. apply (HCseq3 n);auto.
+          apply HCseq2 with (a1 := t). apply sfp;auto. auto.
+          rewrite <-H14. auto.
        +apply (@le_lt_eq CX equCX leCX pofCX) in H8. destruct H8.
           pose proof ltCtr. unfold ltCX in H9. destruct(H9 (distCA a1 a2) (sig_inv eps0) eps).
           auto. auto. apply lt_intro;auto. rewrite H8. apply lt_intro;apply Heps1.
@@ -739,7 +876,7 @@ Proof.
     destruct r. assert(exists p : CA, Cseq 0 p). destruct H2. destruct HWS. apply HCseq1.
     destruct H3. exists x. apply H1.
 Qed.
-(**Up to now, we have proven that there is an surjection from CA to CCA,
+(**Up to now, we have proven that there is trivial projection from CA to CCA, 
      which means that for every r : CCA, there is an element p in CA has the 
      same "limit" as r, note that we havn't defined the process of limition, 
      hence we use the equivelent definition to show that the CCA is complete**)
