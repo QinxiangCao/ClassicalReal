@@ -196,37 +196,72 @@ Proof.
   auto. rewrite H0. rewrite H. reflexivity.
 Qed.
   
-Variables poor_strong :  forall (a b : X), {a <= b} + {b <= a}.
-(**The succ has to make the same division for all the equivalence class of a**)
-Definition succ (a : X) (H : a > zeroX) : X.
-  destruct (division_of_eps_strong  a). auto. destruct x as [eps1 eps2]. simpl in a0.
-  destruct a0 as [Heps1 [Heps2 Hepseq]]. destruct (poor_strong eps1 eps2).
-  apply eps1. apply eps2.
+Definition succ (a : X) (H : a > zeroX) (asc : X)  : Prop.
+  destruct (division_of_eps_strong  a). auto.
+  destruct x as [eps1 eps2]. simpl in a0.
+  destruct a0 as [Heps1 [Heps2 Hepseq]].
+  apply((eps1 <= eps2 -> eqX asc eps1) /\ (eps2 <= eps1 -> eqX asc eps2)).
 Defined.
-Definition succ' (a :{a : X | a > zeroX}) : X := succ (proj1_sig a) (proj2_sig a).
-Definition eqX' (a b : {a : X | a  > zeroX}) : Prop := eqX (proj1_sig a) (proj1_sig b).
-Lemma succ_proper :
-  forall (a b : X) (H1 : a > zeroX) (H2 : b > zeroX), eqX a b ->
-               eqX (succ a H1) (succ b H2).
+
+Lemma succ_proper1 :
+  forall (a b asc bsc : X) (H1 : a > zeroX) (H2 : b > zeroX),
+    eqX a b -> succ a H1 asc -> succ b H2 bsc -> eqX asc bsc.
 Proof.
-  intros. unfold succ. pose proof eq_div_eps_strong.
-  specialize (H0 a b H1 H2 H).
+  intros. unfold succ in H0, H3.
+  pose proof eq_div_eps_strong.
+  specialize (H4 a b H1 H2 H).
   destruct (division_of_eps_strong a H1), (division_of_eps_strong b H2).
-  simpl. simpl in H0. destruct a0 as [? [? ?]].
+  simpl in H0, H3, H4. destruct a0 as [? [? ?]].
   destruct a1 as [? [? ?]]. destruct x, x0.
   simpl in l, l0, e, l1, l2, e0, H0.
-  unfold eqXp in H0. simpl in H0. destruct H0 as [? ?].
-  destruct (poor_strong x x1). destruct (poor_strong x0 x2).
-  auto. rewrite <-H3. apply pore. auto. rewrite H0, H3;auto.
-  destruct (poor_strong x0 x2). rewrite H3.
-  apply pore. rewrite <-H0, <-H3. auto. auto.
-  auto.
+  unfold eqXp in H4. simpl in H4. destruct H4 as [? ?].
+  destruct H0, H3.
+  destruct (poor x0 x2).
+  rewrite H3, H0.
+  exact H4.
+  rewrite H4, H5.
+  exact H8.
+  exact H8.
+  rewrite H7, H6.
+  exact H5.
+  rewrite H4, H5.
+  exact H8.
+  exact H8.
 Qed.
-
+Lemma succ_proper2 :
+  forall (a asc1 asc2 : X) (H1 : a > zeroX),
+    succ a H1 asc1 -> eqX asc2 asc1 -> succ a H1 asc2.
+Proof.
+  intros.
+  unfold succ in H. unfold succ.
+  destruct (division_of_eps_strong a H1).
+  simpl in H. simpl.
+  destruct x.
+  destruct a0 as [? [? ?]].
+  rewrite H0;auto.
+Qed.
+Lemma succ_ext :
+  forall (a : X) (H : a > zeroX),
+  exists asc : X, (succ a H asc).
+Proof.
+  intros. unfold succ.
+  destruct (division_of_eps_strong a H).
+  destruct x.
+  simpl in a0.
+  destruct a0 as [? [? ?]].
+  destruct (poor x x0).
+  exists x;split.
+  intros;reflexivity.
+  intros;apply pore;auto.
+  exists x0;split.
+  intros;apply pore;auto.
+  intros. reflexivity.
+Qed.  
+  
 Inductive zeroSeq (x : X) (H : x > zeroX) : nat -> X -> Prop :=
   | ini (x' : X) (Heq : eqX x x') : zeroSeq x H 0 x'
-  | suc (n : nat) (a b : X) (IH : zeroSeq x H n a) (IHg : a > zeroX) (Heq : eqX (succ a IHg) b) : 
-      zeroSeq x H (S n) b.
+  | suc (n : nat) (a asc : X) (IH : zeroSeq x H n a) (IHg : a > zeroX)
+        (Hsc : succ a IHg asc) : zeroSeq x H (S n) asc.
 
 Lemma greater_ext : (exists a : X, (~eqX a zeroX)) ->(exists b : X, (b > zeroX)).
 Proof.
@@ -243,27 +278,37 @@ Qed.
 Lemma zeroSeq_nonzero : forall (a x: X) (H : a > zeroX) (n : nat) (Hs : zeroSeq a H n x),
     x > zeroX.
 Proof.
-  intros. inversion Hs. rewrite <-Heq. auto. rewrite <-Heq. unfold succ.
+  intros. inversion Hs. rewrite <-Heq. auto.
+  unfold succ in Hsc.
   destruct (division_of_eps_strong a0 IHg).
-  destruct x0 as [eps1 eps2]. simpl in a1. destruct a1 as [Heps1 [Heps2 Hepseq]].
-  destruct (poor_strong eps1 eps2);auto.
+  destruct x0 as [eps1 eps2].
+  simpl in a1.
+  destruct a1 as [Heps1 [Heps2 Hepseq]].
+  destruct Hsc.
+  destruct (poor eps1 eps2).
+  apply H2 in H4.
+  rewrite H4;auto.
+  apply H3 in H4.
+  rewrite H4;auto.
 Qed.
 
 Lemma zeroSeq_well : forall (a : X) (H : a > zeroX), (@well_seq X eqX (zeroSeq a H)).
 Proof.
   intros. split. 
   -intros. induction n. exists a. apply ini. reflexivity.
-    destruct IHn. pose proof (zeroSeq_nonzero a x H n H0).
-    exists (succ x H1). apply suc with (a := x) (IHg := H1);auto. reflexivity.
+   destruct IHn. pose proof (zeroSeq_nonzero a x H n H0).
+   destruct (succ_ext x H1).
+   exists x0. apply suc with (a := x) (IHg := H1);auto. 
   -intros. inversion H1. apply ini. rewrite Heq. auto.
-    apply suc with (a := a0) (IHg := IHg);auto. rewrite <-H0. auto.
-  -intro m. induction m. intros. inversion H0. inversion H1. rewrite <-Heq. auto.
-    intros. inversion H0. inversion H1. assert(eqX a0 a3). apply IHm;auto.
-    assert(eqX (succ a0 IHg) (succ a3 IHg0)). 
-   +pose proof succ_proper.
-    specialize (H7 a0 a3 IHg IHg0 H6).
-    auto.
-   +rewrite H7 in Heq. rewrite Heq in Heq0. auto.
+   apply suc with (a := a0) (IHg := IHg);auto.
+   apply succ_proper2 with (asc1 := a1);auto.
+   symmetry;auto.
+  -intro m. induction m.
+   intros. inversion H0.
+   inversion H1. rewrite <-Heq. auto.
+   intros. inversion H0.
+   inversion H1. assert(eqX a0 a3). apply IHm;auto.
+   apply (succ_proper1 a0 a3 _ _ IHg IHg0);auto.   
 Qed.
 
 Lemma succ_dual : forall (a x1 x2: X) (H : a > zeroX) (n1 n2 : nat) (Hs1 : zeroSeq a H n1 x1)
@@ -271,29 +316,48 @@ Lemma succ_dual : forall (a x1 x2: X) (H : a > zeroX) (n1 n2 : nat) (Hs1 : zeroS
     (n2 > n1)%nat -> x1 >= n_plus 2 x2.
 Proof.
   intros. simpl. rewrite (pfc _ zeroX). rewrite pfz. 
-  generalize dependent n1. generalize dependent x1. generalize dependent x2.
+  generalize dependent n1.
+  generalize dependent x1.
+  generalize dependent x2.
   induction n2. intros. inversion H0. intros.
-  assert(forall (n : nat) (x y : X),zeroSeq a H n x -> zeroSeq a H (S n) y -> x >= y + y).
-  -intros. inversion H2. rewrite <- Heq. unfold succ.
-    destruct (division_of_eps_strong a0 IHg) as [pr [Heps1 [Heps2 Hepseq]]].
-    destruct pr as [eps1 eps2]. simpl in Heps1,Heps2,Hepseq. 
-    destruct(poor_strong eps1 eps2). assert(eqX x a0). pose proof (zeroSeq_well a H).
-    apply HCseq3 with (m := n);auto. rewrite H5. rewrite <-Hepseq.
-    apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto. apply pofr;reflexivity.
-    assert(eqX x a0). pose proof (zeroSeq_well a H).
-    apply HCseq3 with (m := n);auto. rewrite H5. rewrite <-Hepseq.
-    apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto. apply pofr;reflexivity.
+  assert(forall (n : nat) (x y : X),
+            zeroSeq a H n x -> zeroSeq a H (S n) y -> x >= y + y).
+  -intros. inversion H2.
+   unfold succ in Hsc.
+   destruct (division_of_eps_strong a0 IHg)
+     as [pr [Heps1 [Heps2 Hepseq]]].
+   destruct pr as [eps1 eps2].
+   simpl in Heps1,Heps2,Hepseq.
+   destruct(poor eps1 eps2).
+   assert(eqX x a0). pose proof (zeroSeq_well a H).
+   apply HCseq3 with (m := n);auto. rewrite H6, <-Hepseq.
+   apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
+   destruct Hsc. apply H7 in H5.
+   apply pofr;auto.
+   assert(eqX x a0). pose proof (zeroSeq_well a H).
+   apply HCseq3 with (m := n);auto.
+   destruct Hsc. rewrite H8;auto.
+   assert(eqX x a0). pose proof (zeroSeq_well a H).
+   apply HCseq3 with (m := n);auto. rewrite H6, <-Hepseq.
+   apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
+   destruct Hsc. rewrite H8;auto.
+   apply pofr. destruct Hsc.
+   apply H8;auto.
   -pose proof (zeroSeq_well a H). destruct HCseq1 with (n := n2).
-    assert((n2 >= n1)%nat). apply lt_n_Sm_le;auto.
-    apply le_lt_or_eq in H4. destruct H4. assert(x1 >= x + x).
-    apply IHn2 with(x2 :=x) (n1 := n1) (x1 := x1);auto.
-    assert(x >= x2 + x2). apply H1 with (n := n2);auto.
-    assert(x1 >= x). assert(x + x >= x + zeroX).
-    apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto. apply pofr. reflexivity.
-    pose proof (zeroSeq_nonzero a x H n2 H3). destruct H7. auto. rewrite pfc in H7.
-    rewrite pfz in H7. apply poft with (b := x + x);auto. apply poft with (b := x);auto.
-    assert(eqX x x1). apply HCseq3 with (m := n1). rewrite H4. auto. auto.
-    rewrite <-H5. apply H1 with (n := n2);auto.
+   assert((n2 >= n1)%nat). apply lt_n_Sm_le;auto.
+   apply le_lt_or_eq in H4. destruct H4. assert(x1 >= x + x).
+   apply IHn2 with(x2 :=x) (n1 := n1) (x1 := x1);auto.
+   assert(x >= x2 + x2). apply H1 with (n := n2);auto.
+   assert(x1 >= x). assert(x + x >= x + zeroX).
+   apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
+   apply pofr. reflexivity.
+   pose proof (zeroSeq_nonzero a x H n2 H3).
+   destruct H7. auto. rewrite pfc in H7.
+   rewrite pfz in H7. apply poft with (b := x + x);auto.
+   apply poft with (b := x);auto.
+   assert(eqX x x1). apply HCseq3 with (m := n1).
+   rewrite H4. auto. auto.
+   rewrite <-H5. apply H1 with (n := n2);auto.
 Qed.
 
 Lemma zeroSeq_lesseps : forall(a eps : X) (H : a > zeroX) (Hex : eps > zeroX),
@@ -304,49 +368,83 @@ Proof.
   unfold not. intro.
   assert(~(exists (N : nat), (forall (n : nat)(x : X), (n > N)%nat -> zeroSeq a H n x -> x < eps))
     -> forall (N : nat), (exists (n : nat) (x : X) ( H1 : (n > N)%nat) (H2 : zeroSeq a H n x), x >= eps)).
-   -intros. apply not_ex_all_not with (n := N) in H1. apply not_all_ex_not in H1.
-    destruct H1 as [n]. exists n. apply not_all_ex_not in H1. destruct H1 as [x]. exists x.
-    apply not_all_ex_not in H1 as [H2]. apply not_all_ex_not in H1 as[H3].
-    intros. apply lt_not in H1. exists H2. exists H3. auto. auto.
-   -assert(forall (N : nat), (exists (n : nat) (x : X) (_ : (n > N)%nat) (_ : zeroSeq a H n x), x >= eps)).
-    apply H1. unfold not. apply H0.
-    assert(forall (n : nat) (x : X), zeroSeq a H n x -> x >= eps).
-    intros. destruct H2 with (N := n) as [n'].
-    destruct H4. destruct H4 as [H5]. destruct H4 as [H6].
-    assert(x >= n_plus 2 x0). apply (succ_dual a x x0 H n n');auto.
-    simpl in H7. rewrite (pfc x0 zeroX) in H7. rewrite pfz in H7.
-    assert(x0 + x0 >= x0 + zeroX). apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
-    apply pofr;reflexivity. pose proof zeroSeq_nonzero.
-    destruct H8 with (a := a) (x := x0) (H := H) (n := n'). auto. auto. rewrite pfc in H8.
-    rewrite pfz in H8. assert(x0 + x0 >= eps). apply poft with (b := x0);auto.
-    apply poft with (b := x0 + x0);auto.
-    assert(forall (n : nat), n_plus (2 ^ n) eps <= a). intros.
-    pose proof (zeroSeq_well a H). assert(exists a1, zeroSeq a H n a1).
-    apply HCseq1. destruct H5 as [a1]. assert(a1 >= eps).
-    apply H3 with (n := n);auto.
-    assert(forall (m : nat)(t am : X), am >= t -> zeroSeq a H m am -> a >= n_plus (2 ^ m) t).
-    intro m. induction m.
-      { intros. simpl. rewrite pfc,pfz. assert(eqX a am). apply HCseq3 with (m := 0);[apply ini|auto].
-        reflexivity. rewrite H9;auto. }
-      { intros. simpl. replace((2 ^ m + (2 ^ m + 0))%nat) with ((2 ^ m + 2 ^ m)%nat).
-         rewrite n_plus_add1. pose proof HCseq1. destruct H9 with (n := m) as [a'].
-         assert(a' >= n_plus 2 am). apply (succ_dual a a' am H m (S m));auto.
-         simpl in H11. rewrite (pfc _ zeroX), pfz in H11. assert(am + am >= t + t).
-         apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
-         assert(a' >= t + t). apply poft with (b := am + am);auto. apply IHm in H13. rewrite n_plus_add2 in H13.
-         apply H13. auto. omega. }
-       { apply H7 with (am := a1). auto. auto. }
-       { assert(forall n : nat, a >= n_plus n eps). intros. assert((2 ^ n > n)%nat).
-          { apply Nat.pow_gt_lin_r. omega. }
-          { assert(a >= n_plus (2 ^ n) eps). apply H4. assert(n_plus (2 ^ n) eps > n_plus n eps).
-             apply n_plus_great;auto. destruct H7. apply poft with (b := n_plus (2 ^ n) eps);auto. }
-          { pose proof Archimedian. destruct H6 with (x := eps) (y := a) as [n];auto.
-             assert(a >= n_plus 2 eps). apply H5. simpl in H7. rewrite (pfc _ zeroX), pfz in H7.
-             assert(eps + eps > zeroX + eps). pose proof (HpOt X eqX _ leX plusX zeroX zeroX eps eps).
-             destruct H8. apply lt_intro;destruct Hex;auto. apply lt_intro;auto. rewrite pfz in H8.
-             destruct (le_lt_eq _ _ _ (eps + eps) a). apply H9 in H7. destruct H7.
-             apply lttr with (y := eps + eps);auto. rewrite <-H7;auto. assert(n_plus n eps > a /\ ~(n_plus n eps > a)).
-             split. auto. apply lt_not;auto. apply PNP in H8. destruct H8. } }
+  -intros. apply not_ex_all_not with (n := N) in H1.
+   apply not_all_ex_not in H1.
+   destruct H1 as [n].
+   exists n. apply not_all_ex_not in H1. destruct H1 as [x].
+   exists x. apply not_all_ex_not in H1 as [H2].
+   apply not_all_ex_not in H1 as[H3].
+   intros. apply lt_not in H1. exists H2. exists H3. auto. auto.
+  -assert(forall (N : nat), (exists (n : nat) (x : X) (_ : (n > N)%nat) (_ : zeroSeq a H n x), x >= eps)).
+   apply H1. unfold not. apply H0.
+   assert(forall (n : nat) (x : X), zeroSeq a H n x -> x >= eps).
+   intros. destruct H2 with (N := n) as [n'].
+   destruct H4. destruct H4 as [H5]. destruct H4 as [H6].
+   assert(x >= n_plus 2 x0). apply (succ_dual a x x0 H n n');auto.
+   simpl in H7. rewrite (pfc x0 zeroX) in H7. rewrite pfz in H7.
+   assert(x0 + x0 >= x0 + zeroX).
+   apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
+   apply pofr;reflexivity. pose proof zeroSeq_nonzero.
+   destruct H8 with (a := a) (x := x0) (H := H) (n := n').
+   auto. auto. rewrite pfc in H8.
+   rewrite pfz in H8. assert(x0 + x0 >= eps).
+   apply poft with (b := x0);auto.
+   apply poft with (b := x0 + x0);auto.
+   assert(forall (n : nat), n_plus (2 ^ n) eps <= a). intros.
+   pose proof (zeroSeq_well a H). assert(exists a1, zeroSeq a H n a1).
+   apply HCseq1. destruct H5 as [a1]. assert(a1 >= eps).
+   apply H3 with (n := n);auto.
+   assert(forall (m : nat)(t am : X),
+             am >= t -> zeroSeq a H m am -> a >= n_plus (2 ^ m) t).
+   intro m. induction m.
+   { intros. simpl.
+     rewrite pfc,pfz.
+     assert(eqX a am).
+     apply HCseq3 with (m := 0);[apply ini|auto].
+     reflexivity. rewrite H9;auto.
+   }
+   { intros. simpl.
+     replace((2 ^ m + (2 ^ m + 0))%nat) with ((2 ^ m + 2 ^ m)%nat).
+     rewrite n_plus_add1. pose proof HCseq1.
+     destruct H9 with (n := m) as [a'].
+     assert(a' >= n_plus 2 am).
+     apply (succ_dual a a' am H m (S m));auto.
+     simpl in H11. rewrite (pfc _ zeroX), pfz in H11.
+     assert(am + am >= t + t).
+     apply le_two_plus_two with (eqX := eqX) (x0 := zeroX);auto.
+     assert(a' >= t + t). apply poft with (b := am + am);auto.
+     apply IHm in H13. rewrite n_plus_add2 in H13.
+     apply H13. auto. omega.
+   }
+   { apply H7 with (am := a1).
+     auto. auto.
+   }
+   {
+     assert(forall n : nat, a >= n_plus n eps). intros. assert((2 ^ n > n)%nat).
+     {
+       apply Nat.pow_gt_lin_r. omega.
+     }
+     {
+       assert(a >= n_plus (2 ^ n) eps). apply H4.
+       assert(n_plus (2 ^ n) eps > n_plus n eps).
+       apply n_plus_great;auto. destruct H7.
+       apply poft with (b := n_plus (2 ^ n) eps);auto.
+     }
+     { pose proof Archimedian.
+       destruct H6 with (x := eps) (y := a) as [n];auto.
+       assert(a >= n_plus 2 eps). apply H5.
+       simpl in H7. rewrite (pfc _ zeroX), pfz in H7.
+       assert(eps + eps > zeroX + eps).
+       pose proof (HpOt X eqX _ leX plusX zeroX zeroX eps eps).
+       destruct H8. apply lt_intro;destruct Hex;auto.
+       apply lt_intro;auto. rewrite pfz in H8.
+       destruct (le_lt_eq _ _ _ (eps + eps) a). apply H9 in H7.
+       destruct H7.
+       apply lttr with (y := eps + eps);auto. rewrite <-H7;auto.
+       assert(n_plus n eps > a /\ ~(n_plus n eps > a)).
+       split. auto. apply lt_not;auto. apply PNP in H8. destruct H8.
+     }
+   }
   -apply NNPP in H0. apply H0.
 Qed.
 
@@ -355,39 +453,71 @@ Variables distX_eq_strong : forall (x : X), eqX (distX zeroX x) x.
 Lemma always_smaller : forall (a b : X), a > zeroX -> b > zeroX -> exists c, (c < a /\ c < b/\ c > zeroX).
 Proof.
   intros. destruct(classic (a <= b)).
-  destruct(division_of_eps _ _ _ _ _ _ a) as [eps1[eps2 [Heps1[Heps2 Heq]]]];auto.
-  apply lt_intro;destruct H;auto. exists eps1. assert(a > eps1). 
-  pose proof (lt_div X eqX _ leX plusX zeroX). destruct H2 with (a := eps1) (b := eps2) (c := a);auto.
-  apply lt_intro;auto. split. auto. pose proof (le_lt_eq X eqX _ a b). apply H3 in H1.
-  destruct H1. split. apply lttr with (y := a);auto. apply lt_intro;apply Heps1. rewrite <-H1. split. auto.
+  destruct(division_of_eps _ _ _ _ _ _ a)
+    as [eps1[eps2 [Heps1[Heps2 Heq]]]];auto.
+  apply lt_intro;destruct H;auto.
+  exists eps1. assert(a > eps1). 
+  pose proof (lt_div X eqX _ leX plusX zeroX).
+  destruct H2 with (a := eps1) (b := eps2) (c := a);auto.
+  apply lt_intro;auto.
+  split.
+  auto. pose proof (le_lt_eq X eqX _ a b).
+  apply H3 in H1.
+  destruct H1.
+  split.
+  apply lttr with (y := a);auto. apply lt_intro;apply Heps1.
+  rewrite <-H1. split.
+  auto.
   apply lt_intro;apply Heps1.
-  assert(~~b < a). unfold not. intros. apply lt_not in H2. apply H1. auto. auto.
+  assert(~~b < a).
+  unfold not. intros. apply lt_not in H2. apply H1.
+  auto. auto.
   apply NNPP in H2.
-  destruct(division_of_eps _ _ _ _ _ _ b) as [eps1[eps2 [Heps1[Heps2 Heq]]]];auto.
-  apply lt_intro;destruct H0;auto. exists eps1. assert(b > eps1).
-  pose proof (lt_div X eqX _ leX plusX zeroX). destruct H3 with (a := eps1) (b := eps2) (c := b);auto.
-  apply lt_intro;auto. split. apply lttr with (y := b);auto. split;auto. apply lt_intro;apply Heps1.
+  destruct(division_of_eps _ _ _ _ _ _ b)
+    as [eps1[eps2 [Heps1[Heps2 Heq]]]];auto.
+  apply lt_intro;destruct H0;auto.
+  exists eps1. assert(b > eps1).
+  pose proof (lt_div X eqX _ leX plusX zeroX).
+  destruct H3 with (a := eps1) (b := eps2) (c := b);auto.
+  apply lt_intro;auto.
+  split.
+  apply lttr with (y := b);auto. split;auto.
+  apply lt_intro;apply Heps1.
 Qed.
 
 Theorem zeroSeq_Cauchy :forall (a : X) (H : a > zeroX), CauchySeq eqX eqX (zeroSeq a H).
 Proof.
   intros. split. apply zeroSeq_well.
   intros. pose proof zeroSeq_lesseps.
-  destruct(division_of_eps _ _ _ _ _ _ eps) as [eps1 [eps2 [Heps1 [Heps2 Heq]]]];auto.
-  destruct(always_smaller eps1 eps2) as [s];auto. apply lt_intro;destruct Heps1;auto.
+  destruct(division_of_eps _ _ _ _ _ _ eps)
+    as [eps1 [eps2 [Heps1 [Heps2 Heq]]]];auto.
+  destruct(always_smaller eps1 eps2) as [s];auto.
+  apply lt_intro;destruct Heps1;auto.
   apply lt_intro;apply Heps2. destruct H2. destruct H3.
   destruct H1 with (a := a) (eps := s) (H := H) as [N];auto. exists N.
-  intros. destruct H6. assert(distX a0 b <= distX a0 zeroX + distX zeroX b). apply mtr.
-  rewrite (msy a0 zeroX) in H9. rewrite distX_eq_strong,distX_eq_strong in H9.
-  assert(a0 + b < s + s). pose proof (lt_two_plus_two X eqX _ _ _ _). destruct H7.
+  intros. destruct H6.
+  assert(distX a0 b <= distX a0 zeroX + distX zeroX b).
+  apply mtr.
+  rewrite (msy a0 zeroX) in H9.
+  rewrite distX_eq_strong,distX_eq_strong in H9.
+  assert(a0 + b < s + s).
+  pose proof (lt_two_plus_two X eqX _ _ _ _).
+  destruct H7.
   destruct (H10 a0 b s s). apply lt_intro; destruct (H5 m a0);auto.
   apply lt_intro; destruct (H5 n b);auto. apply lt_intro;auto.
-  assert(s + s < eps1 + eps2). pose proof (lt_two_plus_two X eqX _ _ _ _).
-  destruct (H11 s s eps1 eps2). apply lt_intro;apply H2. apply lt_intro;apply H3.
-  apply lt_intro;auto. rewrite Heq in H11. apply lttr with (y := s + s);auto.
-  pose proof (le_lt_eq X eqX _ (distX a0 b) (a0 + b)). apply H12 in H9. destruct H9.
-  apply lttr with (y := a0 + b);auto. apply lt_intro;apply H9. apply lt_intro;apply H10.
-  rewrite H9;apply lt_intro;apply H10. apply lt_intro;apply H11.
+  assert(s + s < eps1 + eps2).
+  pose proof (lt_two_plus_two X eqX _ _ _ _).
+  destruct (H11 s s eps1 eps2).
+  apply lt_intro;apply H2. apply lt_intro;apply H3.
+  apply lt_intro;auto.
+  rewrite Heq in H11.
+  apply lttr with (y := s + s);auto.
+  pose proof (le_lt_eq X eqX _ (distX a0 b) (a0 + b)).
+  apply H12 in H9. destruct H9.
+  apply lttr with (y := a0 + b);auto.
+  apply lt_intro;apply H9. apply lt_intro;apply H10.
+  rewrite H9;apply lt_intro;apply H10.
+  apply lt_intro;apply H11.
 Qed.
 
 Definition zeroN (a : X) (H : a > zeroX) : CX.
@@ -397,8 +527,10 @@ Defined.
 Theorem zeroSeq_eqzero : forall (a : X) (H : a > zeroX), equCX (zeroN a H) zeroCX.
 Proof.
   intros. simpl. intros. pose proof (zeroSeq_lesseps a eps H).
-  destruct H1 as [N]. apply lt_intro;apply H0. exists N. intros. assert(eqX zeroX a2).
-  destruct H4. reflexivity. auto. rewrite <-H5. rewrite msy, distX_eq_strong.
+  destruct H1 as [N].
+  apply lt_intro;apply H0. exists N. intros. assert(eqX zeroX a2).
+  destruct H4. reflexivity. auto.
+  rewrite <-H5. rewrite msy, distX_eq_strong.
   destruct (H1 n a1);auto. apply lt_intro;auto.
 Qed.
 (**up to now, we have constructed a sequence, which is equivalent to zeroX while each
