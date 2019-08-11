@@ -106,11 +106,6 @@ Proof.
 Defined.
 End EquR_playground.
 Existing Instance EquR_trans.
-Inductive ball {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
-        {dist : X -> X -> X}
-        {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
-    (a : X) (r : X) (x : X): Prop :=
-    | ball_intro (L : x0 < r) (H : dist a x < r) : ball a r x.
 Definition leC {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
         {dist : X -> X -> X}
         {mof : Plus_Field eqX leX plusX x0}  {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
@@ -126,15 +121,6 @@ Definition ltC {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X 
         {mof : Plus_Field eqX leX plusX x0}  {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
         (x1 x2 : Cauchilize eqX eqX _ _ _ _) : Prop := leC x1 x2 /\ ~equC x1 x2 .
 Notation "x1 < x2" := (ltC x1 x2) : ltC.
-Class PropBucket {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
-                {dist : X -> X -> X}
-                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqX _ _ _ mof dist}
-                {HE : Equivalence eqX} :={
-          inBall1 :  forall (a x eps y : X), ball a eps x -> ~ball a eps y -> a < y -> x < y ;
-          inBall2 : forall (a x eps y : X), ball a eps x -> ~ball a eps y -> y < a -> y < x;
-          orderPres1 : forall (a b c : X), a < b -> a < c -> dist a b < dist a c -> b < c;
-          orderPres2 : forall (a b c : X), a < b -> a < c -> b < c -> dist a b < dist a c;
-}. 
 Section leCpre_playground.
 Variables X : Type.
 Variables eqX : relation X.
@@ -312,6 +298,7 @@ Variables eqX : relation X.
 Variables leX : relation X.
 Variables plusX : X -> X -> X.
 Variables x0 : X.
+
 Variables HE : Equivalence eqX.
 Variables mof : Plus_Field eqX leX plusX x0.
 Variables dist : X -> X -> X.
@@ -654,14 +641,22 @@ Proof.
 Qed.
 End plus_field_trans.
 Definition distC  {A X : Type} {eqX : relation X} {eqA : relation A} {HE : Equivalence eqX} {HEA : Equivalence eqA}
-           {leX : relation X} {plusX : X -> X -> X} {x0 : X} {dist : A -> A -> X} {distX : X -> X -> X}
-                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqA leX plusX x0 mof dist} 
-                    {MX : Metric eqX eqX leX plusX x0 mof distX} {Dpd : Density eqX mof}
-                        {HDD : forall (a b c : A), eqX (distX (dist a b) (dist a c)) (dist b c)} 
-            (x1 x2 : Cauchilize eqX eqA leX plusX _ _) : Cauchilize eqX eqX leX plusX _ _ .
+           {leX : relation X} {plusX : X -> X -> X} {x0 : X}
+           {dist : A -> A -> X} {distX : X -> X -> X}
+           {mof : Plus_Field eqX leX plusX x0}
+           {M : Metric eqX eqA leX plusX x0 mof dist}
+           {MX : Metric eqX eqX leX plusX x0 mof distX} {Dpd : Density eqX mof}
+           {HDD_pre : forall (x : X),leX x0 x -> eqX (distX x0 x) x}
+           {HPD : forall (a b c : X),
+               eqX (distX (plusX a b) (plusX a c)) (distX b c)}
+           {PB : PropBucket}
+           (x1 x2 : Cauchilize eqX eqA leX plusX _ _) :
+  Cauchilize eqX eqX leX plusX _ _ .
 Proof.
   destruct x1. destruct x2.
     assert(CauchySeq eqX eqX (@distseq A X eqX eqA leX plusX x0 mof dist M Cseq Cseq0)).
-    apply dist_trans;auto.
-    apply(con_intro eqX eqX _ _ _ _ (@distseq A X eqX eqA leX plusX x0 mof dist M Cseq Cseq0) H1).
+    apply dist_trans with (HE := HE);auto.
+    apply(con_intro
+            eqX eqX _ _ _ _
+            (@distseq A X eqX eqA leX plusX x0 mof dist M Cseq Cseq0) H1).
 Defined.

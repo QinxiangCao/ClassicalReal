@@ -36,8 +36,7 @@ Definition zeroCX :CX := M_new.zeroX X eqX HE leX plusX zeroX distX pfX MX.
 Variables HIN : (forall a b : X, eqX (distX a b) (distX (inv a) (inv b))).
 Definition pfCX : Plus_Field equCX leCX plusCX zeroCX  :=@pf_trans X eqX HE leX plusX zeroX distX pfX MX Dp HPD PB HIN.
 Definition equCA : CA -> CA -> Prop := @equC A X eqX eqA leX plusX zeroX dist pfX M.
-Variables HDD : forall (a b c : A), eqX (distX (dist a b) (dist a c)) (dist b c).
-Variables HDDX : forall (a b c : X), eqX (distX (distX a b) (distX a c)) (distX b c).
+Variable HDD_pre : forall (x : X), leX zeroX x -> eqX (distX zeroX x) x.
 Notation "a + b" := (plusX a b)
     (at level 50, left associativity).
 Notation "a <= b" := (leX a b)
@@ -56,13 +55,17 @@ Defined.
 Definition le_leC : forall (a b : CX), leseq a b -> leCX a b.
   apply le_leC;auto.
 Defined.
-Definition distCA : CA -> CA -> CX :=(@distC _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HDD).
-Definition distCX : CX -> CX -> CX :=(@distC _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HDDX).
+Definition HDD_l : forall (a b c : A), leX (distX (dist a b) (dist a c)) (dist b c).
+  apply (HDD_l X eqX leX plusX zeroX _ A eqA _
+               dist distX _ _ HPD _ HDD_pre).
+Defined.
+Definition distCA : CA -> CA -> CX :=  (@distC _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HDD_pre HPD _).
+Definition distCX : CX -> CX -> CX :=  (@distC _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ HDD_pre HPD _).
 Definition MC : Metric equCX equCA leCX plusCX zeroCX pfCX distCA.
   apply ms_trans;auto.
 Defined.
 Definition MCX : Metric equCX equCX leCX plusCX zeroCX pfCX distCX.
-  apply ms_trans_X;auto.
+  apply ms_trans;auto.
 Defined.
 Instance distCA_rewrite : Proper (equCA ==> equCA ==> equCX) distCA.
 Proof.

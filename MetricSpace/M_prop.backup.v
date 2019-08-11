@@ -398,21 +398,7 @@ Proof.
     rewrite He0. rewrite <-HIN. apply H with (m := n0) (n := n); auto.
 Qed.
 End plus_pre.
-Inductive ball {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
-        {dist : X -> X -> X}
-        {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqX _ _ _ mof dist} {HE : Equivalence eqX} 
-    (a : X) (r : X) (x : X): Prop :=
-    | ball_intro (L : x0 < r) (H : dist a x < r) : ball a r x.
 
-Class PropBucket {X : Type} {eqX : relation X} {leX : relation X} {plusX : X -> X -> X} {x0 : X}
-                {dist : X -> X -> X}
-                {mof : Plus_Field eqX leX plusX x0} {M : Metric eqX eqX _ _ _ mof dist}
-                {HE : Equivalence eqX} :={
-          inBall1 :  forall (a x eps y : X), ball a eps x -> ~ball a eps y -> a < y -> x < y ;
-          inBall2 : forall (a x eps y : X), ball a eps x -> ~ball a eps y -> y < a -> y < x;
-          orderPres1 : forall (a b c : X), a < b -> a < c -> dist a b < dist a c -> b < c;
-          orderPres2 : forall (a b c : X), a < b -> a < c -> b < c -> dist a b < dist a c;
-}.
 Section dist_pre.
 Variables X : Type.
 Variables eqX : relation X.
@@ -429,98 +415,8 @@ Variables distX : X -> X -> X.
 Variables MX : Metric eqX eqX leX plusX _ pfX distX.
 Variables M : Metric eqX eqA leX plusX _ pfX dist.
 Variables Dpd : Density eqX pfX.
-Variables HPD : forall (a b c : X),
-    eqX (distX (plusX a b) (plusX a c)) (distX b c).
-Variable BP :PropBucket.
-(*Variables HDD : forall (a b c : A), eqX (distX (dist a b) (dist a c)) (dist b c). *)
-Variable HDD_pre : forall (x : X), leX x0 x -> eqX (distX x0 x) x.
-Lemma HDD_l_pre : forall (a b c : X), leX x0 a -> leX x0 b -> leX x0 c ->
-                                 leX c (plusX a b) -> leX a (plusX b c) ->
-                                 leX (distX a c) b.
-Proof.
-  intros. destruct (poor a c).
-  -rewrite <-(HDD_pre b).
-   assert (eqX (distX x0 b) (distX a (plusX a b))).
-   assert (eqX a (plusX a x0)).
-   rewrite pfc, pfz;reflexivity.
-   assert (eqX (distX a (plusX a b)) (distX (plusX a x0) (plusX a b))).
-   rewrite <-H5;reflexivity.
-   rewrite H6, HPD;reflexivity.
-   rewrite H5.
-   assert (leX a (plusX a b)).
-   pose proof (lt_div X eqX _ leX plusX x0 a b (plusX a b)).
-   apply (le_lt_eq X eqX leX x0 a) in H.
-   destruct H.
-   apply (le_lt_eq X eqX leX x0 b) in H0.
-   destruct H0.
-   apply H6;[reflexivity|auto|auto].
-   rewrite <-H0, pfc, pfz; apply pofr;reflexivity.
-   rewrite <-H, pfz;auto.
-   apply (le_lt_eq X eqX leX c (plusX a b)) in H2.
-   destruct H2.
-   apply (le_lt_eq X eqX leX a c) in H4.
-   destruct H4.
-   apply (le_lt_eq X eqX leX a (plusX a b)) in H6.
-   destruct H6.
-   pose proof (orderPres2 a c (plusX a b)).
-   destruct H7;auto.
-   rewrite H6 in H4.
-   destruct (lt_not_and X eqX leX c (plusX a b)).
-   split;auto.
-   rewrite H4.
-   assert (eqX x0 (distX c c)). symmetry.
-   apply (mre c c);reflexivity.
-   rewrite <-H7. apply mle.
-   rewrite H2. apply pofr;reflexivity.
-   auto.
-   -rewrite <-(HDD_pre b).
-   assert (eqX (distX x0 b) (distX c (plusX c b))).
-   assert (eqX c (plusX c x0)).
-   rewrite pfc, pfz;reflexivity.
-   assert (eqX (distX c (plusX c b)) (distX (plusX c x0) (plusX c b))).
-   rewrite <-H5;reflexivity.
-   rewrite H6, HPD;reflexivity.
-   rewrite H5.
-   assert (leX c (plusX c b)).
-   pose proof (lt_div X eqX _ leX plusX x0 c b (plusX c b)).
-   apply (le_lt_eq X eqX leX x0 c) in H1.
-   destruct H1.
-   apply (le_lt_eq X eqX leX x0 b) in H0.
-   destruct H0.
-   apply H6;[reflexivity|auto|auto].
-   rewrite <-H0, pfc, pfz; apply pofr;reflexivity.
-   rewrite <-H1, pfz;auto.
-   apply (le_lt_eq X eqX leX a (plusX b c)) in H3.
-   destruct H3.
-   apply (le_lt_eq X eqX leX c a) in H4.
-   destruct H4.
-   apply (le_lt_eq X eqX leX c (plusX c b)) in H6.
-   destruct H6.
-   pose proof (orderPres2 c a (plusX c b)).
-   destruct H7;[auto|auto|rewrite pfc;auto|auto].
-   rewrite (msy a c). exact ltle.
-   rewrite H6 in H4. rewrite pfc in H4.
-   destruct (lt_not_and X eqX leX a (plusX b c)).
-   split;auto.
-   rewrite H4.
-   assert (eqX x0 (distX a a)). symmetry.
-   apply (mre a a);reflexivity.
-   rewrite <-H7. apply mle.
-   rewrite H3, (msy _ c), (pfc b _). apply pofr;reflexivity.
-   auto.
-Qed.   
-   
-Lemma HDD_l : forall (a b c : A), leX (distX (dist a b) (dist a c)) (dist b c).
-Proof.
-  intros.
-  apply HDD_l_pre.
-  apply mle.
-  apply mle.
-  apply mle.
-  apply mtr.
-  repeat (rewrite (msy a _)).
-  apply mtr.
-Qed.  
+Variables HDD : forall (a b c : A), eqX (distX (dist a b) (dist a c)) (dist b c). 
+
 Notation "a + b" := (plusX a b)
   (at level 50, left associativity).
 Notation "a <= b" := (leX a b)
@@ -545,24 +441,15 @@ Proof.
       exists G. intros. destruct H4. destruct H4. destruct H5. rewrite He.
       rewrite He0. 
       assert(distX (dist a b0) (dist a0 b) <= distX (dist a b0) (dist a b) + distX (dist a b) (dist a0 b)). 
-      apply mtr. specialize (HDD_l a b b0).
-      specialize (HDD_l b a a0). intros.
-      rewrite (msy b a), (msy b a0) in H5.
-      assert (distX (dist a b0) (dist a b) +
-              distX (dist a b) (dist a0 b) <= dist b b0 + dist a a0).
-      apply le_two_plus_two with (eqX := eqX) (x0 := x0);auto.
-      rewrite (msy (dist a b0) _);auto.
-      assert (distX (dist a b0) (dist a0 b) <= dist b b0 + dist a a0).
-      apply (poft _ _ _ H4 H7).
-      assert(dist b0 b < eps2). apply H0 with (m := n0) (n := n).
+      apply mtr. rewrite HDD in H4. rewrite (msy _ b), (msy a b) in H4.
+      rewrite HDD in H4. assert(dist b0 b < eps2). apply H0 with (m := n0) (n := n).
       destruct H2, H3. split;apply (lt_trans _ G _);auto. split;auto.
       assert(dist a a0 < eps1). apply H with (m := n0) (n := n).
       destruct H2, H3. split;apply (lt_trans _ G _);auto. split;auto.
       assert(dist b0 b + dist a a0 < eps2 + eps1). apply lt_two_plus_two;auto.
-      rewrite (pfc eps2 _),Heq in H11. destruct (le_lt_eq _ _ _ (distX (dist a b0) (dist b a0)) (dist b0 b + dist a a0)).
-      rewrite (msy a0 b), (msy b b0) in H8.
-      apply H12 in H8. destruct H8.
+      rewrite (pfc eps2 _),Heq in H7. destruct (le_lt_eq _ _ _ (distX (dist a b0) (dist b a0)) (dist b0 b + dist a a0)).
+      apply H8 in H4. destruct H4.
           +apply lttr with (y := dist b0 b + dist a a0);auto. rewrite (msy a0 b);auto.
-          +rewrite (msy a0 b);rewrite H8;auto.
+          +rewrite (msy a0 b);rewrite H4;auto.
 Qed.
 End dist_pre.
