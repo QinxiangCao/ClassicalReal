@@ -2,7 +2,8 @@ Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import QArith.QArith_base.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
-
+From Coq Require Import Field.
+From Coq Require Import Psatz.
 Lemma Qabs_triangle_extend: forall (a b c:Q), Qabs (a - c) <=
    Qabs (a - b) + Qabs (b - c).
 Proof. intros.
@@ -15,4 +16,22 @@ Proof. intros. unfold Qmult. unfold Qlt. simpl.
     rewrite <- Zmult_assoc. simpl. apply H.
 Qed.
 
+Lemma Qle_Qplus_Qle : forall a b c d : Q , a <= b -> c <= d -> a + c <= b + d.
+Proof.
+  intros. lra.
+Qed.
 
+Lemma Qlt_Qplus_Qlt : forall a b c d : Q , a < b -> c < d -> a + c < b + d.
+Proof.
+  intros. lra.
+Qed.
+
+Lemma Qle_Qplus_Qlt : forall a b c d : Q , a <= b -> c < d -> a + c < b + d.
+Proof.
+  intros. lra.
+Qed.
+
+Lemma Qlt_Qplus_Qle : forall a b c d : Q , a < b -> c <= d -> a + c < b + d.
+Proof.
+  intros. lra.
+Qed.

@@ -11,20 +11,59 @@ Definition INR (n: nat) : Q := inject_Z (Z.of_nat n).
 
 Coercion INR: nat >-> Q.
 
-Lemma INR_le : forall n m : nat, (n >= m)%nat -> (INR n) >= (INR m).
+Theorem INR_plus : forall n m : nat , INR n + INR m == INR (n + m).
 Proof.
   intros.
   unfold INR.
-  rewrite <- Zle_Qle.
-  apply inj_le. auto.
+  rewrite <- inject_Z_plus.
+  apply inject_Z_injective.
+  rewrite <- Nat2Z.inj_add. auto.
 Qed.
 
-Lemma INR_lt : forall n m : nat, (n > m)%nat -> (INR n) > (INR m).
+Theorem INR_mult : forall n m : nat , INR n * INR m == INR (n * m).
 Proof.
   intros.
   unfold INR.
-  rewrite <- Zlt_Qlt.
-  apply inj_lt. auto.
+  rewrite <- inject_Z_mult.
+  apply inject_Z_injective.
+  rewrite <- Nat2Z.inj_mul. auto.
+Qed.
+
+Theorem eq_INR_Qeq : forall n m : nat, (n = m)%nat -> (INR n == INR m).
+Proof.
+  intros.
+  unfold INR.
+  rewrite H. reflexivity.
+Qed.
+
+Theorem Qeq_INR_eq : forall n m : nat ,(INR n == INR m) -> (n = m)%nat.
+Proof.
+  intros.
+  unfold INR in H.
+  rewrite inject_Z_injective in H.
+  apply Nat2Z.inj. auto.
+Qed.
+
+Theorem INR_le : forall n m : nat, (n >= m)%nat <-> (INR n) >= (INR m).
+Proof.
+  intros.
+  unfold INR.
+  split ; intros.
+  - rewrite <- Zle_Qle.
+    apply inj_le. auto.
+  - rewrite <- Zle_Qle in H.
+    apply Nat2Z.inj_le. auto.
+Qed.
+
+Theorem INR_lt : forall n m : nat, (n > m)%nat <-> (INR n) > (INR m).
+Proof.
+  intros.
+  unfold INR.
+  split ; intros.
+  - rewrite <- Zlt_Qlt.
+    apply inj_lt. auto.
+  - rewrite <- Zlt_Qlt in H.
+    apply Nat2Z.inj_lt. auto.
 Qed.
 
 Lemma INR_nonneg: forall n, INR n >= 0.
@@ -78,7 +117,15 @@ Proof.
   + simpl. omega.
   + rewrite Nat.pow_succ_r'. omega.
 Qed.
-  
+
+Lemma Max_powan_0 : forall (a n : nat), (a > 0)%nat -> (a ^ n > 0)%nat.
+Proof.
+  intros. induction n.
+  + simpl. omega.
+  + rewrite Nat.pow_succ_r'. 
+    apply Nat.mul_pos_pos ; auto.
+Qed.
+
 Lemma Max_pown_0Q : forall n : nat , (INR (2 ^ n) > 0)%Q.
 Proof.
   intros.
