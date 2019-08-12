@@ -1,3 +1,4 @@
+
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Bool.Bool.
 From Coq Require Import Logic.Classical.
@@ -20,6 +21,7 @@ From CReal Require Import Cauchy.RBase.
 From CReal Require Import Cauchy.RArith.
 From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
+From Coq Require Import Psatz.
 Import Pos.
 
 Module C1 := Cauchy.RBase.
@@ -35,7 +37,6 @@ Local Open Scope CReal_Scope.
 Bind Scope DReal_Scope with Dedekind.RBase.Real.
 Delimit Scope DReal_Scope with D.
 
-Check Inject_lemmas.le_inject_Z. SearchAbout inject_Z Qdiv.
 Notation "a == b" :=(D2.Req a b):DReal_Scope.
 Notation "a + b" :=(D3.Rplus a b):DReal_Scope.
 Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
@@ -63,32 +64,112 @@ Proof.
   assert((a * Z.pos c + b * Z.pos c)%Z=(a+b)*Z.pos c)%Z. ring. rewrite H.
   assert(Z.pos (c * c)=Z.pos c*Z.pos c)%Z. tauto. rewrite H0. ring. 
 Qed.
-Lemma power_compare1:forall (n:nat),(of_nat n<2^of_nat n+1)%positive.
+
+  
+Lemma power_compare1:forall (n:nat),(of_nat n<2^of_nat n)%positive.
 Proof.
   induction n.
   - simpl. reflexivity.
-  - assert(2 ^ of_nat (S n) =2 ^ of_nat n+2 ^ of_nat n)%positive.
-    Locate "^".
-    Search BinPos.Pos.pow.
-    admit.
-    assert(of_nat (S n) =(of_nat n)+1)%positive.
-    admit.
-    rewrite H,H0.
-    apply Pos.le_lt_trans with (2 ^ of_nat n + of_nat n )%positive. admit.
-    assert(2 ^ of_nat n + 2 ^ of_nat n + 1=2 ^ of_nat n + (2 ^ of_nat n + 1))%positive.
-    rewrite<- Pos.add_assoc. reflexivity. rewrite H1.
-    apply Pos.add_lt_mono_l. auto.
-Admitted.
-Lemma power_compare2:forall (n:nat),(n>0)%nat->(1#(2^of_nat n+1)<1#of_nat n)%Q.
+  - induction n. 
+    + reflexivity.
+    + assert(2 ^ of_nat (S(S n)) =2 ^ of_nat (S n)+2 ^ of_nat (S n))%positive.
+    assert(of_nat (S(S n))=BinPos.Pos.succ (of_nat (S n))).
+    rewrite<-Pos.of_nat_succ.
+    symmetry.
+    assert((S n)<>0%nat->BinPos.Pos.succ (of_nat (S n)) = of_succ_nat  (S n)).
+    apply Pos.succ_of_nat.
+    apply H. omega. rewrite H.
+    rewrite Pos.pow_succ_r. rewrite Pos.add_diag. reflexivity.
+    rewrite H.
+    assert(of_nat (S(S n)) =(of_nat (S n))+1)%positive.
+    rewrite<-Pos.of_nat_succ. rewrite Pos.add_1_r.
+    symmetry. apply Pos.succ_of_nat. omega.
+    rewrite H0.
+    apply Pos.lt_le_trans with (2 ^ of_nat (S n) + 1 )%positive.
+    apply Pos.add_lt_mono_r . apply IHn.
+    apply Pos.add_le_mono_l. apply Pos.le_1_l.
+Qed.
+Lemma power_compare2:forall (n:nat),(n>0)%nat->(1#(2^of_nat n)<1#of_nat n)%Q.
 Proof.
-  intros. assert(of_nat n<2 ^ of_nat n + 1)%positive. apply power_compare1.
+  intros. assert(of_nat n<2 ^ of_nat n )%positive. apply power_compare1.
   unfold Qlt. simpl. apply H0.
+Qed.
+Lemma Zlt_1_contradiction :forall (a b:Z),(a<b->b<a+1->False)%Z.
+Proof.
+  intros. omega.
+Qed.
+Lemma power2_pos:forall ( b:positive),Z.pos(2^b)=(2^Z.pos b)%Z.
+Proof.
+  intros. simpl. rewrite<-Pos2Z.inj_pow_pos. reflexivity.
+Qed.
+  
+Lemma power_Qlt_1 : forall (a c:Z) ( b  d:positive),((b<d)%positive->a#2^b<c#2^d->a#1<c#2^(d-b))%Q.
+Proof.
+  intros. unfold Qlt in H0. unfold Qlt. simpl. simpl in H0.
+  assert(a * Z.pos (2 ^ (d - b))*Z.pos (2 ^ b) < c *Z.pos (2 ^ b))%Z.
+  rewrite<-Z.mul_assoc.
+  assert(Z.pos (2 ^ (d - b)) * Z.pos (2 ^ b)=Z.pos (2 ^ d))%Z.
+  assert(Z.pos (2 ^ d)=2^(Z.pos d))%Z. apply power2_pos.
+  assert(Z.pos (2 ^ b)=2^(Z.pos b))%Z. apply power2_pos.
+  assert(Z.pos (2 ^ (d-b)%positive)=2^(Z.pos (d-b)%positive))%Z. apply power2_pos.
+  rewrite H1,H2,H3.
+  assert(2 ^ Z.pos (d - b) * 2 ^ Z.pos b=2^(Z.pos (d - b)+Z.pos b))%Z.
+  symmetry.
+  apply Z.pow_add_r. apply Pos2Z.is_nonneg. apply Pos2Z.is_nonneg.
+  rewrite H4.
+  assert(Z.pos (d - b) + Z.pos b=Z.pos d)%Z.
+  assert(Z.pos (d - b)=Z.pos d-Z.pos b)%Z.
+  apply Pos2Z.inj_sub. apply H. rewrite H5. omega.
+  rewrite H5. reflexivity. rewrite H1. apply H0.
+  rewrite Z.mul_1_r.
+  apply Zmult_lt_reg_r with (Z.pos (2 ^ b)). reflexivity. apply H1.
+Qed.
+Lemma power_Qlt_2 : forall (a c:Z) ( b  d:positive),((d<b)%positive->a#2^b<c#2^d->a#2^(b-d)<c#1)%Q.
+Proof.
+  intros. unfold Qlt in H0. unfold Qlt. simpl. simpl in H0.
+  assert(a * Z.pos (2 ^ d) < c *Z.pos (2 ^ (b-d))*Z.pos (2 ^ d))%Z.
+  rewrite<-Z.mul_assoc.
+  assert(Z.pos (2 ^ (b - d)) * Z.pos (2 ^ d)=Z.pos (2 ^ b))%Z.
+  assert(Z.pos (2 ^ d)=2^(Z.pos d))%Z. apply power2_pos.
+  assert(Z.pos (2 ^ b)=2^(Z.pos b))%Z. apply power2_pos.
+  assert(Z.pos (2 ^ (b-d)%positive)=2^(Z.pos (b-d)%positive))%Z. apply power2_pos.
+  rewrite H1,H2,H3.
+  assert(2 ^ Z.pos (b - d) * 2 ^ Z.pos d=2^(Z.pos (b - d)+Z.pos d))%Z.
+  symmetry.
+  apply Z.pow_add_r. apply Pos2Z.is_nonneg. apply Pos2Z.is_nonneg.
+  rewrite H4.
+  assert(Z.pos (b - d) + Z.pos d=Z.pos b)%Z.
+  assert(Z.pos (b - d)=Z.pos b-Z.pos d)%Z.
+  apply Pos2Z.inj_sub. apply H. rewrite H5. omega.
+  rewrite H5. reflexivity. rewrite H1. apply H0.
+  rewrite Z.mul_1_r.
+  apply Zmult_lt_reg_r with (Z.pos (2 ^ d)). reflexivity. apply H1.
+Qed.
+
+Lemma lt_Poslt :forall(a b:nat),(0<a->a<b->(of_nat a<of_nat b)%positive)%nat.
+Proof.
+  intros.
+  generalize dependent b.
+  induction a.
+  - inversion H.
+  - intros. assert(a=0\/~a=0)%nat by apply classic. destruct H1.
+    * rewrite H1. rewrite H1 in H0. simpl. 
+      destruct  b. inversion H0. destruct b. inversion H0.
+      inversion H3. rewrite <-Pos.of_nat_succ. rewrite<- Pos.succ_of_nat.
+      apply Pos.lt_1_succ. omega.
+    * induction b.
+        + inversion H0.
+        + rewrite<- Pos.of_nat_succ. rewrite <-Pos.of_nat_succ.
+          rewrite<- Pos.succ_of_nat. rewrite <-Pos.succ_of_nat.
+          assert(of_nat a < of_nat b)%positive. apply IHa.
+          omega. omega.
+          rewrite<- Pos.succ_lt_mono. apply H2. omega. apply H1.
 Qed.
 Lemma Dcut_P: forall (n:positive)(Dcut:Q->Prop),Dedekind Dcut ->
 exists (m:Z),Dcut (m#n)/\~Dcut (m+1#n).
 Proof.
   intros. assert(exists (t:Z),Dcut (t#n)).
-  { destruct H. destruct Dedekind_properties1. Search Z Q. destruct H.
+  { destruct H. destruct Dedekind_properties1. destruct H.
   destruct Inject_lemmas.le_inject_Z with x.
   exists (Zpos(n)*x0)%Z. assert(Z.pos n * x0 # n==inject_Z x0)%Q.
   rewrite Qmake_Qdiv. rewrite inject_Z_mult. field. 
@@ -129,7 +210,6 @@ Proof.
       assert(Z.to_nat (b - a)=S(Z.to_nat (b - 1 - a))).
       assert(b - 1 - a=b-a-1)%Z. omega.
       rewrite H6. assert(Z.to_nat (b - a - 1)=Z.to_nat (b-a)-1)%nat.
-      Search Z.to_nat . 
       apply Z2Nat.inj_sub. omega.
       rewrite H7. omega. rewrite H6 in H4. apply eq_add_S. apply H4. }
   apply H2 with (Z.to_nat(x0-x)) x x0. apply H0. apply H1. reflexivity.
@@ -139,9 +219,7 @@ Definition CSeq_pre (DCut: Q -> Prop): nat -> Q -> Prop :=
 DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat n))/\(q==N#2^(of_nat n))%Q).
 
 Theorem Cauchy_Dcut :forall (DCut:Q->Prop),
-Dedekind DCut->Cauchy (CSeq_pre DCut). (*(fun n q=>exists N:Z,
-DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat n))/\(q==N#2^(of_nat n))%Q).
-*)
+Dedekind DCut->Cauchy (CSeq_pre DCut).
 Proof.
   intros.
   split.
@@ -184,24 +262,161 @@ Proof.
       rewrite H9. rewrite H10. rewrite H7. rewrite H8. reflexivity. }
       assert(q1-q2==0)%Q. rewrite H8.  ring. rewrite H9. simpl. apply H0.
     * assert(m1<m2)%nat. omega.
-      assert(q1<q2)%Q. admit.
-      assert(Qabs (q1 - q2)==q2-q1)%Q. assert(q1-q2<0). 
-      unfold Qlt. simpl. unfold Qlt in H10. 
+      assert(q1<=q2)%Q.
+      unfold CSeq_pre in *.
+      destruct H4. destruct H4. destruct H10.
+      destruct H5. destruct H5. destruct H12.
+      assert(q1<=q2\/~q1<=q2) by apply classic. destruct H14. apply H14.
+      assert(q2<q1). apply QOrderedType.QOrder.not_ge_lt. apply H14.
+      rewrite H11,H13 in H15.
+      assert(x1#2^(of_nat (m2-m1))<x0#1)%Q.
+      assert(of_nat (m2 - m1)=(of_nat m2)-(of_nat m1))%positive.
+      apply Nat2Pos.inj_sub. omega. rewrite H16.
+      apply power_Qlt_2. apply lt_Poslt. omega. auto. apply H15.
+      assert(x0 # 2 ^ of_nat m1<x1 + 1 # 2 ^ of_nat m2). apply Dcut_lt with DCut.
+      auto. auto. auto.
+      assert(x0 # 1<x1 + 1 # 2 ^ of_nat (m2-m1)).
+      assert(of_nat (m2 - m1)=(of_nat m2)-(of_nat m1))%positive.
+      apply Nat2Pos.inj_sub. omega. rewrite H18.
+      apply power_Qlt_1. apply lt_Poslt. omega. auto. apply H17.
+      unfold Qlt in H16,H18. simpl in H16,H18.
+      rewrite Z.mul_1_r in H16,H18.
+      assert False.
+      apply Zlt_1_contradiction with x1 (x0 * Z.pos (2 ^ of_nat (m2 - m1)))%Z.
+      auto. auto. destruct H19.
+      assert(Qabs (q1 - q2)==q2-q1)%Q. assert(q1-q2<=0). 
+      unfold Qle. simpl. unfold Qle in H10. 
       assert((Qnum q1 * QDen q2 + - Qnum q2 * QDen q1) * 1 =(Qnum q1 * QDen q2 + - Qnum q2 * QDen q1))%Z. omega.
       rewrite H11. 
       assert(Qnum q1 * QDen q2 + - Qnum q2 * QDen q1=Qnum q1 * QDen q2  - Qnum q2 * QDen q1)%Z.
       unfold Zminus. assert(- Qnum q2 * QDen q1=- (Qnum q2 * QDen q1))%Z.
-      ring. ring. rewrite H12. apply Z.lt_sub_0. apply H10.
+      ring. ring. rewrite H12. apply Z.le_sub_0. apply H10.
       assert(Qabs (q1 - q2)==-(q1-q2))%Q. rewrite Qabs_neg.
-      reflexivity. apply Qlt_le_weak. apply H11.
+      reflexivity. apply H11.
       rewrite H12. ring. 
-      assert(q2-q1<1#2^of_nat m1)%Q. admit.
+      assert(q2-q1<1#2^of_nat m1)%Q.
+      unfold CSeq_pre in H4,H5. destruct H4,H5.
+      destruct H4. destruct H12. destruct H5. destruct H14.
+      assert(x1 # 2 ^ of_nat m2<x0 + 1 # 2 ^ of_nat m1)%Q.
+      apply Dcut_lt with DCut. auto. auto. auto.
+      rewrite H13,H15.
+      assert( 1# 2 ^ of_nat m1==((x0+1) # 2 ^ of_nat m1)-(x0 # 2 ^ of_nat m1))%Q.
+      unfold Qminus.
+      assert(- (x0 # 2 ^ of_nat m1)==(-x0 # 2 ^ of_nat m1))%Q.
+      unfold Qeq. simpl. reflexivity.
+      rewrite H17. rewrite Qplus_sameden.
+      assert(x0 + 1 + - x0=1)%Z. ring. rewrite H18. reflexivity.    
+      rewrite H17. unfold Qminus.
+      apply Qplus_lt_l. auto.
       rewrite H11.
-      assert(1 # 2 ^ of_nat m1<=eps)%Q. admit.
-      apply QOrderedType.QOrder.lt_le_trans with (1 # 2 ^ of_nat m1).
-      auto. auto.
-  + assert(m2<m1)%nat. omega. (*similar to the former situation*)
-Admitted.
+      assert(x=0\/~x=0)%nat by apply classic. destruct H13. rewrite H13 in H1. simpl in H1.
+      unfold inject_Z in H1. assert(0<1/eps)%Q .
+      assert(1 / eps==/eps)%Q. field. unfold not. intros.
+      rewrite H14 in H0. apply Qlt_irrefl with 0. apply H0. rewrite H14. apply Qinv_lt_0_compat. apply H0.
+      assert(0<0). apply QOrderedType.QOrder.lt_le_trans with (1 / eps). auto. auto.
+      assert False. apply Qlt_irrefl with 0. apply H15. destruct H16.
+      assert(1 # 2 ^ of_nat m1<=eps)%Q. assert(1 # 2 ^ of_nat m1<=1#of_nat m1)%Q.
+      apply Qlt_le_weak. apply power_compare2. omega. 
+      apply QOrderedType.QOrder.le_trans with (1 # of_nat m1). apply H14.
+      unfold Qle. simpl.
+      assert(1 / eps *eps<= inject_Z (Z.of_nat x)*eps)%Q.
+      apply Qmult_le_compat_r. apply H1. apply Qlt_le_weak. apply H0.
+      assert(eps * /eps==1)%Q. apply Qmult_inv_r.
+      unfold not. intros.  rewrite H16 in H0. 
+      assert False. apply Qlt_irrefl with 0. apply H0. destruct H17.
+      assert((1 / eps) * eps ==eps * / eps)%Q.
+      assert(1 / eps==/eps)%Q. field. unfold not. intros.  rewrite H17 in H0. 
+      assert False. apply Qlt_irrefl with 0. apply H0. destruct H18.
+      rewrite<-H17. ring. rewrite H16 in H17. rewrite H17 in H15.
+      unfold Qle in H15. simpl in H15.
+      apply Z.le_trans with (Z.of_nat x * Qnum eps * 1)%Z.
+      auto. rewrite Z.mul_1_r. rewrite Z.mul_comm.
+      assert(Z.of_nat x <=Z.pos (of_nat m1))%Z.
+      assert(x<=m1)%nat. omega. 
+      destruct m1. simpl. assert(x=0)%nat by omega. rewrite H19.
+      simpl. omega. rewrite<-Pos.of_nat_succ.
+      rewrite Zpos_P_of_succ_nat. omega.
+      apply Z.mul_le_mono_nonneg_l. unfold Qlt in H0. simpl in H0.
+      rewrite Z.mul_1_r in H0. omega. apply H18.
+      apply Qlt_le_trans with (1 # 2 ^ of_nat m1). auto. auto.
+    + assert(m2<m1)%nat. omega.
+      assert(q2<=q1)%Q.
+      unfold CSeq_pre in *.
+      destruct H4. destruct H4. destruct H8.
+      destruct H5. destruct H5. destruct H10.
+      assert(q2<=q1\/~q2<=q1) by apply classic. destruct H12. apply H12.
+      assert(q1<q2). apply QOrderedType.QOrder.not_ge_lt. apply H12.
+      rewrite H9,H11 in H13.
+      assert(x0#2^(of_nat (m1-m2))<x1#1)%Q.
+      assert(of_nat (m1 - m2)=(of_nat m1)-(of_nat m2))%positive.
+      apply Nat2Pos.inj_sub. omega. rewrite H14.
+      apply power_Qlt_2. apply lt_Poslt. omega. auto. apply H13.
+      assert(x1 # 2 ^ of_nat m2<x0 + 1 # 2 ^ of_nat m1). apply Dcut_lt with DCut.
+      auto. auto. auto.
+      assert(x1 # 1<x0 + 1 # 2 ^ of_nat (m1-m2)).
+      assert(of_nat (m1 - m2)=(of_nat m1)-(of_nat m2))%positive.
+      apply Nat2Pos.inj_sub. omega. rewrite H16.
+      apply power_Qlt_1. apply lt_Poslt. omega. auto. apply H15.
+      unfold Qlt in H14,H16. simpl in H14,H16.
+      rewrite Z.mul_1_r in H16,H14.
+      assert False.
+      apply Zlt_1_contradiction with x0 (x1 * Z.pos (2 ^ of_nat (m1 - m2)))%Z.
+      auto. auto. destruct H17.
+      assert(Qabs (q1 - q2)==q1-q2)%Q. assert(0<=q1-q2). 
+      unfold Qle. simpl. unfold Qle in H8. 
+      assert((Qnum q1 * QDen q2 + - Qnum q2 * QDen q1) * 1 =(Qnum q1 * QDen q2 + - Qnum q2 * QDen q1))%Z. omega.
+      rewrite H9. 
+      assert(Qnum q1 * QDen q2 + - Qnum q2 * QDen q1=Qnum q1 * QDen q2  - Qnum q2 * QDen q1)%Z.
+      unfold Zminus. assert(- Qnum q2 * QDen q1=- (Qnum q2 * QDen q1))%Z.
+      ring. ring. rewrite H10. apply Zle_minus_le_0. apply H8.
+      rewrite Qabs_pos.
+      reflexivity. apply H9.
+      rewrite H9. 
+      assert(q1-q2<1#2^of_nat m2)%Q.
+      unfold CSeq_pre in H4,H5. destruct H4,H5.
+      destruct H4. destruct H10. destruct H5. destruct H12.
+      assert(x0 # 2 ^ of_nat m1<x1 + 1 # 2 ^ of_nat m2)%Q.
+      apply Dcut_lt with DCut. auto. auto. auto.
+      rewrite H13,H11.
+      assert( 1# 2 ^ of_nat m2==((x1+1) # 2 ^ of_nat m2)-(x1 # 2 ^ of_nat m2))%Q.
+      unfold Qminus.
+      assert(- (x1 # 2 ^ of_nat m2)==(-x1 # 2 ^ of_nat m2))%Q.
+      unfold Qeq. simpl. reflexivity.
+      rewrite H15. rewrite Qplus_sameden.
+      assert(x1 + 1 + - x1=1)%Z. ring. rewrite H16. reflexivity.    
+      rewrite H15. unfold Qminus.
+      apply Qplus_lt_l. auto.
+      assert(x=0\/~x=0)%nat by apply classic. destruct H11. rewrite H11 in H1. simpl in H1.
+      unfold inject_Z in H1. assert(0<1/eps)%Q .
+      assert(1 / eps==/eps)%Q. field. unfold not. intros.
+      rewrite H12 in H0. apply Qlt_irrefl with 0. apply H0. rewrite H12. apply Qinv_lt_0_compat. apply H0.
+      assert(0<0). apply QOrderedType.QOrder.lt_le_trans with (1 / eps). auto. auto.
+      assert False. apply Qlt_irrefl with 0. apply H13. destruct H14.
+      assert(1 # 2 ^ of_nat m2<=eps)%Q. assert(1 # 2 ^ of_nat m2<=1#of_nat m2)%Q.
+      apply Qlt_le_weak. apply power_compare2. omega. 
+      apply QOrderedType.QOrder.le_trans with (1 # of_nat m2). apply H12.
+      unfold Qle. simpl.
+      assert(1 / eps *eps<= inject_Z (Z.of_nat x)*eps)%Q.
+      apply Qmult_le_compat_r. apply H1. apply Qlt_le_weak. apply H0.
+      assert(eps * /eps==1)%Q. apply Qmult_inv_r.
+      unfold not. intros.  rewrite H14 in H0. 
+      assert False. apply Qlt_irrefl with 0. apply H0. destruct H15.
+      assert((1 / eps) * eps ==eps * / eps)%Q.
+      assert(1 / eps==/eps)%Q. field. unfold not. intros.  rewrite H15 in H0. 
+      assert False. apply Qlt_irrefl with 0. apply H0. destruct H16.
+      rewrite<-H15. ring. rewrite H14 in H15. rewrite H15 in H13.
+      unfold Qle in H13. simpl in H13.
+      apply Z.le_trans with (Z.of_nat x * Qnum eps * 1)%Z.
+      auto. rewrite Z.mul_1_r. rewrite Z.mul_comm.
+      assert(Z.of_nat x <=Z.pos (of_nat m2))%Z.
+      assert(x<=m2)%nat. omega. 
+      destruct m2. simpl. assert(x=0)%nat by omega. rewrite H17.
+      simpl. omega. rewrite<-Pos.of_nat_succ.
+      rewrite Zpos_P_of_succ_nat. omega.
+      apply Z.mul_le_mono_nonneg_l. unfold Qlt in H0. simpl in H0.
+      rewrite Z.mul_1_r in H0. omega. apply H16.
+      apply Qlt_le_trans with (1 # 2 ^ of_nat m2). auto. auto.
+Qed.
   
 Definition D2C (B:D1.Real):C1.Real :=
 match B with
@@ -209,13 +424,13 @@ match B with
 Real_intro (fun n q=>exists N:Z,DCut (N#(2^(of_nat n)))/\~DCut((N+1)%Z#2^(of_nat n))/\(q==N#2^(of_nat n))%Q)
 (Cauchy_Dcut DCut H) end.
 
-Theorem C2D_properity1:forall (x y:D1.Real),
+Theorem D2C_properity1:forall (x y:D1.Real),
   ((D2C x)+(D2C y))==(D2C ( x+ y)).
 Proof.
   intros. destruct x,y. unfold "==". unfold D2C. hnf. intros.
   assert(exists n:nat,(1/eps+1/eps<=inject_Z(Z.of_nat n))).
   apply Inject_lemmas.inject_Z_of_nat_le. destruct H2.
-  exists (x+1)%nat. intros.
+  exists (x+2)%nat. intros.
   destruct H5. unfold C3.CauchySeqPlus in H4.
   assert(exists (t:Z),A (t#2 ^ of_nat m)/\~A (t+1#2 ^ of_nat m)).
   apply Dcut_P. auto. destruct H6.
@@ -230,22 +445,144 @@ Proof.
   unfold Qminus. assert(- (x0 # 2 ^ of_nat m)=(-x0 # 2 ^ of_nat m))%Q.
   unfold Qeq. simpl. reflexivity. 
   rewrite H11. unfold Zminus. apply Qplus_sameden. rewrite H11.
-  assert(0<=x1+x2-x0)%Z. admit.
-  assert(x1+x2-x0<=2)%Z. admit.
+  assert(-2<=x1+x2-x0)%Z.
+  unfold D3.Cut_plus_Cut in H5,H9. destruct H5. destruct H5.
+  assert(x3<x1 + 1 # 2 ^ of_nat m)%Q.
+  apply Dcut_lt with A. apply H. apply H5. apply H6.
+  assert(x4<x2 + 1 # 2 ^ of_nat m)%Q.
+  apply Dcut_lt with A0. apply H0. apply H5. apply H7.
+  assert(x3+x4<(x1 + 1 # 2 ^ of_nat m)+(x2 + 1 # 2 ^ of_nat m))%Q.
+  apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto.
+  destruct H5. destruct H15. rewrite H16 in H14.
+  rewrite Qplus_sameden in H14.
+  assert(x0<x1 + 1 + (x2 + 1))%Z.
+  unfold Qlt in H14. simpl in H14. apply Zmult_lt_reg_r with (Z.pos (2 ^ of_nat m)).
+  apply Pos2Z.is_pos. apply H14. apply Zlt_le_weak.
+  apply Zlt_0_minus_lt. rewrite <-Z.lt_0_sub in H17.
+  assert(x1 + 1 + (x2 + 1) - x0=x1 + x2 - x0 - -2)%Z by omega.
+  rewrite<-H18. auto.
+  assert(x1+x2-x0<=2)%Z.
+  unfold D3.Cut_plus_Cut in H5,H9. destruct H5. destruct H5.
+  unfold not in H9.
+  assert(~ A (x3+(1 # 2 ^ of_nat m))%Q).
+  unfold not. intros. apply H9.
+  exists (x3 + (1 # 2 ^ of_nat m))%Q,x4.
+  split. apply H13. split. apply H5.
+  destruct H5. destruct H14.
+  assert(x3 + (1 # 2 ^ of_nat m) + x4 ==x3 +x4+ (1 # 2 ^ of_nat m))%Q by ring.
+  rewrite H16. rewrite H15. apply Qplus_sameden.
+  assert(~ A0(x4+(1 # 2 ^ of_nat m))%Q).
+  unfold not. intros. apply H9.
+  exists x3 ,(x4+ (1 # 2 ^ of_nat m))%Q.
+  split. apply H5. split. apply H14.
+  destruct H5. destruct H15.
+  assert(x3 + (x4+(1 # 2 ^ of_nat m))==x3 +x4+ (1 # 2 ^ of_nat m))%Q by ring.
+  rewrite H17. rewrite H16. apply Qplus_sameden.
+  assert(x1 # 2 ^ of_nat m<x3 + (1 # 2 ^ of_nat m))%Q.
+  apply Dcut_lt with A. auto. apply H6. apply H13.
+  assert(x2 # 2 ^ of_nat m<x4 + (1 # 2 ^ of_nat m))%Q.
+  apply Dcut_lt with A0. auto. apply H7. apply H14.
+  assert((x1# 2 ^ of_nat m)+(x2# 2 ^ of_nat m)<(x3 + (1 # 2 ^ of_nat m))+(x4 +( 1 # 2 ^ of_nat m)))%Q.
+  apply Qplus_lt_le_compat. auto. apply Qlt_le_weak. auto.
+  destruct H5. destruct H18.
+  assert(x3 + (1 # 2 ^ of_nat m) + (x4 + (1 # 2 ^ of_nat m))==x3 +x4+ (1 # 2 ^ of_nat m) +  (1 # 2 ^ of_nat m))%Q. ring. rewrite H20 in H17.
+  rewrite H19 in H17.
+  rewrite Qplus_sameden in H17.
+  rewrite Qplus_sameden in H17.
+  rewrite Qplus_sameden in H17.
+  assert(x1+x2<x0 + 1 + 1)%Z.
+  unfold Qlt in H17. simpl in H17. apply Zmult_lt_reg_r with (Z.pos (2 ^ of_nat m)).
+  apply Pos2Z.is_pos. apply H17. apply Zlt_le_weak.
+  apply Zlt_0_minus_lt. rewrite <-Z.lt_0_sub in H21.
+  assert(x0 + 1 + 1 - (x1 + x2)= 2 - (x1 + x2 - x0))%Z by omega.
+  rewrite<-H22. auto.
   assert(Qabs (x1 + x2 - x0 # 2 ^ of_nat m)<=2# 2 ^ of_nat m).
-  admit.
+  unfold Qabs.
+  assert(Z.abs (x1 + x2 - x0) <=2)%Z.
+  apply Z.abs_le. omega.
+  unfold Qle. simpl.
+  rewrite Pos2Z.pos_xO.
+  apply Z.mul_le_mono_pos_r. reflexivity. auto.
   apply Qle_lt_trans with (2 # 2 ^ of_nat m).
   apply H14.
-  admit.
-Admitted. 
-Theorem C2D_properity2:forall (x y:D1.Real),
+  apply QOrderedType.QOrder.lt_trans with (2 # of_nat m).
+  unfold Qlt. simpl. rewrite Pos2Z.pos_xO.
+  assert( Z.pos (2 ^ of_nat m)~0= 2*Z.pos (2 ^ of_nat m))%Z. rewrite Pos2Z.pos_xO. reflexivity.
+  rewrite H15. apply Zmult_lt_compat_l. reflexivity.
+  apply Pos2Z.pos_lt_pos. apply power_compare1. 
+      assert((2#1)*(1 / eps) *eps<= inject_Z (Z.of_nat x)*eps)%Q.
+      apply Qmult_le_compat_r.
+      assert(1 / eps + 1 / eps==(2 # 1) * (1 / eps))%Q. ring.
+      rewrite<-H15. apply H2. apply Qlt_le_weak. apply H1.
+      assert(eps * /eps==1)%Q. apply Qmult_inv_r.
+      unfold not. intros.  rewrite H16 in H1. 
+      assert False. apply Qlt_irrefl with 0. apply H1. destruct H17.
+      assert((1 / eps) * eps ==eps * / eps)%Q.
+      assert(1 / eps==/eps)%Q. field. unfold not. intros.  rewrite H17 in H1. 
+      assert False. apply Qlt_irrefl with 0. apply H1. destruct H18.
+      rewrite<-H17. ring. rewrite H16 in H17.
+      assert((2 # 1) * (1 / eps) * eps==(1 / eps) * eps*(2#1))%Q. ring. rewrite H18 in H15.
+      rewrite H17 in H15.
+      unfold Qle in H15. simpl in H15.
+      unfold Qlt. simpl.
+      apply Z.le_lt_trans with (Z.of_nat x * Qnum eps * 1)%Z.
+      auto. rewrite Z.mul_1_r. rewrite Z.mul_comm.
+      assert(Z.of_nat x <Z.pos (of_nat m))%Z.
+      assert(x<m)%nat. omega. 
+      destruct m. simpl. assert(x=0)%nat by omega. rewrite H20.
+      simpl. omega. rewrite<-Pos.of_nat_succ.
+      rewrite Zpos_P_of_succ_nat. omega.
+      apply Zmult_gt_0_lt_compat_l. unfold Qlt in H1. simpl in H1.
+      rewrite Z.mul_1_r in H1. omega.
+      apply H19.
+Qed.
+
+Theorem D2C_properity2:forall (x y:D1.Real),
  (D2C x)*(D2C y)==(D2C (x * y)).
 Proof.
   intros. destruct x,y. unfold "==". hnf. intros.
-  exists 0%nat. (*remaining*)
+  assert(exists x : Q, ~ A x). apply H.
+  assert(exists y : Q, ~ A0 y). apply H0.
+  destruct H2,H3.
+  assert(exists x:Z, A (x#2)/\~A ((x+1)#2))%Q. apply Dcut_P. auto.
+  assert(exists x:Z, A0 (x#2)/\~A0 ((x+1)#2))%Q. apply Dcut_P. auto.
+  destruct H4,H5.
+  assert(exists q:Q,Qabs(x1#2)<q/\Qabs x<q )%Q.
+  exists (Qabs (x1 # 2)+Qabs x+1)%Q. split.
+  assert(0<Qabs x + 1)%Q.
+  assert(0==0+0)%Q by ring. rewrite H6.
+  apply QArith_base_ext.Qplus_le_lt_compat. apply Qabs_nonneg. reflexivity.
+  assert(Qabs (x1 # 2)==Qabs (x1 # 2)+0)%Q by ring.
+  rewrite H7.
+  assert( Qabs (x1 # 2) + 0 + Qabs x + 1== Qabs (x1 # 2) + (Qabs x + 1))%Q by ring.
+  rewrite H8. apply QArith_base_ext.Qplus_le_lt_compat. apply Qle_refl. auto.
+  assert(Qabs x ==(Qabs x )+0)%Q by ring. rewrite H6.
+  assert(Qabs (x1 # 2) + (Qabs x + 0) + 1==Qabs x +(Qabs (x1 # 2) +  1))%Q by ring.
+  rewrite H7. apply QArith_base_ext.Qplus_le_lt_compat. apply Qle_refl.
+  assert(0==0+0)%Q by ring. rewrite H8.
+  apply QArith_base_ext.Qplus_le_lt_compat. apply Qabs_nonneg. reflexivity.
+  destruct H6.
+  assert(exists q:Q,Qabs(x2#2)<q/\Qabs x0<q )%Q.
+  exists (Qabs (x2 # 2)+Qabs x0+1)%Q. split.
+  assert(0<Qabs x0 + 1)%Q.
+  assert(0==0+0)%Q by ring. rewrite H7.
+  apply QArith_base_ext.Qplus_le_lt_compat. apply Qabs_nonneg. reflexivity.
+  assert(Qabs (x2 # 2)==Qabs (x2 # 2)+0)%Q by ring.
+  rewrite H8.
+  assert( Qabs (x2 # 2) + 0 + Qabs x0 + 1== Qabs (x2 # 2) + (Qabs x0 + 1))%Q by ring.
+  rewrite H9. apply QArith_base_ext.Qplus_le_lt_compat. apply Qle_refl. auto.
+  assert(Qabs x0 ==(Qabs x0 )+0)%Q by ring. rewrite H7.
+  assert(Qabs (x2 # 2) + (Qabs x0 + 0) + 1==Qabs x0 +(Qabs (x2 # 2) +  1))%Q by ring.
+  rewrite H8. apply QArith_base_ext.Qplus_le_lt_compat. apply Qle_refl.
+  assert(0==0+0)%Q by ring. rewrite H9.
+  apply QArith_base_ext.Qplus_le_lt_compat. apply Qabs_nonneg. reflexivity.
+  destruct H7. 
+  assert(exists n:nat,((x3+x4)/eps<=inject_Z(Z.of_nat n))).
+  apply Inject_lemmas.inject_Z_of_nat_le. destruct H8.
+  exists (x5+1)%nat. 
   intros.
-  destruct H4. destruct H4. destruct H5.
-  unfold C3.CauchySeqMult in H3.
+  destruct H11. destruct H11. destruct H12.
+  unfold C3.CauchySeqMult in H10.
   assert(exists N : Z,
         A (N # 2 ^ of_nat m) /\
         ~ A (N + 1 # 2 ^ of_nat m) ). apply Dcut_P.
@@ -254,15 +591,14 @@ Proof.
         A0 (N # 2 ^ of_nat m) /\
         ~ A0 (N + 1 # 2 ^ of_nat m) ). apply Dcut_P.
   auto.
-  destruct H7,H8.
-  assert(q1==(x0 # 2 ^ of_nat m)*(x1 # 2 ^ of_nat m))%Q.
-  apply H3. exists x0. split. apply H7. split. apply H7. reflexivity.
-  exists x1. split. apply H8. split. apply H8. reflexivity.
-  
-              
+  destruct H14,H15.
+  assert(q1==(x7 # 2 ^ of_nat m)*(x8 # 2 ^ of_nat m))%Q.
+  apply H10. exists x7. split. apply H14. split. apply H14. reflexivity.
+  exists x8. split. apply H15. split. apply H15. reflexivity.
+  unfold Cut_mult in H11,H12.
 Admitted.
 
-Theorem C2D_properity3:forall (x y:D1.Real),
+Theorem D2C_properity3:forall (x y:D1.Real),
 (x==y)%D->  ((D2C x)==(D2C y)).
 Proof.
   intros. unfold "==". destruct x,y. simpl. intros.
@@ -299,4 +635,250 @@ Proof.
   rewrite H10. apply H2.
 Qed.
 
+Notation "a <= b" :=(Rle a b):CReal_Scope.
+Notation "a < b" :=(Rlt a b):CReal_Scope.
+Notation "a <= b" :=(Dedekind.ROrder.Rle a b):DReal_Scope.
+Notation "a < b" :=(Dedekind.ROrder.Rlt a b):DReal_Scope.
 
+Theorem D2C_properity4:forall (x y:D1.Real),
+(x<y)%D->  ((D2C x)<(D2C y)).
+Proof.
+  intros. hnf.  destruct x,y. hnf in H. destruct H. destruct H2.
+  destruct H2. simpl. unfold CauchySeqPlus. unfold Cauchy_opp.
+  assert(exists t:Q,A0 t/\x<t)%Q. apply Dedekind_properties3. auto. auto.
+  destruct H4. destruct H4.
+  exists ((1#2)*(x0-x))%Q. split.
+  - lra.
+  - assert(exists n:nat,(1/(x0-x)<=inject_Z(Z.of_nat n)))%Q as Hi. apply Inject_lemmas.inject_Z_of_nat_le.
+    destruct Hi as [t Hi].
+    exists (t+1)%nat. intros.
+    assert(exists N : Z, A0 (N # 2 ^ of_nat n) /\ ~ A0 (N + 1 # 2 ^ of_nat n)).
+    apply Dcut_P.  auto. 
+    assert(exists N : Z, A (N # 2 ^ of_nat n) /\ ~ A (N + 1 # 2 ^ of_nat n)).
+    apply Dcut_P. auto. destruct H8. destruct H9.
+    specialize H7 with (x1 # 2 ^ of_nat n)%Q (-x2 # 2 ^ of_nat n)%Q.
+    assert((q == (x1 # 2 ^ of_nat n) + (-x2 # 2 ^ of_nat n)))%Q. apply H7.
+    exists x1. split. apply H8. split. apply H8. reflexivity. intros.
+    destruct  H10. destruct H10. destruct H11. assert(x2=x3)%Z.
+    assert(x2# 2 ^ of_nat n<x3+1# 2 ^ of_nat n)%Q.
+    apply Dcut_lt with A. auto. apply H9. auto.
+    assert(x3# 2 ^ of_nat n<x2+1# 2 ^ of_nat n)%Q.
+    apply Dcut_lt with A. auto. auto. apply H9.
+    assert(x2<x3+1)%Z. unfold Qlt in H13. simpl in H13.
+    apply Zmult_lt_reg_r with  (Z.pos (2 ^ of_nat n)).
+    apply Pos2Z.is_pos. auto.
+    assert(x3<x2+1)%Z. unfold Qlt in H14. simpl in H14.
+    apply Zmult_lt_reg_r with  (Z.pos (2 ^ of_nat n)).
+    apply Pos2Z.is_pos. auto.
+    omega.
+    rewrite H12. rewrite H13. reflexivity.
+    rewrite H10. rewrite Qplus_sameden.
+    destruct H8,H9,H10.
+    assert(1 # 2 ^ of_nat n <= (1 # 2) * (x0 - x)\/~1 # 2 ^ of_nat n <= (1 # 2) * (x0 - x))%Q by apply classic.
+    destruct H10.
+    assert(x0-x<((x1+1)+-x2)# 2 ^ of_nat n)%Q.
+    assert(x0<(x1+1)# 2 ^ of_nat n)%Q. apply Dcut_lt with A0.
+    auto. auto. auto.
+    assert(x2# 2 ^ of_nat n<x)%Q.
+    apply Dcut_lt with A.
+    auto. auto. auto.
+    assert(-x< -(x2# 2 ^ of_nat n))%Q. lra.
+    assert(x1 + 1 + - x2 # 2 ^ of_nat n==((x1 + 1)# 2 ^ of_nat n) + -( x2 # 2 ^ of_nat n))%Q.
+    assert(- (x2 # 2 ^ of_nat n)==(- x2 # 2 ^ of_nat n))%Q.
+    unfold Qeq. simpl. reflexivity. rewrite H16.
+    rewrite Qplus_sameden. reflexivity. rewrite H16. lra.
+    assert((1 # 2) * (x0 - x)+ (1 # 2) * (x0 - x)<= (x1 + - x2 # 2 ^ of_nat n)+(1 # 2) * (x0 - x))%Q.
+    assert((1 # 2) * (x0 - x) + (1 # 2) * (x0 - x) ==x0-x)%Q. lra.
+    rewrite H14. apply Qlt_le_weak. apply Qlt_le_trans with (x1 + 1 + - x2 # 2 ^ of_nat n)%Q.
+    auto. assert(x1 + 1 + - x2 # 2 ^ of_nat n ==(x1 + - x2 # 2 ^ of_nat n)+(1 # 2 ^ of_nat n))%Q.
+    rewrite Qplus_sameden. assert(x1 + 1 + - x2=x1 + - x2 + 1)%Z.
+    omega. rewrite H15. reflexivity. rewrite H15.
+    apply Qplus_le_r. auto.
+    apply Qplus_le_l with ((1 # 2) * (x0 - x))%Q. auto.
+    apply QOrderedType.QOrder.not_ge_lt in H10.
+    apply Qlt_le_weak. apply Qlt_le_trans with (1 # 2 ^ of_nat n)%Q.
+    auto.
+    assert(x2<x1)%Z.
+    assert(x2<x1+1)%Z.
+    assert(x2#2 ^ of_nat n<x)%Q. apply Dcut_lt with A.
+    auto. auto. auto.
+    assert(x0<x1+1#2 ^ of_nat n)%Q. apply Dcut_lt with A0.
+    auto. auto. auto. 
+    assert(x2#2 ^ of_nat n<x1+1#2 ^ of_nat n)%Q. lra.
+    unfold Qlt in H15. simpl in H15.
+    apply Zmult_lt_reg_r with (Z.pos (2 ^ of_nat n)).
+    apply Pos2Z.pos_is_pos. auto.
+    assert(x2<=x1)%Z. omega. apply Zle_lt_or_eq in H14. destruct H14.
+    auto. assert False.
+    destruct H13,H10. apply H11. rewrite<-H14. rewrite<- H14 in H8.
+    assert(x2 # 2 ^ of_nat n<x)%Q.
+    apply Dcut_lt with A. auto. auto. auto.
+    assert(x2 + 1 # 2 ^ of_nat n<x0)%Q.
+    assert(1 # 2 ^ of_nat n<x0-x)%Q.
+    apply Qlt_le_trans with (1 # of_nat n).
+    apply power_compare2. omega.
+    assert(exists q:Q,q==x0-x)%Q as Hj. exists (x0-x);reflexivity.
+    destruct Hj as [s Hj]. rewrite<- Hj in*. unfold Qle. simpl.
+    assert(1<=inject_Z (Z.of_nat t)*s)%Q as Hk.
+    assert(1==1 / s*s)%Q. assert(s * /s==1)%Q. apply Qmult_inv_r.
+    unfold not. intros.  rewrite H13 in Hj. lra.
+    assert(1 / s==/s)%Q. field. unfold not. intros. lra.
+    rewrite H15. symmetry. rewrite Qmult_comm.
+    apply H13. rewrite H13. apply Qmult_le_compat_r. auto. rewrite Hj. lra.
+    unfold Qle in Hk. simpl in Hk. rewrite Z.mul_1_r in Hk.
+    apply Z.le_trans with (Z.of_nat t * Qnum s)%Z. auto.
+    rewrite Z.mul_comm. apply Z.mul_le_mono_nonneg_l.
+    assert(0<=s)%Q. lra. unfold Qle in H13. simpl in H13.
+    rewrite Z.mul_1_r in H13. auto.
+    destruct n. omega. rewrite <-Pos.of_nat_succ.
+    rewrite Zpos_P_of_succ_nat. apply Z.le_trans with (Z.of_nat n).
+    apply inj_le. omega. apply Z.le_succ_diag_r.
+    assert(x2 + 1 # 2 ^ of_nat n ==(x2 # 2 ^ of_nat n)+( 1 # 2 ^ of_nat n ))%Q.
+    rewrite Qplus_sameden. reflexivity. rewrite H15. lra. 
+    apply Dedekind_properties2 with x0.
+    auto. split. auto. lra. 
+    destruct H15.
+    unfold Qle. simpl.
+    assert(Z.pos (2 ^ of_nat n)=1*Z.pos (2 ^ of_nat n))%Z.
+    rewrite Z.mul_1_l. reflexivity. rewrite H14.
+    apply Z.mul_le_mono_nonneg_r.
+    rewrite Z.mul_1_l. apply Pos2Z.is_nonneg.
+    lia.
+Qed.
+Theorem D2C_properity5:forall (x y:D1.Real),
+(x<=y)%D->  ((D2C x)<=(D2C y)).
+Proof.
+  intros. apply D3.Rle_lt_eq in H. destruct H.
+  - assert(D2C x == D2C y). apply D2C_properity3. auto.
+    hnf. right. auto.
+  - hnf. left. apply D2C_properity4. auto.
+Qed.
+
+Theorem D2C_properity6:D2C (RBase.Rzero)==0%R.
+Proof.
+  hnf. intros. 
+  assert(exists n:nat,(1/eps<=inject_Z(Z.of_nat n)))%Q.
+  apply Inject_lemmas.inject_Z_of_nat_le. 
+  destruct H0. exists x%nat. intros.
+  destruct H2. rewrite H3. assert(q1-0==q1)%Q. ring. rewrite H4.
+  destruct H2. destruct H5. destruct H3,H4.
+  assert(x0=-1)%Z.
+  assert(x0<0)%Z. unfold Qlt in H2. simpl in H2. 
+  rewrite Z.mul_1_r in H2. apply H2.
+  apply Qnot_lt_le in H5. assert(0<=x0+1)%Z.
+  unfold Qle in H5. simpl in H5. rewrite Z.mul_1_r in H5.
+  apply H5. assert(-1<=x0)%Z. omega.
+  assert(x0=-1\/~x0=-1)%Z by apply classic.
+  destruct H8. auto.
+  assert(-1<x0)%Z. apply Z.le_neq. split. auto. unfold not.
+  intros. destruct H8. symmetry. apply H9.
+  omega. rewrite H3 in H6. rewrite H6.
+  simpl.  assert(1 # 2 ^ of_nat m<1#of_nat m)%Q.
+  apply power_compare2. omega.
+  apply Qlt_le_trans with (1 # of_nat m)%Q. auto.
+  unfold Qle. simpl. 
+  assert(1 / eps *eps<= inject_Z (Z.of_nat x)*eps)%Q.
+  apply Qmult_le_compat_r. apply H0. apply Qlt_le_weak. apply H.
+  assert(eps * /eps==1)%Q. apply Qmult_inv_r.
+  unfold not. intros.  rewrite H8 in H. 
+  assert False. apply Qlt_irrefl with 0. apply H. destruct H9.
+  assert((1 / eps) * eps ==eps * / eps)%Q.
+  assert(1 / eps==/eps)%Q. field. unfold not. intros.  rewrite H9 in H. 
+  assert False. apply Qlt_irrefl with 0. apply H. destruct H10.
+  rewrite<-H9. ring. rewrite H8 in H9. rewrite H9 in H7.
+  unfold Qle in H8. simpl in H8.
+  unfold Qle in H7. simpl in H7.
+  apply Z.le_trans with (Z.of_nat x * Qnum eps * 1)%Z.
+  auto. rewrite Z.mul_1_r. rewrite Z.mul_comm.
+  apply Zmult_le_compat_l. 
+  assert(Z.of_nat x <=Z.pos (of_nat m))%Z.
+  assert(x<=m)%nat. omega. 
+  destruct m. simpl. assert(x=0)%nat by omega. rewrite H11.
+  simpl. omega. rewrite<-Pos.of_nat_succ.
+  rewrite Zpos_P_of_succ_nat. omega. apply H10.
+  apply Zlt_le_weak. unfold Qlt in H . simpl in H.
+  rewrite Z.mul_1_r in H. auto.
+Qed.
+Notation "- a" :=(Ropp a):CReal_Scope. 
+Notation "- a" :=(Dedekind.RArith.Ropp a):DReal_Scope.
+Theorem D2C_properity7:forall (x:D1.Real), D2C (-x)==-D2C x.
+Proof.
+  intros. assert(D2C (-x)+D2C x==-D2C x +D2C x).
+  rewrite D2C_properity1.
+  assert(- x + x==RBase.Rzero)%D. rewrite D3.Rplus_comm.
+  apply D3.Rplus_opp. 
+  assert(D2C(-x+x)==D2C(RBase.Rzero))%C. apply D2C_properity3. auto.
+  rewrite H0. rewrite C3.Rplus_comm. rewrite C3.Rplus_opp_r.
+  apply D2C_properity6.
+  apply C3.Rplus_inj_r with (D2C x). auto.
+Qed.
+Theorem D2C_properity8:D2C (RBase.Rone)==1%R.
+Proof.
+  hnf. intros. 
+  assert(exists n:nat,(1/eps<=inject_Z(Z.of_nat n)))%Q.
+  apply Inject_lemmas.inject_Z_of_nat_le. 
+  destruct H0. exists x%nat. intros.
+  destruct H2. rewrite H3.
+  destruct H2. destruct H4. destruct H3.
+  assert(q1-1==-1#2 ^ of_nat m)%Q.
+  unfold Qlt in H2,H4.
+  simpl in H2,H4. rewrite Z.mul_1_r in H2,H4.
+  assert(x0= Z.pos (2 ^ of_nat m)-1)%Z.
+  omega.
+  rewrite H3 in H5. rewrite H5. 
+  assert((Z.pos (2 ^ of_nat m) - 1 # 2 ^ of_nat m) - 1==(Z.pos (2 ^ of_nat m) - 1 -Z.pos (2 ^ of_nat m) # 2 ^ of_nat m))%Q.
+  unfold Qeq. simpl. rewrite Z.mul_1_r. rewrite Pos.mul_1_r. unfold Z.sub.
+  rewrite Pos2Z.opp_pos. reflexivity.
+  rewrite H6. assert(Z.pos (2 ^ of_nat m) - 1 - Z.pos (2 ^ of_nat m) =-1)%Z. omega.
+  rewrite H7. reflexivity.
+  rewrite H3.
+  simpl.  assert(1 # 2 ^ of_nat m<1#of_nat m)%Q.
+  apply power_compare2. omega.
+  apply Qlt_le_trans with (1 # of_nat m)%Q. auto.
+  unfold Qle. simpl. 
+  assert(1 / eps *eps<= inject_Z (Z.of_nat x)*eps)%Q.
+  apply Qmult_le_compat_r. apply H0. apply Qlt_le_weak. apply H.
+  assert(eps * /eps==1)%Q. apply Qmult_inv_r.
+  unfold not. intros.  rewrite H8 in H. 
+  assert False. apply Qlt_irrefl with 0. apply H. destruct H9.
+  assert((1 / eps) * eps ==eps * / eps)%Q.
+  assert(1 / eps==/eps)%Q. field. unfold not. intros.  rewrite H9 in H. 
+  assert False. apply Qlt_irrefl with 0. apply H. destruct H10.
+  rewrite<-H9. ring. rewrite H8 in H9. rewrite H9 in H7.
+  unfold Qle in H8. simpl in H8.
+  unfold Qle in H7. simpl in H7.
+  apply Z.le_trans with (Z.of_nat x * Qnum eps * 1)%Z.
+  auto. rewrite Z.mul_1_r. rewrite Z.mul_comm.
+  apply Zmult_le_compat_l. 
+  assert(Z.of_nat x <=Z.pos (of_nat m))%Z.
+  assert(x<=m)%nat. omega. 
+  destruct m. simpl. assert(x=0)%nat by omega. rewrite H11.
+  simpl. omega. rewrite<-Pos.of_nat_succ.
+  rewrite Zpos_P_of_succ_nat. omega. apply H10.
+  apply Zlt_le_weak. unfold Qlt in H . simpl in H.
+  rewrite Z.mul_1_r in H. auto.
+Qed.
+Check Rinv.
+Lemma notD2Czero :forall (x:D1.Real)(H:~(x==RBase.Rzero)%D),~D2C x==0%R.
+Proof.
+  intros. unfold not. intros. apply H.
+  assert(~ x<RBase.Rzero)%D. unfold not. intro. apply D2C_properity4 in H1.
+  rewrite H0 in H1. rewrite D2C_properity6 in H1.
+  apply C2.Rlt_irrefl with 0%R;auto.
+  assert(~ RBase.Rzero<x)%D. unfold not. intro. apply D2C_properity4 in H2.
+  rewrite H0 in H2. rewrite D2C_properity6 in H2.
+  apply C2.Rlt_irrefl with 0%R;auto.
+  apply D2.Rnot_lt_le in H1. apply D3.Rle_lt_eq in H1.
+  destruct H1. symmetry. auto. assert False.
+  apply H2;auto. destruct H3.
+Qed.
+Theorem D2C_properity9:forall (x:D1.Real)(H:~(x==RBase.Rzero)%D), D2C (Dedekind.RArith.Rinv x H)==Rinv (exist _ (D2C x) (notD2Czero x H )%R).
+Proof.
+  intros. assert(D2C (Dedekind.RArith.Rinv x H)*(D2C x)==(/ exist (fun a0 : Real => ~ (a0 == 0)%C) (D2C x) (notD2Czero x H))%R*(D2C x))%C.
+  rewrite D2C_properity2.
+  rewrite C3.Rmult_comm. rewrite C3.Rmult_inv_r'.
+  assert((Dedekind.RArith.Rinv x H) * x==RBase.Rone)%D.
+  rewrite D3.Rmult_comm. apply D3.Rmult_inv.
+  apply D2C_properity3 in H0. rewrite H0. apply D2C_properity8.
+  apply C3.Rmult_inj_r with (D2C x). apply notD2Czero. auto. auto.
+Qed.

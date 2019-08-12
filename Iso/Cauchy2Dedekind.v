@@ -20,6 +20,7 @@ From CReal Require Import Cauchy.RBase.
 From CReal Require Import Cauchy.RArith.
 From CReal Require Import Cauchy.ROrder.
 From Coq Require Import PArith.BinPosDef.
+From Coq Require Import Psatz.
 Import Pos.
 
 Module C1:= Cauchy.RBase.
@@ -41,6 +42,8 @@ Notation "a * b" :=(D3.Rmult a b):DReal_Scope.
 Notation "a == b" :=(C1.Real_equiv a b):CReal_Scope.
 Notation "a + b" :=(C3.Rplus a b):CReal_Scope.
 Notation "a * b" :=(C3.Rmult a b):CReal_Scope.
+Notation "a - b" :=(D3.Rminus a b):DReal_Scope.
+Notation "a - b" :=(C3.Rminus a b):CReal_Scope.
 Lemma Z_1_mult: forall(a:Z),(1*a=a)%Z.
 Proof.
   intros. simpl. induction a. omega. omega. omega.
@@ -354,3 +357,157 @@ unfold "==". split.
   rewrite H11. auto. apply Qplus_lt_l with ((1 # 2) * x0)%Q.
   auto.
 Qed.
+
+Notation "a <= b" :=(Rle a b):CReal_Scope.
+Notation "a < b" :=(Rlt a b):CReal_Scope.
+Notation "a <= b" :=(Dedekind.ROrder.Rle a b):DReal_Scope.
+Notation "a < b" :=(Dedekind.ROrder.Rlt a b):DReal_Scope.
+
+Theorem C2D_properity4:forall (x y:C1.Real),
+(x<y)%C->  ((C2D x)<(C2D y)).
+Proof.
+  intros. hnf. destruct x,y. simpl.
+  split.
+  - intros. destruct H2. destruct H2. destruct H3.
+    hnf in H. destruct H. destruct H. destruct H4.
+    simpl in H4. unfold CauchySeqPlus,Cauchy_opp in H4.
+    exists x0. split. auto. exists(x1+x3)%nat.
+    intros.
+    assert(exists (t:Q),CSeq  n t). apply H0. destruct H7.
+    assert(x+x0<x4)%Q. apply H3 with n. omega. apply H7.
+    assert(x4<=p)%Q. 
+    assert(x2<=(p-x4))%Q. apply H4 with n. omega.
+    intros. assert(q2==-x4)%Q. apply H10. auto.
+    rewrite H11. unfold Qminus. assert(p==q1)%Q.
+    apply Cauchy_unique with CSeq0 n. auto.
+    auto. auto. rewrite H12. reflexivity.
+    assert(0<=(p-x4))%Q. lra.
+    apply Qle_minus_iff. unfold Qminus in H10. auto.
+    apply Qlt_le_trans with x4. auto. auto.
+  - hnf in*. simpl in H. destruct H. destruct H.
+    destruct H2. unfold CauchySeqPlus,Cauchy_opp in H2.
+    assert(exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q,
+               CSeq m1 q1 -> CSeq m2 q2 -> (Qabs (q1 - q2) < (1#4)*x))%Q.
+    apply H0. lra. destruct H3.
+    assert(exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q,
+               CSeq0 m1 q1 -> CSeq0 m2 q2 -> (Qabs (q1 - q2) < (1#4)*x))%Q.
+    apply H1. lra. destruct H4.
+    assert(exists q:Q,CSeq0 (x0+x1+x2+1)%nat q) by apply H1.
+    destruct H5. exists(x3-(1#2)*x)%Q. split.
+    + exists ((1#4)*x)%Q. split. lra. exists (x0+x1+x2)%nat.
+      intros. assert(x3 - (1 # 2) * x + (1 # 4) * x==x3-(1#4)*x)%Q.
+      lra. rewrite H8.
+      assert(Qabs(x3-p)<(1#4)*x)%Q.
+      apply H4 with (x0+x1+x2+1)%nat n.
+      lia. lia. auto. auto.
+      assert(x3<p+(1#4)*x)%Q. 
+      assert(x3-p<=Qabs (x3 - p))%Q. apply Qle_Qabs.
+      assert(x3-p<(1 # 2) * x)%Q. lra. lra.
+      lra.
+    + unfold not. intros. destruct H6. destruct H6. destruct H7.
+      assert(exists q:Q,CSeq (x0+x1+x2+x5+1)%nat q) by apply H0.
+      destruct H8. assert(x3 - (1 # 2) * x + x4 < x6)%Q.
+      apply H7 with (x0+x1+x2+x5+1)%nat . lia. auto.
+      assert(exists q:Q, CSeq (x0+x1+x2+1)%nat q)%Q.
+      apply H0. destruct H10.
+      assert(Qabs(x7-x6)<(1#4)*x)%Q.
+      apply H3 with (x0+x1+x2+1)%nat (x0+x1+x2+x5+1)%nat.
+      lia. lia. auto. auto.
+      assert(x6-x7<=Qabs (x6 - x7))%Q. apply Qle_Qabs.
+      assert(Qabs(x6-x7)==Qabs(x7-x6))%Q.
+      rewrite<- Qabs_opp. assert(- (x6 - x7)==x7-x6)%Q. lra.
+      rewrite H13. reflexivity.
+      assert(x6-x7<(1 # 4) * x)%Q. lra.
+      assert(x<=x3-x7)%Q. apply H2 with (x0+x1+x2+1)%nat.
+      lia. intros. assert(q2==-x7)%Q. apply H16. auto.
+      rewrite H17. assert(x3==q1)%Q.
+      apply Cauchy_unique with CSeq0 (x0 + x1 + x2 + 1)%nat.
+      auto. auto. auto. lra.
+      assert(x6+x<x3+(1 # 4) * x)%Q. lra.
+      assert(x3-(1#2)*x<x6)%Q by lra.
+      assert(x6+(3#4)*x<x3)%Q by lra.
+      assert(x3 - (1 # 2) * x <x3-(1 # 2) * x)%Q by lra.
+      apply QOrderedType.QOrder.lt_irrefl with (x3 - (1 # 2) * x )%Q.
+      auto.
+Qed.   
+Theorem C2D_properity5:forall (x y:C1.Real),
+(x<=y)%C->  ((C2D x)<=(C2D y)).
+Proof.
+  intros. unfold Rle in H. destruct H.
+  - assert(C2D x < C2D y). apply C2D_properity4. apply H.
+    apply D2.Rlt_le_weak. apply H0.
+  - assert(C2D x == C2D y). apply C2D_properity3. apply H.
+    apply Rle_lt_eq. left;auto.
+Qed.
+Notation "- a" :=(Ropp a):CReal_Scope. 
+Notation "- a" :=(Dedekind.RArith.Ropp a):DReal_Scope.
+Theorem C2D_properity6:C2D (0%R)==RBase.Rzero.
+Proof.
+  hnf. split.
+  - hnf. intros. destruct H. destruct H. destruct H0.
+    assert(x+x0<0)%Q. apply H0 with (x1+1)%nat . omega. reflexivity.
+    lra.
+  - hnf. intros. exists ((-1#2)*x)%Q. split. lra.
+    exists 0%nat. intros. rewrite H1. lra.
+Qed.
+Theorem C2D_properity7:forall (x:C1.Real), C2D (-x)==-C2D x.
+Proof.
+  intros. assert(C2D (-x)+C2D x==-C2D x +C2D x).
+  rewrite C2D_properity1.
+  assert(- x + x==Rzero)%C. rewrite C3.Rplus_comm. rewrite C3.Rplus_opp_r. reflexivity.
+  assert(C2D(-x+x)==C2D(0%R))%D. apply C2D_properity3. auto.
+  rewrite H0. rewrite D3.Rplus_comm. rewrite D3.Rplus_opp.
+  apply C2D_properity6.
+  rewrite D3.Rplus_comm in H. symmetry in H. rewrite D3.Rplus_comm in H.
+  apply D3.Rplus_compat_l with (C2D x). symmetry. auto.
+Qed.
+Theorem C2D_properity8:C2D (1%R)==RBase.Rone.
+Proof.
+  hnf. split.
+  - hnf. intros. destruct H. destruct H. destruct H0.
+    assert(x+x0<1)%Q. apply H0 with (x1+1)%nat . omega. reflexivity.
+    lra.
+  - hnf. intros. exists ((-1#2)*(x-1))%Q. split. lra.
+    exists 0%nat. intros. rewrite H1. lra.
+Qed.
+Lemma notC2Dzero :forall (x:C1.Real)(H:~(x==0%R)%C),~C2D x==RBase.Rzero.
+Proof.
+  intros. unfold not. intros. apply H.
+  assert(C2D 0%R == RBase.Rzero). apply C2D_properity6. assert(C2D x==C2D 0%R).
+  rewrite H0,H1. reflexivity.
+  assert(x==0%R\/~x==0%R)%C by apply classic. destruct H3.
+  auto.
+  assert(~x<0%R)%C. unfold not. intro. assert(C2D x<C2D 0%R).
+  apply C2D_properity4. auto. apply D3.Rlt_not_refl with (C2D x).
+  rewrite <-H2 in H5. auto.
+  assert(~0%R<x)%C. unfold not. intro. apply C2D_properity4 in H5.
+  rewrite H2 in H5. apply D3.Rlt_not_refl with (C2D 0%R). auto.
+  apply Rnot_lt_le in H4. unfold C2.Rge in H4. unfold C2.Rle in H4.
+  destruct H4. assert False. apply H5. auto. destruct H6.
+  symmetry. auto.
+Qed.
+
+Theorem C2D_properity9:forall (x:C1.Real)(H:~(x==0%R)%C), C2D (Rinv (exist _ x H))==Dedekind.RArith.Rinv (C2D x) (notC2Dzero x H).
+Proof.
+  intros. assert(~C2D x==RBase.Rzero). apply notC2Dzero.
+  auto. assert((C2D (/ exist (fun a0 : Real => ~ (a0 == 0)%C) x H)%R)*(C2D x)==(Dedekind.RArith.Rinv (C2D x) (notC2Dzero x H))*(C2D x)).
+  rewrite C2D_properity2. rewrite D3.Rmult_comm. rewrite Rmult_inv.
+  assert((/ exist (fun a0 : Real => ~ (a0 == 0)%C) x H)%R * x==1%R)%C.
+  rewrite C3.Rmult_comm. apply Rmult_inv_r'.
+  assert(C2D ((/ exist (fun a0 : Real => ~ (a0 == 0)%C) x H)%R * x)==C2D 1%R).
+  apply C2D_properity3. auto. rewrite H2. apply C2D_properity8.
+  Search D3.Rmult RBase.Rone.
+  rewrite <-D3.Rmult_1_r. symmetry. rewrite<-D3.Rmult_1_r. symmetry.
+  assert(RBase.Rone==(C2D x)*(Dedekind.RArith.Rinv (C2D x) (notC2Dzero x H) )).
+  rewrite Rmult_inv. reflexivity. rewrite H2. rewrite<- D3.Rmult_assoc. rewrite H1.
+  rewrite D3.Rmult_assoc. reflexivity.
+Qed.
+
