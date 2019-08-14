@@ -19,6 +19,10 @@ From CReal Require Import Dedekind.RArith.
 From CReal Require Import Cauchy.RBase.
 From CReal Require Import Cauchy.RArith.
 From CReal Require Import Cauchy.ROrder.
+From CReal Require Import Cauchy.RAbs.
+From CReal Require Import Cauchy.RComplete.
+From CReal Require Import Cauchy.RFloor.
+From CReal Require Import Cauchy.RFunc.
 From Coq Require Import PArith.BinPosDef.
 From Coq Require Import Psatz.
 Import Pos.
@@ -285,16 +289,38 @@ Proof.
   intros.
   unfold "==". split.
 - destruct x,y. unfold "*". simpl. intros.
-  unfold Cut_mult in H1. unfold PP in H1. simpl in H1. destruct H1.
+  unfold Cut_mult in H1. unfold PP,PN,NP,NN in H1.
+  unfold Cut_multPP,Cut_multPN,Cut_multNP,Cut_multNN in H1. simpl in H1.
+  unfold C3.CauchySeqMult. destruct H1.
   + destruct H1. destruct H1. destruct H1. destruct H1.
     destruct H3. destruct H3. destruct H4. destruct H5.
-    unfold Cut_multPP in H2. destruct H2. destruct H2.
-    destruct H2. destruct H6. destruct H7. destruct H8.
+    destruct H2. destruct H2. destruct H2. destruct H6.
+    destruct H7. destruct H8.
     destruct H7. destruct H8. destruct H7. destruct H8.
-    destruct H10. destruct H11. 
-
+    destruct H10. destruct H11. admit.
+  + destruct H1.
+    * destruct H1. destruct H1. 
+    unfold D3.Cut_opp in H1. destruct H1. destruct H1.
+    destruct H3. destruct H3. destruct H5. unfold D3.Cut_opp in H2.
+    destruct H2. destruct H2. admit.
+    * unfold D3.Cut_opp in H1. unfold D3.Cut_mult0 in H1.
+    destruct H1. destruct H1. destruct H1. destruct H1. destruct H1.
+    destruct H4. destruct H3. destruct H3. destruct H2. destruct H2.
+    admit.
+    destruct H1. destruct H1. destruct H1. destruct H1. destruct H1.
+    destruct H3. destruct H3. destruct H2. destruct H2. destruct H2.
+    destruct H6. destruct H7. destruct H7. destruct H7. destruct H8.
+    destruct H8. destruct H8. admit.
+    unfold D3.O in H1. destruct H1. destruct H1.
+    destruct H1. unfold D3.Cut_opp in H3. admit.
+    destruct H1. unfold D3.Cut_opp in H3. admit.
+- destruct x,y. unfold "*". simpl. intros. destruct H1. destruct H1.
+  destruct H2. unfold CauchySeqMult in H2. unfold D3.Cut_mult.
+  unfold PP,PN,NP,NN.
+  unfold Cut_multPP,Cut_multPN,Cut_multNP,Cut_multNN.
+  unfold D3.Cut_mult0. unfold D3.Cut_opp. admit.
 Admitted.
-Lemma Qminus_Qplus:forall(a b c:Q),a<=b+c<->a-b<=c.
+Lemma Qminus_Qplus:forall(a b c:Q),a<=b+c<->a-b<=c. 
 Proof.
   intros. split.
 - intros. unfold Qminus. assert(a + -b<= b + c +-b).
@@ -510,4 +536,7 @@ Proof.
   rewrite Rmult_inv. reflexivity. rewrite H2. rewrite<- D3.Rmult_assoc. rewrite H1.
   rewrite D3.Rmult_assoc. reflexivity.
 Qed.
-
+Locate Rabs.
+Locate Rlimit.
+(* Theorem C2D_property10:forall (x:C1.Real),C2D (Rabs x)=D3.Rabs (C2D x). *)
+(* Theorem C2D_property11:forall (x:C1.Real), (*One CReal_Seq has a limit ->(C2D CReal_Seq) has a limit*). *)
