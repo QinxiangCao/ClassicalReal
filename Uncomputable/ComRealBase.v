@@ -167,6 +167,13 @@ Module Type VIR_R.
 
 End VIR_R.
 
+Module Type VIR_R_EXTRA (VirR: VIR_R).
+Import VirR.
+  Parameter Rsinglefun : {X: R -> Prop | (forall x1 x2, X x1 -> X x2 -> x1 = x2)
+         /\ (exists x, X x) /\ Proper (Reqb ==> iff) X} -> R.
+  Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
+End VIR_R_EXTRA.
+
 Module VirRLemmas (VirR: VIR_R).
 
   Import VirR.
