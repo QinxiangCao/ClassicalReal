@@ -22,6 +22,7 @@ Import ListNotations.
 
 Module TM_u_u.
   Parameter TM : nat -> nat -> bool.
+  Axiom TMuu_eqb : forall (i1 i2 : nat) , (forall j : nat , TM i1 j = TM i2 j) <-> i1 = i2.
   Axiom Turing_mono : forall (i j k: nat), (j <= k)%nat -> TM i j = true -> TM i k = true.
   Theorem Turing_mono' : forall (i j k: nat), (k <= j)%nat -> TM i j = false -> TM i k = false.
   Proof.

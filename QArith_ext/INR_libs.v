@@ -20,6 +20,17 @@ Proof.
   rewrite <- Nat2Z.inj_add. auto.
 Qed.
 
+Theorem INR_minus : forall n m : nat , (n >= m)%nat -> INR (n - m) == INR n - INR m.
+Proof.
+  intros.
+  assert (n - m >= 0)%nat. { omega. }
+  remember (n - m)%nat as p.
+  assert (n = p + m)%nat. { omega. }
+  unfold Qminus.
+  rewrite H1. 
+  rewrite <- INR_plus. field. 
+Qed.
+
 Theorem INR_mult : forall n m : nat , INR n * INR m == INR (n * m).
 Proof.
   intros.
@@ -92,6 +103,11 @@ Proof.
 Qed.
 
 Lemma INR_Qeq_1 : (INR 1 == 1)%Q.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma INR_eq_1 : (INR 1 = 1)%Q.
 Proof.
   reflexivity.
 Qed.
