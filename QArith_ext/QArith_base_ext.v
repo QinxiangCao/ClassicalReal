@@ -35,3 +35,23 @@ Lemma Qlt_Qplus_Qle : forall a b c d : Q , a < b -> c <= d -> a + c < b + d.
 Proof.
   intros. lra.
 Qed.
+
+Lemma Qabs_diff_Qlt_condition : forall a b c : Q , Qabs (a - b) < c <-> a < b + c /\ a > b - c.
+Proof.
+  split ; intros.
+  - split ; rewrite <- (Qplus_lt_l _ _ (-b)).
+    + assert (b + c + - b == c)%Q. { ring. }
+      rewrite H0.
+      apply Qle_lt_trans with (Qabs(a - b)) ; auto.
+      apply Qle_Qabs.
+    + assert (b - c + - b == - c)%Q. { ring. }
+      rewrite H0. 
+      assert (b + - a < c).
+      { rewrite Qabs_Qminus in H.
+        apply Qle_lt_trans with (Qabs(b - a)) ; auto.
+        apply Qle_Qabs. 
+      }
+      lra.
+  - destruct H.
+    apply Qabs_case ; lra.
+Qed.
