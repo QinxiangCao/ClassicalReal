@@ -42,7 +42,6 @@ Module Type VIR_R.
   Parameter Rinv : R -> R.
   Parameter Rlt : R -> R -> Prop.
   Parameter Rabs : R -> R.
-  Parameter up : R -> Z.
   Parameter IZR : Z -> R.
   Parameter IQR : Q -> R.
   Infix "+" := Rplus : R_scope.
@@ -156,10 +155,7 @@ Module Type VIR_R.
 
   Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
                                           (exists sup : R , Sup X sup).
-
-  Parameter Up_same : forall (r1 r2 : R) , r1 = r2 -> (up r1 = up r2)%Z.
-  Parameter Up_R0 : (up R0 = 0)%Z.
-  
+ 
   Parameter IZR_0 : forall z : Z , IZR z = R0 <-> (z = 0)%Z.
   Parameter Z_same_R : forall z1 z2 : Z , (z1 = z2)%Z <-> IZR z1 = IZR z2.
   Parameter IQR_0 : forall q : Q , IQR q = R0 <-> (q = 0)%Q.
