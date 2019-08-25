@@ -78,6 +78,7 @@ Module Type VIR_R.
   Parameter Rabs_pos : forall r1 : R , (r1 >= R0) -> Rabs r1 = r1.
   Parameter Rabs_neg : forall r1 : R , (r1 <= R0) -> Rabs r1 = - r1.
   Parameter Rabs_tri : forall a b c : R , Rabs(a - b) < c <-> a < b + c /\ a > b - c.
+  Parameter Rabs_comm : forall a b : R , Rabs (a - b) = Rabs (b - a).
   Parameter Ropp_R0 : R0 = - R0. 
   Parameter Ropp_IQR : forall r : Q ,  - IQR r  = IQR ( - r).
   Parameter Rlt_opp : forall r : R , r > R0 -> - r < R0.
@@ -109,6 +110,8 @@ Module Type VIR_R.
   Parameter Rmult_gt_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 > r2 * r3 <-> r1 * / r3  > r2.
   Parameter Rmult_ge_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 >= r2 * r3 <-> r1 * / r3 >= r2.
   Parameter Ropp_opp : forall r : R , r = -- r.
+  Parameter Ropp_mult_r : forall r1 r2 : R , r1 * - r2 = - (r1 * r2).
+  Parameter Ropp_mult_l : forall r1 r2 : R , - r1 * r2 = - (r1 * r2).
   Parameter Rinv_inv : forall r : R , r <> R0 -> r = //r.
   Parameter Rinv_mult : forall r1 r2 : R , / (r1 * r2) = / r1 * / r2.
   Parameter Rinv_self : forall r : R , r <> R0 -> r * / r = R1.
@@ -150,6 +153,8 @@ Module Type VIR_R.
     apply (exists a : nat , IQR (INR (a)) <= X /\ IQR (INR (a)) <= X0 /\ X < IQR (INR (a + 1)) /\ X0 < IQR (INR (a + 1))).
   Defined.
   
+  Definition Same_Ipart_n(r : R)(n : nat) : Prop := Same_Ipart (r * IQR (10 ^ n)%nat) ((r + IQR (1%nat / (10 ^ S n)%nat)) * IQR (10 ^ n)%nat). 
+  
   Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
   Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
 
@@ -164,7 +169,7 @@ Module Type VIR_R.
 End VIR_R.
 
 Module Type VIR_R_EXTRA (VirR: VIR_R).
-Import VirR.
+  Import VirR.
   Parameter Rsinglefun : {X: R -> Prop | (forall x1 x2, X x1 -> X x2 -> x1 = x2)
          /\ (exists x, X x) /\ Proper (Reqb ==> iff) X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
@@ -313,6 +318,22 @@ Module VirRLemmas (VirR: VIR_R).
       + right. rewrite <- Rlt_not_ge in H. auto.
     - subst.
       destruct H ; apply (Rlt_irrefl y) ; auto.
+  Qed.
+  
+  Theorem Rmult_minus_distr_l :forall r1 r2 r3 : R , r3 * (r1 - r2) = r3 * r1 - r3 * r2.
+  Proof.
+    intros.
+    unfold Rminus.
+    rewrite Rmult_plus_distr_l.
+    rewrite Ropp_mult_r.  auto.
+  Qed.
+  
+  Theorem Rmult_minus_distr_r : forall r1 r2 r3 :R , (r1 - r2) * r3 = r1 * r3 - r2 * r3.
+  Proof.
+    intros.
+    unfold Rminus.
+    rewrite Rmult_plus_distr_r.
+    rewrite Ropp_mult_l. auto.
   Qed.
   
   Theorem IQR_R1_same : IQR (1%nat) = R1.
