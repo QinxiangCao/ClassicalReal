@@ -36,6 +36,8 @@ Module Type VIR_R.
   Local Open Scope R_scope.
   Parameter R0 : R.
   Parameter R1 : R.
+  Notation "0" := R0 : R_scope.
+  Notation "1" := R1 : R_scope.
   Parameter Rplus : R -> R -> R.
   Parameter Rmult : R -> R -> R.
   Parameter Ropp : R -> R.
@@ -116,9 +118,11 @@ Module Type VIR_R.
   Parameter Rinv_mult : forall r1 r2 : R , / (r1 * r2) = / r1 * / r2.
   Parameter Rinv_self : forall r : R , r <> R0 -> r * / r = R1.
   
-  Parameter RT: ring_theory R0 R1 Rplus Rmult Rminus Ropp Reqb.
+  Parameter RT: ring_theory R0 R1 Rplus Rmult Rminus Ropp (eq (A := R)).
   Add Ring ABS: RT (abstract).
-  
+  Parameter RF : field_theory 0 1 Rplus Rmult Rminus Ropp Rdiv Rinv (eq(A:=R)).
+  Add Field ABS' : RF (abstract).
+   
   Parameter Rplus_assoc : forall r1 r2 r3 : R , r1 + r2 + r3 = r1 + (r2 + r3).
   Parameter Rmult_assoc : forall r1 r2 r3 : R , r1 * r2 * r3 = r1 * (r2 * r3).
   Parameter Ropp_minus : forall r1 r2 : R , - (r1 - r2) = r2 - r1.

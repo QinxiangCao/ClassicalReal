@@ -359,6 +359,68 @@ Module TMR_Set (R : VIR_R).
     apply H1 ; auto.
   Qed.
 
+  Theorem InSearch_limitTM'r : In_Search limitTM'r.
+  Proof.
+    set (fun (n : nat)(r : R) => r = TM'r n).
+    assert (mono_up P).
+    { subst P. 
+      split ; hnf ; intros.
+      + split ; hnf ; intros.
+        * exists (TM'r a). auto.
+        * subst. auto.
+      + pose proof In_Search_TM'r. subst.
+        apply Dec_R_ge ; auto.
+        intros.
+        pose proof TM'r_pro n n0.
+        pose proof TM'r_pro n1 n0.
+        assert (m1 = Nat.b2n (TM n0 n)). { apply (partial_functional_Dec_R (TM'r n) n0); auto. }
+        assert (m2 = Nat.b2n (TM n0 n1)). { apply (partial_functional_Dec_R (TM'r n1) n0); auto. }
+        subst. clear H H0 H3 H4.
+        destruct (TM n0 n1) eqn : En.
+        * assert (TM n0 n = true). { apply (Turing_mono n0 n1 n) ; auto. }
+          rewrite H. omega.
+        * destruct (TM n0 n) ; simpl ; omega.
+    }
+    assert (exists r : R , upper_bound P r).
+    { subst P. exists (IQR (10%nat)).
+      hnf. intros.
+      subst. destruct (In_Search_TM'r n).  apply Rle_lt_weak. auto.
+    }
+    pose proof limit_of_TM'r.
+    pose proof mono_up_limit_sup P H H0 limitTM'r H1.
+    destruct H2. clear H0 H1 H.
+    split .
+    - hnf in *. subst P.
+      apply Rle_ge.
+      apply Rle_trans with (TM'r O).
+      + destruct (In_Search_TM'r O) ; auto.
+        apply Rle_ge. auto.
+      + apply (H3 O). auto.
+    - apply Rle_lt_trans with R2.
+      + apply Rle_ge. apply H2.
+        hnf. intros.
+        subst P. simpl in *.
+        subst. left.
+        apply Dec_R_lt.
+        apply In_Search_TM'r. 
+        * split. left. unfold R2.
+          rewrite <- IQR_R1. rewrite <- IQR_R0.
+          rewrite IQR_plus. apply IQR_lt. lra. 
+          apply R2_Rlt_R10.
+        * exists O.
+          split ; intros ; try (omega).
+          pose proof Two_Dec.
+          assert (m2 = 2)%nat. { apply (partial_functional_Dec_R R2 0) ; auto. }
+          pose proof TM'r_InDecR n O.
+          assert (m1 = 0 \/ m1 = 1)%nat.
+          { destruct H5.
+            - left. apply (partial_functional_Dec_R (TM'r n) O) ; auto.
+            - right. apply (partial_functional_Dec_R (TM'r n) O) ; auto.
+          }
+          omega.
+      + apply R2_Rlt_R10.
+  Qed.
+  
   Theorem limitTM'r_pro0 : InDecR limitTM'r.
   Proof.
     hnf.

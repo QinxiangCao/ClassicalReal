@@ -943,7 +943,7 @@ Module CR_uu (R : VIR_R).
   Definition CR2 (r : R) := exists f : nat -> Q, limit f r.
   (** exists a Cauthy sequence of rational number limits to r *)
   Definition CR3 (r : R) :=
-      {f : nat -> Q & {N : Q -> nat | limit f r /\ (forall n m: nat , Same_Ipart_n (IQR (f n)) m) 
+      {f : nat -> Q & {N : Q -> nat | limit f r 
       /\ (forall eps : Q , (eps > 0)%Q -> forall (n m : nat) , (n >= N eps)%nat /\ (n >= 1) %nat -> (m >= n)%nat -> (Qabs(f n - f m) < eps)%Q)
       /\ (forall n , (f n >= 0)%Q) } }.
        
@@ -984,9 +984,7 @@ Module CR_uu (R : VIR_R).
     exists (fun eps => eps_arrow_nat eps).
     split.
     - rewrite sum_f_limit_r ; auto.
-    - split ; intros.
-      apply Same_Ipart_pow10n. apply InDecR_all_n. apply InDecR_sum_f ; auto. 
-      split ; intros ; try (apply IQR_le ; rewrite IQR_R0 ; apply Rle_ge ;
+    - split ; intros ; try (apply IQR_le ; rewrite IQR_R0 ; apply Rle_ge ;
         apply In_search_sum_f ; auto).
       destruct H3.
       pose proof eps_arrow_correct eps.
@@ -1147,13 +1145,11 @@ Module CR_uu (R : VIR_R).
       - rewrite <- INR_Qeq_0. apply INR_lt. omega.
       - rewrite Qmult_0_l. auto.
     }
-    destruct H0. destruct H1.
-    pose proof H1 _ H''.
-    clear H1.
+    destruct H0. 
+    pose proof H0 _ H''.
     remember (N eps0) as n1.
     remember (max (S n1) n) as n0. 
-    pose proof H3 n0.
-    clear H3.
+    clear H0.
     assert (H''' : (n0 >= n1 /\ n0 >= 1)%nat).
     {
       assert (max (S n1) n >= S n1)%nat. { apply Nat.le_max_l. }
@@ -1164,45 +1160,45 @@ Module CR_uu (R : VIR_R).
       destruct H.
       assert (IQR eps0 > R0).
       { rewrite <- IQR_R0. apply IQR_lt. auto. }
-      specialize (H3 _ H4).
-      destruct H3.
+      specialize (H0 _ H3).
+      destruct H0.
       assert (max n0 x >= x)%nat. { apply Nat.le_max_r. }
       assert (max n0 x >= n0)%nat. { apply Nat.le_max_l. } 
       remember (max n0 x) as x0.
       assert (f x0 = f x0)%Q. { auto. }
-      specialize (H3 _ _ H5 H7).
-      specialize (H1 _ H''' H6).
-      clear H''' H5 H6 H7.
-      apply Rabs_tri in H3.
-      destruct H3.
-      apply Qabs_diff_Qlt_condition in H1.
-      destruct H1.
+      specialize (H0 _ _ H4 H6).
+      specialize (H2 _ _ H''' H5).
+      clear H''' H5 H6 H4.
+      apply Rabs_tri in H0.
+      destruct H0.
+      apply Qabs_diff_Qlt_condition in H2.
+      destruct H2.
       assert (q == eps0 + eps0)%Q.
       { subst. unfold Qdiv. rewrite <- Qmult_plus_distr_r. 
         assert (/ INR 2 + / INR 2 == (2 # 1) * / INR 2)%Q. 
-        { field. intro. rewrite <- INR_Qeq_0 in H7. apply Qeq_INR_eq in H7. omega. }
+        { field. intro. rewrite <- INR_Qeq_0 in H6. apply Qeq_INR_eq in H6. omega. }
         assert (INR 2 > 0)%Q. { rewrite <- INR_Qeq_0. apply INR_lt. omega. }
-        rewrite H7.
+        rewrite H6.
         simpl. rewrite <- Qmult_1_r at 1.
         apply Qmult_inj_l.
         lra. rewrite <- (Qmult_inv_r (INR 2)) ; try (lra).
-        apply Qinv_lt_0_compat in H8.
+        apply Qinv_lt_0_compat in H7.
         apply Qmult_inj_r ; try (lra).
         assert (INR (2) == INR (1) + INR(1))%Q.
         { rewrite INR_plus. simpl. reflexivity. }
-        rewrite H9. rewrite INR_Qeq_1. reflexivity.
+        rewrite H8. rewrite INR_Qeq_1. reflexivity.
       }
       assert (IQR q = IQR eps0 + IQR eps0).
       {
         apply NNPP. intro.
-        apply Rnot_eq_lt in H8.
-        destruct H8 ; rewrite IQR_plus in H8 ; apply IQR_lt in H8 ; lra.
+        apply Rnot_eq_lt in H7.
+        destruct H7 ; rewrite IQR_plus in H7 ; apply IQR_lt in H7 ; lra.
       }
-      rewrite H8.
-      clear H7 H8.
+      rewrite H7.
+      clear H7 H6.
       apply Rabs_tri.
-      apply IQR_lt in H1.
-      apply IQR_lt in H6.
+      apply IQR_lt in H2.
+      apply IQR_lt in H5.
       rewrite <- IQR_plus in *.
       rewrite <- IQR_minus in *.
       split.
@@ -1210,7 +1206,7 @@ Module CR_uu (R : VIR_R).
         apply Rlt_trans with (IQR (f x0) + IQR eps0) ; auto.
         apply Rlt_Rplus_r ; auto.
       - apply Rlt_Rminus_Rplus. apply Rlt_Rminus_Rplus in H5.
-        apply Rlt_Rminus_Rplus in H6.
+        apply Rlt_Rminus_Rplus in H4.
         apply Rlt_trans with (IQR eps0 + IQR (f x0)) ; auto.
         rewrite Rplus_assoc.
         apply Rlt_Rplus_l ; auto. 
@@ -1222,14 +1218,14 @@ Module CR_uu (R : VIR_R).
       rewrite IQR_inv. rewrite IQR_mult. unfold Qdiv. reflexivity.
       intro.
       apply (Qlt_irrefl 0%Q).
-      rewrite <- H4 at 2. rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega. 
+      rewrite <- H3 at 2. rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega. 
     }
-    rewrite H4 in H3.
-    clear H4.
+    rewrite H3 in H0.
+    clear H3.
     assert (forall n : nat , ~ ((10 ^ n)%nat == 0)%Q).
     { intros. intro.
       apply (Qlt_irrefl 0%Q).
-      rewrite <- H4 at 2.
+      rewrite <- H3 at 2.
       rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
     }
     assert (forall n : nat , (10 ^ n)%nat > 0)%Q.
@@ -1244,20 +1240,28 @@ Module CR_uu (R : VIR_R).
       rewrite Qmult_comm.
       assert ((10 ^ (S (S n)))%nat == 10%nat * (10 ^ S n)%nat)%Q.
       { rewrite Nat.pow_succ_r'. rewrite INR_mult. ring. }
-      rewrite H6.
+      rewrite H5.
       rewrite <- Qmult_assoc. rewrite Qmult_inv_r ; auto.
       rewrite Qmult_1_r. rewrite <- INR_Qeq_1. apply INR_lt. omega.
     }
-    pose proof Dec_R_eps_same _ _ (S n) H6.
+    pose proof Dec_R_eps_same _ _ (S n) H5.
     assert (Same_Ipart_n limitTM'r (S n - 1)). 
     { apply Same_Ipart_pow10n. apply InDecR_all_n. apply limitTM'r_pro0. }
-    specialize (H0 n0 (S n - 1)%nat).
-    destruct (Dec_Q (f n0) n).
-    - rewrite <- IQR_R0. apply IQR_le. auto. 
-    - rewrite H7 in d ;  auto.
-    - rewrite H7 in n2 ; auto.
-      right. destruct (limitTM'r_pro0 n) ; auto.
-      exfalso. auto.
+    destruct (Dec_Q_nine (f n0) (S n)).
+    - rewrite <- IQR_R0. apply IQR_le. auto.
+    - apply (Dec_Q_Dec_R_same _ (f n0)) ; auto.
+      apply InSearch_limitTM'r.
+      apply limitTM'r_pro0. 
+    - destruct (Dec_Q (f n0) n).
+      + rewrite <- IQR_R0. apply IQR_le. auto. 
+      + rewrite H6 in d ;  auto.
+        apply Dec_R_nine_same. assert (S (S n - 1) = S n)%nat. { omega. }
+        rewrite H8. auto.
+      + rewrite H6 in n3 ; auto.
+        right. destruct (limitTM'r_pro0 n) ; auto.
+        exfalso. auto.
+        apply Dec_R_nine_same. assert (S (S n - 1) = S n)%nat. { omega. }
+        rewrite H8. auto.
   Qed.
   
 End CR_uu.
