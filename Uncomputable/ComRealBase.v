@@ -26,7 +26,7 @@ From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 From CReal Require Import Countable.
-From CReal Require Import INR_libs.
+From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
 
 Module Type VIR_R.
@@ -46,6 +46,7 @@ Module Type VIR_R.
   Parameter Rabs : R -> R.
   Parameter IZR : Z -> R.
   Parameter IQR : Q -> R.
+  Parameter INR : nat -> R.
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.
@@ -61,12 +62,51 @@ Module Type VIR_R.
   Infix "<=" := Rle : R_scope.
   Infix ">=" := Rge : R_scope.
   Infix ">"  := Rgt : R_scope.
-  Parameter Rpow : R -> nat ->R. 
-  Parameter Rlim : (nat -> R) -> R -> Prop.
+  Parameter pow : R -> nat -> R.
+  
+  Parameter Rplus_comm : forall r1 r2 : R , r1 + r2 = r2 + r1.
+  Parameter Rplus_assoc : forall r1 r2 r3 : R , r1 + r2 + r3 = r1 + (r2 + r3).
+  Parameter Rplus_opp_r : forall r : R , r + - r = 0.
+  Parameter Rplus_0_l : forall r1 : R , 0 + r1 = r1.
+ 
+  Parameter Rmult_comm : forall r1 r2 : R , r1 * r2 = r2 * r1.
+  Parameter Rmult_assoc : forall r1 r2 r3 : R , r1 * r2 * r3 = r1 * (r2 * r3).
+  Parameter Rinv_l : forall r : R , r <> 0 -> / r * r = 1.
+  Parameter Rmult_1_l : forall r1 : R , 1 * r1 = r1.
+  Parameter R1_neq_R0 : 1 <> 0.
+  Parameter Rmult_plus_distr_l :forall r1 r2 r3 : R , r1 * (r2 + r3) = r1 * r2 + r1 * r3.
+  
+  Parameter total_order_T : forall r r1 : R , r < r1 \/ r = r1 \/ r > r1.
+  Parameter Rlt_asym : forall r1 r2 : R , r1 < r2 -> ~ r2 < r1.
+  Parameter Rlt_trans : forall r1 r2 r3:R, r1 < r2 -> r2 < r3 -> r1 < r3.
+  Parameter Rplus_lt_compat_l : forall r1 r2 r3: R , r1 < r2 -> r3 + r1 < r3 + r2.
+  Parameter Rmult_lt_compat_l : forall r1 r2 r3 : R , r3 > 0 -> r1 < r2 -> r3 * r1  < r3 * r2 .
+  
+  Definition archimedean : nat -> R -> Prop .
+    intros n r.
+    apply (IQR (INQ n) <= r /\ r < IQR (INQ (n + 1))).
+  Defined.
+  
+  Axiom archimedean_exists : forall r : R , exists x : nat , archimedean x r.
+  
+  Definition Same_Ipart : R -> R -> Prop.
+    intros.
+    apply (exists a : nat , IQR (INQ (a)) <= X /\ IQR (INQ (a)) <= X0 /\ X < IQR (INQ (a + 1)) /\ X0 < IQR (INQ (a + 1))).
+  Defined.
+  
+  Definition Same_Ipart_n(r : R)(n : nat) : Prop := Same_Ipart (r * IQR (10 ^ n)%nat) ((r + IQR (1%nat / (10 ^ S n)%nat)) * IQR (10 ^ n)%nat). 
+  
+  Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
+  Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
+
+  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
+                                          (exists sup : R , Sup X sup).
+ 
+  
   Definition Reqb (x y : R) : Prop := x = y.
   Notation "x == y" := (Reqb x y) (no associativity, at level 70).
   Parameter Rlt_irrefl : forall r1 : R , ~ (r1 < r1).
-  Parameter R_dec : forall r r1 : R , r <= r1 \/ r > r1.
+
   Parameter IQR_R0 : IQR (0%Q) = R0.
   Parameter IQR_R1 : IQR (1%Q) = R1.
   Parameter IQR_plus : forall r1 r2 : Q , IQR r1 + IQR r2 = IQR (r1 + r2).
@@ -76,7 +116,7 @@ Module Type VIR_R.
   Parameter IQR_le : forall r1 r2 : Q , (r1 <= r2)%Q <-> IQR r1 <= IQR r2.
   Parameter IQR_lt : forall r1 r2 : Q , (r1 < r2)%Q <-> IQR r1 < IQR r2.
   Parameter IQR_eq : forall r1 r2 : Q , (r1 = r2)%Q <-> IQR r1 = IQR r2.
-  Parameter Rlt_trans : forall r1 r2 r3:R, r1 < r2 -> r2 < r3 -> r1 < r3.
+  
   Parameter Rabs_pos : forall r1 : R , (r1 >= R0) -> Rabs r1 = r1.
   Parameter Rabs_neg : forall r1 : R , (r1 <= R0) -> Rabs r1 = - r1.
   Parameter Rabs_tri : forall a b c : R , Rabs(a - b) < c <-> a < b + c /\ a > b - c.
@@ -91,20 +131,20 @@ Module Type VIR_R.
   Parameter Rle_pos_eqb : forall r1 r2 : R  , r1 <= r2 <-> r2 - r1 >= R0.
   Parameter Rle_neg_eqb : forall r1 r2 : R  , r1 >= r2 <-> r2 - r1 <= R0.
   Parameter Rplus_0 : forall r1 r2 : R , r1 - r2 = R0 <-> r1 = r2.
-  Parameter Rminus_self : forall r : R , r - r = R0.
+
   Definition R2 : R := R1 + R1.
-  Parameter Rplus_0_l : forall r1 : R , r1 = R0 + r1.
+
   Parameter Rplus_0_r : forall r1 : R , r1 = r1 + R0.
   Parameter Rmult_0_l : forall r1 : R , R0 * r1 = R0.
   Parameter Rmult_0_r : forall r1 : R , r1 * R0 = R0.
-  Parameter Rmult_1_r : forall r1 : R , r1 * R1 = r1.
-  Parameter Rmult_1_l : forall r1 : R , R1 * r1 = r1.
-  Parameter Rmult_plus_distr_l :forall r1 r2 r3 : R , r3 * (r1 + r2) = r3 * r1 + r3 * r2.
+  
+  Parameter Rmult_1_r : forall r1 : R , r1 * 1 = r1.
+  
   Parameter Rmult_plus_distr_r : forall r1 r2 r3 :R , (r1 + r2) * r3 = r1 * r3 + r2 * r3.
-  Parameter Rplus_comm : forall r1 r2 : R , r1 + r2 = r2 + r1.
-  Parameter Rmult_comm : forall r1 r2 : R , r1 * r2 = r2 * r1.
+  
+  
   Parameter Rmult_le_l : forall r1 r2 r3 : R , r3 > R0 -> r3 * r1  <= r3 * r2 <-> r1 <= r2.
-  Parameter Rmult_lt_l : forall r1 r2 r3 : R , r3 > R0 -> r3 * r1  < r3 * r2 <-> r1 < r2.
+  Parameter Rmult_lt_l : forall r1 r2 r3 : R , r3 > R0 -> r3 * r1 < r3 * r2 <-> r1 < r2.
   Parameter Rmult_le_r : forall r1 r2 r3 : R , r3 > R0 -> r1 * r3 <= r2 * r3 <-> r1 <= r2.
   Parameter Rmult_lt_r : forall r1 r2 r3 : R , r3 > R0 -> r1 * r3 < r2 * r3 <-> r1 < r2.
   Parameter Rmult_lt_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 < r2 * r3 <-> r1 * / r3  < r2.
@@ -116,18 +156,18 @@ Module Type VIR_R.
   Parameter Ropp_mult_l : forall r1 r2 : R , - r1 * r2 = - (r1 * r2).
   Parameter Rinv_inv : forall r : R , r <> R0 -> r = //r.
   Parameter Rinv_mult : forall r1 r2 : R , / (r1 * r2) = / r1 * / r2.
-  Parameter Rinv_self : forall r : R , r <> R0 -> r * / r = R1.
+  Parameter Rinv_r : forall r : R , r <> 0 -> r * / r = 1.
   
   Parameter RT: ring_theory R0 R1 Rplus Rmult Rminus Ropp (eq (A := R)).
   Add Ring ABS: RT (abstract).
   Parameter RF : field_theory 0 1 Rplus Rmult Rminus Ropp Rdiv Rinv (eq(A:=R)).
   Add Field ABS' : RF (abstract).
    
-  Parameter Rplus_assoc : forall r1 r2 r3 : R , r1 + r2 + r3 = r1 + (r2 + r3).
-  Parameter Rmult_assoc : forall r1 r2 r3 : R , r1 * r2 * r3 = r1 * (r2 * r3).
+  
+  
   Parameter Ropp_minus : forall r1 r2 : R , - (r1 - r2) = r2 - r1.
   Parameter Rlt_Rplus_r : forall r1 r2 r3: R , r1 < r2 -> r1 + r3 < r2 + r3.
-  Parameter Rlt_Rplus_l : forall r1 r2 r3: R , r1 < r2 -> r3 + r1 < r3 + r2.
+  
   Parameter Rle_Rplus_r : forall r1 r2 r3: R , r1 <= r2 -> r1 + r3 <= r2 + r3.
   Parameter Rle_Rplus_l : forall r1 r2 r3: R , r1 <= r2 -> r3 + r1 <= r3 + r2.
   Parameter Rlt_Rlt_minus : forall r1 r2 r3 r4 : R , r1 < r2 -> r3 < r4 -> r3 - r2 < r4 - r1.
@@ -145,25 +185,6 @@ Module Type VIR_R.
   Parameter Rge_Rinv : forall r1 : R , r1 >= R1 -> r1 >= / r1.
   Parameter Rlt_Rinv : forall r1 : R , r1 < R1 /\ r1 > R0 -> r1 < / r1.
   Parameter Rle_Rinv : forall r1 : R , r1 <= R1 /\ r1 > R0 -> r1 <= / r1.
-  Definition archimedean : nat -> R -> Prop .
-    intros n r.
-    apply (IQR (INR n) <= r /\ r < IQR (INR (n + 1))).
-  Defined.
-  
-  Axiom archimedean_exists : forall r : R , exists x : nat , archimedean x r.
-  
-  Definition Same_Ipart : R -> R -> Prop.
-    intros.
-    apply (exists a : nat , IQR (INR (a)) <= X /\ IQR (INR (a)) <= X0 /\ X < IQR (INR (a + 1)) /\ X0 < IQR (INR (a + 1))).
-  Defined.
-  
-  Definition Same_Ipart_n(r : R)(n : nat) : Prop := Same_Ipart (r * IQR (10 ^ n)%nat) ((r + IQR (1%nat / (10 ^ S n)%nat)) * IQR (10 ^ n)%nat). 
-  
-  Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
-  Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
-
-  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
-                                          (exists sup : R , Sup X sup).
  
   Parameter IZR_0 : forall z : Z , IZR z = R0 <-> (z = 0)%Z.
   Parameter Z_same_R : forall z1 z2 : Z , (z1 = z2)%Z <-> IZR z1 = IZR z2.
@@ -287,8 +308,9 @@ Module VirRLemmas (VirR: VIR_R).
     split ; intros.
     - apply (Rlt_irrefl r1).
       apply Rlt_le_trans with r2 ; auto.
-    - destruct (R_dec r2 r1) ; auto.
-      exfalso . auto. 
+    - destruct (total_order_T r2 r1) ; auto.
+      exfalso . apply H. left. auto.
+      destruct H0 ; auto. subst. exfalso. apply H. apply Rle_refl.
   Qed.
   
   Theorem Rle_not_gt : forall r1 r2 : R , r1 <= r2 <-> ~ (r2 < r1).
@@ -298,8 +320,10 @@ Module VirRLemmas (VirR: VIR_R).
     split ; intros.
     - apply (Rlt_irrefl r1).
       apply Rle_lt_trans with r2 ; auto.
-    - destruct (R_dec r1 r2) ; auto.
-      exfalso . auto. 
+    - destruct (total_order_T r1 r2) ; auto.
+      left. auto.
+      destruct H0 ; auto. subst. apply Rle_refl.
+      exfalso. apply H. apply H0. 
   Qed.
   
   Theorem Rle_ge_eq : forall x y : R , x >= y -> y >= x -> x = y.
@@ -345,17 +369,17 @@ Module VirRLemmas (VirR: VIR_R).
     apply NNPP.
     intro.
     apply Rnot_eq_lt in H.
-    destruct H ; rewrite <- IQR_R1 in * ; apply IQR_lt in H ; apply (Qlt_irrefl 1) ; rewrite INR_Qeq_1 in H ;auto.
+    destruct H ; rewrite <- IQR_R1 in * ; apply IQR_lt in H ; apply (Qlt_irrefl 1) ; rewrite INQ_Qeq_1 in H ;auto.
   Qed.
   
-  Theorem Ipart_unique : forall (r : R)(n m : nat) , ((IQR (INR n) <= r) /\ (r < IQR (INR (n + 1)))) ->
-                                                     ((IQR (INR m) <= r) /\ (r < IQR (INR (m + 1)))) -> n = m%nat.
+  Theorem Ipart_unique : forall (r : R)(n m : nat) , ((IQR (INQ n) <= r) /\ (r < IQR (INQ (n + 1)))) ->
+                                                     ((IQR (INQ m) <= r) /\ (r < IQR (INQ (m + 1)))) -> n = m%nat.
   Proof.
     intros.
     destruct H , H0.
     apply NNPP. intro.
     apply nat_total_order in H3.
-    destruct H3 ; apply lt_le_S in H3 ; rewrite <- Nat.add_1_r in H3 ; apply (Rlt_irrefl r) ; apply INR_le in H3 ; apply IQR_le in H3.
+    destruct H3 ; apply lt_le_S in H3 ; rewrite <- Nat.add_1_r in H3 ; apply (Rlt_irrefl r) ; apply INQ_le in H3 ; apply IQR_le in H3.
     - apply Rlt_le_trans with (IQR (n + 1)%nat) ; auto.
       apply Rle_trans with (IQR (m)) ; auto.
     - apply Rlt_le_trans with (IQR (m + 1)%nat) ; auto.
@@ -363,25 +387,25 @@ Module VirRLemmas (VirR: VIR_R).
   Qed.
   
   Theorem Same_Ipart_mult : forall (r1 r2 : R)(k : nat) , (k > 0)%nat -> 
-                Same_Ipart (r1 * (IQR (INR k))) (r2 * (IQR (INR k))) -> Same_Ipart r1 r2.
+                Same_Ipart (r1 * (IQR (INQ k))) (r2 * (IQR (INQ k))) -> Same_Ipart r1 r2.
   Proof.
     intros.
     hnf in *.
     destruct H0 , H0 , H1 , H2.
     assert (IQR (k) > R0).
-    { rewrite <- IQR_R0. apply IQR_lt. rewrite <- INR_Qeq_0. apply INR_lt. omega. }
+    { rewrite <- IQR_R0. apply IQR_lt. rewrite <- INQ_Qeq_0. apply INQ_lt. omega. }
     apply Rmult_le_divr in H0; auto.
     apply Rmult_le_divr in H1; auto.
     apply Rmult_gt_divr in H2; auto.
     apply Rmult_gt_divr in H3; auto.
     destruct (archimedean_exists (IQR x * / IQR k)) , H5.
-    assert (IQR (x + 1)%nat * / IQR k <= IQR (INR (x0 + 1))).
+    assert (IQR (x + 1)%nat * / IQR k <= IQR (INQ (x0 + 1))).
     { apply Rmult_le_divr ; auto.
       rewrite <- Rmult_lt_divr in H6 ; auto.
       rewrite IQR_mult in *. apply IQR_le. 
       apply IQR_lt in H6.
-      rewrite INR_mult in *. 
-      apply INR_le. apply INR_lt in H6. 
+      rewrite INQ_mult in *. 
+      apply INQ_le. apply INQ_lt in H6. 
       omega.
      }
      exists x0.
@@ -577,7 +601,7 @@ Module VirRLemmas (VirR: VIR_R).
     assert (x - eps < x).
     { rewrite Rplus_0_r.
       unfold Rminus.
-      apply Rlt_Rplus_l.
+      apply Rplus_lt_compat_l.
       apply Rlt_opp. auto.
     }
     pose proof Sup_pro X x H H2 (x - eps) H3.
@@ -613,7 +637,7 @@ Module VirRLemmas (VirR: VIR_R).
       assert (x - eps < x).
       { rewrite Rplus_0_r.
         unfold Rminus.
-        apply Rlt_Rplus_l.
+        apply Rplus_lt_compat_l.
         apply Rlt_opp. auto.
       }
       pose proof Sup_pro X x H H3 (x - eps) H4.
@@ -649,7 +673,7 @@ Module VirRLemmas (VirR: VIR_R).
     assert (x + eps > x).
     { rewrite Rplus_0_r.
       unfold Rminus.
-      apply Rlt_Rplus_l.
+      apply Rplus_lt_compat_l.
       auto.
     }
     pose proof Inf_pro X x H H2 (x + eps) H3.
@@ -743,13 +767,13 @@ Module VirRLemmas (VirR: VIR_R).
       rewrite <- IQR_R1. rewrite Rplus_comm.
       rewrite IQR_plus.
       assert (IQR (x0 + 1) = IQR (S x0)).
-      { apply IQR_eq. rewrite INR_S. auto. }
+      { apply IQR_eq. rewrite INQ_S. auto. }
       rewrite H9. auto.
     }
     apply (H11 (S x0) (r2 + x1) H12).
   Qed.
   
-  Theorem eps_gt_10n :forall eps : R , eps > R0 -> exists n : nat , IQR 1 *  / IQR (INR (10 ^ n)%nat) < eps.
+  Theorem eps_gt_10n :forall eps : R , eps > R0 -> exists n : nat , IQR 1 *  / IQR (INQ (10 ^ n)%nat) < eps.
   Proof.
      intros.
      assert (IQR 1 > R0 /\ eps > R0).
@@ -762,12 +786,12 @@ Module VirRLemmas (VirR: VIR_R).
      exists x.
      apply Rmult_lt_divr.
      - apply Rlt_le_trans with (IQR 1) ; auto.
-       apply IQR_le. rewrite <- INR_Qeq_1.
-       apply INR_le. apply Max_powan_0. omega.
+       apply IQR_le. rewrite <- INQ_Qeq_1.
+       apply INQ_le. apply Max_powan_0. omega.
      - apply Rlt_trans with (IQR x * eps) ; auto.
        rewrite (Rmult_comm eps (IQR (10 ^ x)%nat)).
        apply Rmult_lt_r ; auto.
-       apply IQR_lt. apply INR_lt.
+       apply IQR_lt. apply INQ_lt.
        apply Nat.pow_gt_lin_r. omega.
   Qed.
   
@@ -775,7 +799,7 @@ Module VirRLemmas (VirR: VIR_R).
   Proof.
     intros.
     split; intros ; subst ; try (reflexivity).
-    - rewrite Rminus_self. rewrite Rabs_pos. apply Rlt_gt. auto.
+    - unfold Rminus. rewrite Rplus_opp_r. rewrite Rabs_pos. apply Rlt_gt. auto.
       apply Rle_refl.
     - apply NNPP.
       intro.
@@ -791,7 +815,7 @@ Module VirRLemmas (VirR: VIR_R).
         apply H.
         apply Rmult_gt_divr.
         * rewrite <- IQR_R0. apply IQR_lt.
-          rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+          rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
         * rewrite Rmult_0_l. rewrite <- IQR_R0. apply IQR_lt. lra.
       + apply Rlt_neg_eqb in H0.
         assert (r1 - r2 <= R0). { apply Rle_lt_weak. apply H0. }
@@ -805,7 +829,7 @@ Module VirRLemmas (VirR: VIR_R).
         apply H.
         apply Rmult_gt_divr.
         * rewrite <- IQR_R0. apply IQR_lt.
-          rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+          rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
         * rewrite Rmult_0_l. rewrite <- IQR_R0. apply IQR_lt. lra.
   Qed.
 

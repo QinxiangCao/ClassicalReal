@@ -21,7 +21,7 @@ Require Import Ring.
 From Coq Require Import Field.
 From Coq Require Import Omega.
 From CReal Require Import Uncomputable.TMSet.
-From CReal Require Import INR_libs.
+From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
 From CReal Require Import Uncomputable.ComRealBase.
 From CReal Require Import Uncomputable.ComRealBase_Dec.
@@ -438,14 +438,14 @@ Module TMR_Set (R : VIR_R).
     pose proof TM'r_InDecR.
     destruct H. 
     assert (~ (10 ^ S x)%nat == 0)%Q.
-    { intro. apply (Qlt_irrefl 0%Q). rewrite <- H4 at 2. rewrite <- INR_Qeq_0.
-      apply INR_lt. apply Max_powan_0. omega.
+    { intro. apply (Qlt_irrefl 0%Q). rewrite <- H4 at 2. rewrite <- INQ_Qeq_0.
+      apply INQ_lt. apply Max_powan_0. omega.
     }
     assert (IQR 1 / IQR (10 ^ S x)%nat > R0).
     { unfold Rdiv. rewrite IQR_inv ; auto. rewrite IQR_mult.
       rewrite <- IQR_R0. apply IQR_lt. rewrite Qmult_1_l.
       apply Qinv_lt_0_compat.
-      rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+      rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
     specialize (H2 _ H5). destruct H2.
     assert (max (S x) x1 >= x1)%nat. { apply Nat.le_max_r. }
@@ -461,7 +461,7 @@ Module TMR_Set (R : VIR_R).
     apply Rle_neg_eqb in H7.
     apply Rle_ge in H7.
     assert (IQR (10 ^ x)%nat > R0).
-    { rewrite <- IQR_R0. apply IQR_lt. rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega. }
+    { rewrite <- IQR_R0. apply IQR_lt. rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega. }
     apply Rmult_le_r with (r3 := IQR (10 ^ x)%nat) in H7 ; auto.
     apply Rmult_lt_r with (r3 := IQR (10 ^ x)%nat) in H2 ; auto.
     rewrite Rmult_minus_distr_r in H2.
@@ -474,13 +474,13 @@ Module TMR_Set (R : VIR_R).
       { rewrite IQR_mult.
         apply NNPP. intro.
         apply Rnot_eq_lt in H9. 
-        destruct H9 ; apply IQR_lt in H9 ; rewrite INR_mult in H9 ; apply INR_lt in H9;
+        destruct H9 ; apply IQR_lt in H9 ; rewrite INQ_mult in H9 ; apply INQ_lt in H9;
         rewrite Nat.pow_succ_r' in H9 ; rewrite mult_comm in H9 ; omega.
       }
       rewrite H9.
       rewrite Rinv_mult. rewrite Rmult_comm.
       rewrite <- Rmult_assoc.
-      rewrite Rinv_self. rewrite Rmult_1_l. auto.
+      rewrite Rinv_r. rewrite Rmult_1_l. auto.
       apply Rnot_eq_lt. auto.
     }
     rewrite H9 in *. 
@@ -488,7 +488,7 @@ Module TMR_Set (R : VIR_R).
     - assert (x2 <= x3)%nat.
       { apply NNPP. intro.
         assert (x3 + 1<= x2)%nat. { omega. }
-        apply INR_le in H15. apply IQR_le in H15.
+        apply INQ_le in H15. apply IQR_le in H15.
         apply (Rlt_irrefl (IQR x2)).
         apply Rle_lt_trans with (r2 * IQR (10 ^ x)%nat) ; auto.
         apply Rle_lt_trans with (limitTM'r * IQR (10 ^ x)%nat) ; auto.
@@ -503,25 +503,25 @@ Module TMR_Set (R : VIR_R).
       apply Rlt_Rplus_r with (r3 := IQR 1 / IQR 10%nat) in H11.
       pose proof Rlt_trans _ _ _ H17 H11.
       apply (Rlt_irrefl (IQR (x2 + 1)%nat + IQR 1%nat)).
-      apply INR_le in H16.
-      rewrite <- INR_plus in H16.
+      apply INQ_le in H16.
+      rewrite <- INQ_plus in H16.
       apply IQR_le in H16.
       rewrite <- IQR_plus in H16.
       apply Rle_lt_trans with (IQR x3) ; auto.
       apply Rlt_trans with (IQR (x2 + 1)%nat + IQR 1 / IQR 10%nat) ; auto.
-      apply Rlt_Rplus_l. unfold Rdiv.
+      apply Rplus_lt_compat_l. unfold Rdiv.
       rewrite IQR_R1. rewrite Rmult_1_l.
       rewrite IQR_inv ; auto.
       apply IQR_lt.
-      rewrite INR_Qeq_1.
+      rewrite INQ_Qeq_1.
       apply Qlt_shift_inv_r.
-      rewrite <- INR_Qeq_0. apply INR_lt. omega.
-      rewrite Qmult_1_l. rewrite <- INR_Qeq_1. apply INR_lt. omega.
-      intro. rewrite <- INR_Qeq_0 in H19. apply Qeq_INR_eq in H19. omega.
+      rewrite <- INQ_Qeq_0. apply INQ_lt. omega.
+      rewrite Qmult_1_l. rewrite <- INQ_Qeq_1. apply INQ_lt. omega.
+      intro. rewrite <- INQ_Qeq_0 in H19. apply Qeq_INQ_eq in H19. omega.
     - assert (x2 <= x3)%nat.
       { apply NNPP. intro.
         assert (x3 + 1<= x2)%nat. { omega. }
-        apply INR_le in H15. apply IQR_le in H15.
+        apply INQ_le in H15. apply IQR_le in H15.
         apply (Rlt_irrefl (IQR x2)).
         apply Rle_lt_trans with (r2 * IQR (10 ^ x)%nat) ; auto.
         apply Rle_lt_trans with (limitTM'r * IQR (10 ^ x)%nat) ; auto.
@@ -553,7 +553,7 @@ Module TMR_Set (R : VIR_R).
       apply Rlt_trans with (r2 * IQR (10 ^ x)%nat + IQR 1 / IQR 10%nat) ; auto.
       apply Rle_lt_trans with (limitTM'r * IQR (10 ^ x)%nat) ; auto.
       apply Rle_trans with (IQR x3) ; auto.
-      apply IQR_le. apply INR_le. omega.
+      apply IQR_le. apply INQ_le. omega.
   Qed.
   
   Theorem limitTM'r_pro : forall (n : nat) , Dec_R limitTM'r n 1 <-> exists j : nat , TM n j = true.
@@ -562,16 +562,16 @@ Module TMR_Set (R : VIR_R).
     pose proof limit_of_TM'r.
     destruct H. 
     split ; intros.
-    - assert (~ INR (10 ^ S n) == 0)%Q.
+    - assert (~ INQ (10 ^ S n) == 0)%Q.
       { intro. apply (Qlt_irrefl 0%Q). rewrite <- H2 at 2.
-        rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+        rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
       }
       set (eps := (IQR 1 / IQR (10 ^ S n)%nat)).
       assert (eps > R0).
       { rewrite <- IQR_R0. subst eps. unfold Rdiv. 
         rewrite IQR_inv ; auto. rewrite IQR_mult. apply IQR_lt.
         rewrite Qmult_1_l. apply Qinv_lt_0_compat.
-        rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+        rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
       }
       specialize (H0 _ H3). destruct H0.
       assert (x >= x)%nat. { omega. }
@@ -584,16 +584,16 @@ Module TMR_Set (R : VIR_R).
       pose proof (Dec_R_eps_same (TM'r x) limitTM'r _ H0 H4 H5).
       apply H6 ; auto.
     - destruct H1.
-      assert (~ INR (10 ^ S (max x n)) == 0)%Q.
+      assert (~ INQ (10 ^ S (max x n)) == 0)%Q.
       { intro. apply (Qlt_irrefl 0%Q). rewrite <- H2 at 2.
-        rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+        rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
       }
       set (eps := (IQR 1 / IQR (10 ^ S (max x n))%nat)).
       assert (eps > R0).
       { rewrite <- IQR_R0. subst eps. unfold Rdiv. 
         rewrite IQR_inv ; auto. rewrite IQR_mult. apply IQR_lt.
         rewrite Qmult_1_l. apply Qinv_lt_0_compat.
-        rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+        rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
       }
       specialize (H0 _ H3). destruct H0.
       assert (max x0 x >= x0)%nat. { apply Nat.le_max_l. }

@@ -23,7 +23,7 @@ Require Import Ring.
 From Coq Require Import Field.
 From Coq Require Import Omega.
 From CReal Require Import Uncomputable.TMSet.
-From CReal Require Import INR_libs.
+From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
 From CReal Require Import Uncomputable.ComRealBase.
 From CReal Require Import Uncomputable.ComRealBase_Dec.

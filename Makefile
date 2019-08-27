@@ -15,7 +15,7 @@ DEP_DEMO = -Q $(CURRENT_DIR) CReal
 DEP_FLAG = $(DEP_DEMO)
 
 QArith_ext_FILES = \
-  QArith_base_ext.v INR_libs.v
+  QArith_base_ext.v INQ_libs.v
 
 Dedekind_FILES = \
   RBase.v ROrder.v RArith.v
@@ -30,7 +30,7 @@ MetricSpace_FILES = \
   MS_Def.v
 
 Uncomputable_FILES = \
-  Countable.v TMSet.v ComRealBase.v ComRealBase_Dec.v ComRealBase_TMR.v ComRealBaseuu.v ComRealBaseN_Q.v Rinv_Rpow.v
+  Countable.v TMSet.v ComRealBase.v ComRealBase_Dec.v ComRealBase_TMR.v ComRealBaseuu.v ComRealBaseN_Q.v Rinv_Rpow.v Rdefinitions.v Raxioms.v RIneq.v
 
 FILES = \
   $(QArith_ext_FILES:%.v=QArith_ext/%.v) \

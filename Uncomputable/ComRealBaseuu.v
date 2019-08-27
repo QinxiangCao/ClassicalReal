@@ -23,7 +23,7 @@ Require Import Ring.
 From Coq Require Import Field.
 From Coq Require Import Omega.
 From CReal Require Import Uncomputable.TMSet.
-From CReal Require Import INR_libs.
+From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
 From CReal Require Import Uncomputable.ComRealBase.
 From CReal Require Import Uncomputable.ComRealBase_Dec.
@@ -97,11 +97,11 @@ Module CR_uu (R : VIR_R).
 
   Fixpoint sum_f (f : nat -> nat) (n : nat) : Q :=
     match n with
-      | 0%nat => INR (f 0%nat)
-      | S n' => (sum_f f n' + (INR (f n) / INR (10 ^ n)))%Q
+      | 0%nat => INQ (f 0%nat)
+      | S n' => (sum_f f n' + (INQ (f n) / INQ (10 ^ n)))%Q
     end.
     
-  Theorem sum_f_expand : forall (f : nat -> nat)(n : nat) , (sum_f f (S n) == sum_f f n + (INR (f (S n)) / INR (10 ^ (S n))))%Q.
+  Theorem sum_f_expand : forall (f : nat -> nat)(n : nat) , (sum_f f (S n) == sum_f f n + (INQ (f (S n)) / INQ (10 ^ (S n))))%Q.
   Proof.
     intros.
     reflexivity.
@@ -111,109 +111,109 @@ Module CR_uu (R : VIR_R).
   Proof.
     intros.
     induction n.
-    - simpl. apply INR_lt. apply (H O).
+    - simpl. apply INQ_lt. apply (H O).
     - rewrite (sum_f_expand f n). 
       rewrite (sum_f_expand f1 n).
       apply Qplus_lt_le_compat ; auto.
       apply Qlt_le_weak.
       unfold Qdiv. 
-      assert (~ INR(10 ^ S n) == 0)%Q.
+      assert (~ INQ(10 ^ S n) == 0)%Q.
       {
         unfold not.
         intros.
         apply (Qlt_irrefl 0).
         rewrite <- H0 at 2. 
-        rewrite <- INR_Qeq_0.
-        apply INR_lt.
+        rewrite <- INQ_Qeq_0.
+        apply INQ_lt.
         apply lt_trans with (m := S n).
         destruct n ; omega.
         apply Nat.pow_gt_lin_r. omega.
       }
       apply Qlt_shift_div_l. 
-      + rewrite <- INR_Qeq_0. apply INR_lt. 
+      + rewrite <- INQ_Qeq_0. apply INQ_lt. 
         apply lt_trans with (m := S n).
         destruct n ; omega.
         apply Nat.pow_gt_lin_r. omega.
       + rewrite <- Qmult_assoc.
-        rewrite (Qmult_comm (/ INR (10 ^ S n)) (INR (10 ^ S n))).
+        rewrite (Qmult_comm (/ INQ (10 ^ S n)) (INQ (10 ^ S n))).
         rewrite Qmult_inv_r ; auto.
         rewrite Qmult_1_r.
-        apply INR_lt. auto.
+        apply INQ_lt. auto.
   Qed.
 
   Theorem f_le_sum_f_le : forall (f f1 : nat -> nat) , (forall n : nat , (f n <= f1 n)%nat) -> (forall n : nat , (sum_f f n <= sum_f f1 n)%Q).
   Proof.
     intros.
     induction n.
-    - simpl. apply INR_le. apply (H O).
+    - simpl. apply INQ_le. apply (H O).
     - rewrite (sum_f_expand f n). 
       rewrite (sum_f_expand f1 n).
       apply Qplus_le_compat; auto.
       unfold Qdiv. 
-      assert (~ INR(10 ^ S n) == 0)%Q.
+      assert (~ INQ(10 ^ S n) == 0)%Q.
       {
         unfold not.
         intros.
         apply (Qlt_irrefl 0).
         rewrite <- H0 at 2. 
-        rewrite <- INR_Qeq_0.
-        apply INR_lt.
+        rewrite <- INQ_Qeq_0.
+        apply INQ_lt.
         apply lt_trans with (m := S n).
         destruct n ; omega.
         apply Nat.pow_gt_lin_r. omega.
       }
       apply Qle_shift_div_l. 
-      + rewrite <- INR_Qeq_0. apply INR_lt. 
+      + rewrite <- INQ_Qeq_0. apply INQ_lt. 
         apply lt_trans with (m := S n).
         destruct n ; omega.
         apply Nat.pow_gt_lin_r. omega.
       + rewrite <- Qmult_assoc.
-        rewrite (Qmult_comm (/ INR (10 ^ S n)) (INR (10 ^ S n))).
+        rewrite (Qmult_comm (/ INQ (10 ^ S n)) (INQ (10 ^ S n))).
         rewrite Qmult_inv_r ; auto.
         rewrite Qmult_1_r.
-        apply INR_le. auto.
+        apply INQ_le. auto.
   Qed.
 
-  Theorem sum_f_up : forall f : nat -> nat , Indec f -> (forall n : nat , sum_f f (S n) <= sum_f f n + INR(1) / INR (10 ^ n))%Q.
+  Theorem sum_f_up : forall f : nat -> nat , Indec f -> (forall n : nat , sum_f f (S n) <= sum_f f n + INQ(1) / INQ (10 ^ n))%Q.
   Proof.
     intros.
     rewrite sum_f_expand. rewrite Qplus_le_r.
-    assert (INR (10) / INR(10 ^ (S n)) == INR (1) / INR (10 ^ n))%Q.
+    assert (INQ (10) / INQ(10 ^ (S n)) == INQ (1) / INQ (10 ^ n))%Q.
     {
       rewrite Nat.pow_succ_r'.
-      rewrite <- INR_mult.
+      rewrite <- INQ_mult.
       unfold Qdiv.
       rewrite Qinv_mult_distr.
       rewrite Qmult_assoc.
       rewrite Qmult_inv_r.
-      rewrite INR_Qeq_1. reflexivity.
+      rewrite INQ_Qeq_1. reflexivity.
       unfold not. intros. inversion H0.
     }
     rewrite <- H0.
     apply Qle_shift_div_l.
-    - rewrite <- INR_Qeq_0. apply INR_lt. 
+    - rewrite <- INQ_Qeq_0. apply INQ_lt. 
       apply lt_trans with (m := S n).
       destruct n ; omega.
       apply Nat.pow_gt_lin_r. omega.
     - unfold Qdiv. 
-      assert (~ INR(10 ^ S n) == 0)%Q.
+      assert (~ INQ(10 ^ S n) == 0)%Q.
       {
         unfold not.
         intros.
         apply (Qlt_irrefl 0).
         rewrite <- H1 at 2. 
-        rewrite <- INR_Qeq_0.
-        apply INR_lt.
+        rewrite <- INQ_Qeq_0.
+        apply INQ_lt.
         apply lt_trans with (m := S n).
         destruct n ; omega.
         apply Nat.pow_gt_lin_r. omega.
       }
       rewrite <- Qmult_assoc.
-      rewrite (Qmult_comm (/ INR (10 ^ S n)) (INR (10 ^ S n))).
+      rewrite (Qmult_comm (/ INQ (10 ^ S n)) (INQ (10 ^ S n))).
       rewrite Qmult_inv_r ; auto.
       pose proof H (S n).
       rewrite Qmult_1_r.
-      apply INR_le.
+      apply INQ_le.
       apply lt_le_weak ; auto.
       destruct H2; omega.
   Qed.
@@ -228,8 +228,8 @@ Module CR_uu (R : VIR_R).
       rewrite <- Qplus_0_r at 1.
       apply Qplus_le_r.
       unfold Qdiv. apply Qmult_le_0_compat.
-      + rewrite <- INR_Qeq_0. apply INR_le. omega.
-      + apply Qinv_le_0_compat. rewrite <- INR_Qeq_0. apply INR_le. omega.
+      + rewrite <- INQ_Qeq_0. apply INQ_le. omega.
+      + apply Qinv_le_0_compat. rewrite <- INQ_Qeq_0. apply INQ_le. omega.
   Qed.
 
   Theorem sum_f_Dec_R_up : forall (f : nat -> nat) (n m : nat) , Indec f -> (n < m)%nat ->  Dec_R (IQR (sum_f f n)) m 0.
@@ -242,9 +242,9 @@ Module CR_uu (R : VIR_R).
       exists ((f 0) * (10 ^ m))%nat.
       repeat split .
       + apply IQR_le.
-        simpl. rewrite INR_mult. lra.
+        simpl. rewrite INQ_mult. lra.
       + apply IQR_lt. simpl.
-        rewrite INR_mult. apply INR_lt. omega.
+        rewrite INQ_mult. apply INQ_lt. omega.
       + assert (m = m - 1 + 1)%nat. { omega. }
         rewrite H1.
         rewrite Nat.pow_add_r.
@@ -259,43 +259,43 @@ Module CR_uu (R : VIR_R).
       exists (x + (f (S n)) * (10 ^ (m - S n)))%nat.
       repeat split .
       + apply IQR_le. rewrite sum_f_expand.
-        rewrite Qmult_plus_distr_l. rewrite <- INR_plus.
+        rewrite Qmult_plus_distr_l. rewrite <- INQ_plus.
         apply Qle_Qplus_Qle ; auto.
-        unfold Qdiv. rewrite <- Qmult_assoc. rewrite <- INR_mult.
+        unfold Qdiv. rewrite <- Qmult_assoc. rewrite <- INQ_mult.
         destruct (H (S n)).
-        * rewrite H5. rewrite INR_Qeq_0. rewrite !Qmult_0_l. lra.
-        * rewrite H5. rewrite INR_Qeq_1. rewrite !Qmult_1_l. 
+        * rewrite H5. rewrite INQ_Qeq_0. rewrite !Qmult_0_l. lra.
+        * rewrite H5. rewrite INQ_Qeq_1. rewrite !Qmult_1_l. 
           assert (m = m - S n + S n)%nat. { omega. }
           rewrite H6 at 2.
           rewrite Nat.pow_add_r.
-          rewrite <- INR_mult.
+          rewrite <- INQ_mult.
           rewrite Qmult_comm at 1.
           rewrite <- Qmult_assoc.
           rewrite Qmult_inv_r.
           rewrite Qmult_1_r. lra.
           intro.
-          rewrite <- INR_Qeq_0 in H7. apply Qeq_INR_eq in H7.
+          rewrite <- INQ_Qeq_0 in H7. apply Qeq_INQ_eq in H7.
           apply (lt_irrefl O). rewrite <- H7 at 2.
           apply Max_powan_0. omega.
       + apply IQR_lt. rewrite sum_f_expand.
         rewrite Qmult_plus_distr_l. 
         assert (x + f (S n) * 10 ^ (m - S n) + 1 = x + 1 + f (S n) * 10 ^ (m - S n))%nat. { omega. }
-        rewrite H5. clear H5. rewrite <- INR_plus.
+        rewrite H5. clear H5. rewrite <- INQ_plus.
         apply Qlt_Qplus_Qle ; auto.
-        unfold Qdiv. rewrite <- Qmult_assoc. rewrite <- INR_mult.
+        unfold Qdiv. rewrite <- Qmult_assoc. rewrite <- INQ_mult.
         destruct (H (S n)).
-        * rewrite H5. rewrite INR_Qeq_0. rewrite !Qmult_0_l. lra.
-        * rewrite H5. rewrite INR_Qeq_1. rewrite !Qmult_1_l. 
+        * rewrite H5. rewrite INQ_Qeq_0. rewrite !Qmult_0_l. lra.
+        * rewrite H5. rewrite INQ_Qeq_1. rewrite !Qmult_1_l. 
           assert (m = m - S n + S n)%nat. { omega. }
           rewrite H6 at 1.
           rewrite Nat.pow_add_r.
-          rewrite <- INR_mult.
+          rewrite <- INQ_mult.
           rewrite Qmult_comm at 1.
           rewrite <- Qmult_assoc.
           rewrite Qmult_inv_r.
           rewrite Qmult_1_r. lra.
           intro.
-          rewrite <- INR_Qeq_0 in H7. apply Qeq_INR_eq in H7.
+          rewrite <- INQ_Qeq_0 in H7. apply Qeq_INQ_eq in H7.
           apply (lt_irrefl O). rewrite <- H7 at 2.
           apply Max_powan_0. omega. 
       + rewrite Nat.add_mod ; auto.
@@ -317,25 +317,25 @@ Module CR_uu (R : VIR_R).
       repeat split ; auto.
       + apply Rle_trans with (IQR (sum_f f n) * IQR (10 ^ n)%nat) ; auto.
         apply Rmult_le_r.
-        * rewrite <- IQR_R0. apply IQR_lt. rewrite <-INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+        * rewrite <- IQR_R0. apply IQR_lt. rewrite <-INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
         * apply IQR_le. apply Mono_up_sum_f. omega.
       + rewrite IQR_mult in *. apply IQR_lt. apply IQR_lt in H1. apply IQR_le in H0.
         rewrite sum_f_expand.
         destruct (H (S n)).
-        * rewrite H2. rewrite INR_Qeq_0. unfold Qdiv. rewrite Qmult_0_l.
+        * rewrite H2. rewrite INQ_Qeq_0. unfold Qdiv. rewrite Qmult_0_l.
           rewrite Qplus_0_r. auto.
         * rewrite H2. clear H2.
           rewrite Qmult_plus_distr_l.
           assert (10 ^ S n = 10 ^ n * 10)%nat. { rewrite mult_comm. apply Nat.pow_succ_r. omega. }
-          assert (INR(1) / INR(10^ S n) * INR (10 ^ n) == INR (1) / INR(10) )%Q. 
+          assert (INQ(1) / INQ(10^ S n) * INQ (10 ^ n) == INQ (1) / INQ(10) )%Q. 
           { 
-            apply (Qmult_inj_r _ _ (INR 10)).
-            - intro. rewrite <- INR_Qeq_0 in H3. apply Qeq_INR_eq in H3. inversion H3.
-            - rewrite <- Qmult_assoc. rewrite INR_mult.  rewrite <- H2.
+            apply (Qmult_inj_r _ _ (INQ 10)).
+            - intro. rewrite <- INQ_Qeq_0 in H3. apply Qeq_INQ_eq in H3. inversion H3.
+            - rewrite <- Qmult_assoc. rewrite INQ_mult.  rewrite <- H2.
               field. split ; intro.
-              + rewrite <- INR_Qeq_0 in H3. apply Qeq_INR_eq in H3. inversion H3.
+              + rewrite <- INQ_Qeq_0 in H3. apply Qeq_INQ_eq in H3. inversion H3.
               + apply (Qlt_irrefl 0%Q). rewrite <- H3 at 2.
-                rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0 ; omega.
+                rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0 ; omega.
           }
           rewrite H3.
           pose proof (sum_f_Dec_R_up f n (S n)). 
@@ -347,37 +347,37 @@ Module CR_uu (R : VIR_R).
           symmetry in H5.
           apply mod_exists in H5 ; try (omega) .
           destruct H5.  rewrite plus_0_r in *.
-          rewrite H2 in *. rewrite <- INR_mult in *.
+          rewrite H2 in *. rewrite <- INQ_mult in *.
           rewrite Qmult_assoc in *.
           subst x0.
           rewrite mult_comm in *.
-          rewrite <- INR_plus in H6.
-          rewrite <- INR_mult in *.
-          assert (INR(10) > 0)%Q. { rewrite <- INR_Qeq_0. apply INR_lt. omega. }
+          rewrite <- INQ_plus in H6.
+          rewrite <- INQ_mult in *.
+          assert (INQ(10) > 0)%Q. { rewrite <- INQ_Qeq_0. apply INQ_lt. omega. }
           apply Qmult_lt_0_le_reg_r in H4 ; auto.
-          assert (INR(1) == INR(1) / INR(10) * INR(10))%Q. { field. intro. rewrite H7 in H5. apply Qlt_irrefl in H5. auto. }
+          assert (INQ(1) == INQ(1) / INQ(10) * INQ(10))%Q. { field. intro. rewrite H7 in H5. apply Qlt_irrefl in H5. auto. }
           rewrite H7 in H6.
           rewrite <- Qmult_plus_distr_l in H6.
           apply Qmult_lt_r in H6 ; auto.
           assert (sum_f f n * (10 ^ n)%nat < x1 + 1%nat)%Q.
           { apply Qlt_trans with (x1 + 1%nat / 10%nat)%Q ; auto.
-            apply Qplus_lt_r. rewrite INR_Qeq_1.
+            apply Qplus_lt_r. rewrite INQ_Qeq_1.
             unfold Qdiv. rewrite Qmult_1_l.
             apply Qlt_shift_inv_r ; auto.
           }
           assert (x = x1).
           {
             apply (Ipart_unique (IQR (sum_f f n * (10 ^ n)%nat))) ; split ; try (apply IQR_le) ; try (apply IQR_lt) ; auto.
-            rewrite <- INR_plus. auto.
+            rewrite <- INQ_plus. auto.
           }
           subst.
           apply Qlt_trans with (x1 + 1%nat / 10%nat + 1%nat / 10%nat)%Q.
           ** apply Qplus_lt_l. auto.
-          ** rewrite <- INR_plus. rewrite <- Qplus_assoc.
+          ** rewrite <- INQ_plus. rewrite <- Qplus_assoc.
              apply Qplus_lt_r.
              unfold Qdiv. rewrite <- Qmult_plus_distr_l.
-             rewrite INR_plus. simpl. rewrite INR_Qeq_1.
-             apply Qmult_lt_r with (INR (10)) ; auto.
+             rewrite INQ_plus. simpl. rewrite INQ_Qeq_1.
+             apply Qmult_lt_r with (INQ (10)) ; auto.
   Qed.
   
   Theorem sum_f_Dec_R_same : forall (f : nat -> nat) (n m : nat) , Indec f -> (m <= n)%nat ->  Dec_R (IQR (sum_f f n)) m (f m).
@@ -390,7 +390,7 @@ Module CR_uu (R : VIR_R).
       repeat split ; simpl.
       * rewrite IQR_R1_same. rewrite Rmult_1_r. apply Rle_refl.
       * rewrite IQR_R1_same. rewrite Rmult_1_r. apply IQR_lt.
-        apply INR_lt. omega.
+        apply INQ_lt. omega.
       * destruct (H O) ; rewrite H1 ; auto.
     - intros.
       inversion H0.
@@ -403,26 +403,26 @@ Module CR_uu (R : VIR_R).
         repeat split.
         + apply IQR_le. rewrite sum_f_expand.
           rewrite Qmult_plus_distr_l.
-          rewrite <- INR_plus.
+          rewrite <- INQ_plus.
           apply Qle_Qplus_Qle ; auto.
           rewrite Qmult_comm.
           rewrite Qmult_div_r. lra.
           intro.
           apply (Qlt_irrefl 0).
           rewrite <- H3 at 2.
-          rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+          rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
         + apply IQR_lt. rewrite sum_f_expand.
           rewrite Qmult_plus_distr_l.
           assert (x + f (S n) + 1 = x + 1 + f (S n))%nat. { omega. }
           rewrite H3. clear H3.
-          rewrite <- INR_plus.
+          rewrite <- INQ_plus.
           apply Qlt_Qplus_Qle ; auto.
           rewrite Qmult_comm.
           rewrite Qmult_div_r. lra.
           intro.
           apply (Qlt_irrefl 0).
           rewrite <- H3 at 2.
-          rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega. 
+          rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega. 
         + rewrite Nat.add_mod ; auto.
           rewrite <- H1. rewrite plus_0_l.
           destruct (H (S n)) ; rewrite H3 ; auto. 
@@ -440,10 +440,10 @@ Module CR_uu (R : VIR_R).
         { 
           apply  (Same_Ipart_mult _ _ (10 ^ (n - m))).
           - apply Max_powan_0 ; omega.
-          - destruct (archimedean_exists (IQR ((sum_f f n) * INR (10 ^ n)))), H8.
+          - destruct (archimedean_exists (IQR ((sum_f f n) * INQ (10 ^ n)))), H8.
             exists x1.
             assert (((10 ^ m)%nat * (10 ^ (n - m))%nat) == (10 ^ n)%nat)%Q.
-            { rewrite INR_mult. apply eq_INR_Qeq. 
+            { rewrite INQ_mult. apply eq_INQ_Qeq. 
               rewrite <- Nat.pow_add_r.
               assert (m + (n - m) = n)%nat. { omega. }
               subst. auto.
@@ -452,63 +452,63 @@ Module CR_uu (R : VIR_R).
             apply IQR_le in H8 ; apply IQR_lt in H9 ;
             rewrite <- Qmult_assoc ; rewrite H10 ; clear H10;
             try (rewrite sum_f_expand ; rewrite Qmult_plus_distr_l) ; auto.
-            + apply Qle_trans with ((sum_f f n) * (INR (10 ^ n)))%Q ; auto.
+            + apply Qle_trans with ((sum_f f n) * (INQ (10 ^ n)))%Q ; auto.
               rewrite <- Qplus_0_r at 1.
               apply Qplus_le_r.
               unfold Qdiv. 
-              assert (INR(10^n) >= 0)%Q.
-              {  rewrite <- INR_Qeq_0. apply INR_le. apply lt_le_weak. apply Max_powan_0. omega. }
+              assert (INQ(10^n) >= 0)%Q.
+              {  rewrite <- INQ_Qeq_0. apply INQ_le. apply lt_le_weak. apply Max_powan_0. omega. }
               apply Qmult_le_0_compat ; auto.
               apply Qmult_le_0_compat.
-              * rewrite <- INR_Qeq_0. apply INR_le. destruct (H (S n)) ; omega.
+              * rewrite <- INQ_Qeq_0. apply INQ_le. destruct (H (S n)) ; omega.
               * apply Qinv_le_0_compat.
-                rewrite <- INR_Qeq_0. apply INR_le. apply lt_le_weak. apply Max_powan_0. omega.
+                rewrite <- INQ_Qeq_0. apply INQ_le. apply lt_le_weak. apply Max_powan_0. omega.
             + assert (10 ^ S n = 10 ^ n * 10)%nat. { rewrite mult_comm. apply Nat.pow_succ_r. omega. }
-              assert (INR(f (S n)) / INR(10^S n) * INR (10 ^ n) == INR (f (S n)) / INR(10) )%Q. 
+              assert (INQ(f (S n)) / INQ(10^S n) * INQ (10 ^ n) == INQ (f (S n)) / INQ(10) )%Q. 
               { 
-                apply (Qmult_inj_r _ _ (INR 10)).
-                - intro. rewrite <- INR_Qeq_0 in H11. apply Qeq_INR_eq in H11. inversion H11.
-                - rewrite <- Qmult_assoc. rewrite INR_mult.  rewrite <- H10.
+                apply (Qmult_inj_r _ _ (INQ 10)).
+                - intro. rewrite <- INQ_Qeq_0 in H11. apply Qeq_INQ_eq in H11. inversion H11.
+                - rewrite <- Qmult_assoc. rewrite INQ_mult.  rewrite <- H10.
                   field. split ; intro.
-                  + rewrite <- INR_Qeq_0 in H11. apply Qeq_INR_eq in H11. inversion H11.
+                  + rewrite <- INQ_Qeq_0 in H11. apply Qeq_INQ_eq in H11. inversion H11.
                   + apply (Qlt_irrefl 0%Q). rewrite <- H11 at 2.
-                    rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0 ; omega.
+                    rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0 ; omega.
               }
               rewrite H11. 
               symmetry in H6.
               apply mod_exists in H6 ; try (omega) .
               destruct H6. rewrite plus_0_r in H6.
-              rewrite H10 in *. rewrite <- INR_mult in *.
+              rewrite H10 in *. rewrite <- INQ_mult in *.
               rewrite Qmult_assoc in *.
               subst x0.
               rewrite mult_comm in *.
-              rewrite <- INR_plus in H7.
-              rewrite <- INR_mult in *.
-              assert (INR(10) > 0)%Q. { rewrite <- INR_Qeq_0. apply INR_lt. omega. }
+              rewrite <- INQ_plus in H7.
+              rewrite <- INQ_mult in *.
+              assert (INQ(10) > 0)%Q. { rewrite <- INQ_Qeq_0. apply INQ_lt. omega. }
               apply Qmult_lt_0_le_reg_r in H3 ; auto.
-              assert (INR(1) == INR(1) / INR(10) * INR(10))%Q. { field. intro. rewrite H12 in H6. apply Qlt_irrefl in H6. auto. }
+              assert (INQ(1) == INQ(1) / INQ(10) * INQ(10))%Q. { field. intro. rewrite H12 in H6. apply Qlt_irrefl in H6. auto. }
               rewrite H12 in H7.
               rewrite <- Qmult_plus_distr_l in H7.
               apply Qmult_lt_r in H7 ; auto.
               assert ((sum_f f n) * (10 ^ n)%nat < x2 + 1%nat)%Q.
               { apply Qlt_trans with (x2 + 1%nat / 10%nat)%Q ; auto.
-                apply Qplus_lt_r. rewrite INR_Qeq_1.
+                apply Qplus_lt_r. rewrite INQ_Qeq_1.
                 unfold Qdiv. rewrite Qmult_1_l.
                 apply Qlt_shift_inv_r ; auto.
               }
               assert (x2 = x1).
               {
                 apply (Ipart_unique (IQR ((sum_f f n) * (10 ^ n)%nat))) ; split ; try (apply IQR_le) ; try (apply IQR_lt) ; auto.
-                rewrite <- INR_plus. auto.
+                rewrite <- INQ_plus. auto.
               }
               subst.
               apply Qlt_trans with (x1 + 1%nat / 10%nat + f (S n) / 10%nat)%Q.
               * apply Qplus_lt_l. auto.
-              * rewrite <- INR_plus. rewrite <- Qplus_assoc.
+              * rewrite <- INQ_plus. rewrite <- Qplus_assoc.
                 apply Qplus_lt_r.
                 unfold Qdiv. rewrite <- Qmult_plus_distr_l.
-                rewrite INR_plus. simpl. rewrite INR_Qeq_1.
-                apply Qmult_lt_r with (INR (10)) ; auto.
+                rewrite INQ_plus. simpl. rewrite INQ_Qeq_1.
+                apply Qmult_lt_r with (INQ (10)) ; auto.
                 destruct (H (S n)) ; rewrite H14 ; auto.
         }
         destruct H8 , H8 , H9 , H10.
@@ -517,15 +517,15 @@ Module CR_uu (R : VIR_R).
         split ; auto.
   Qed.
   
-  Theorem sum_f_In_Search : forall (f : nat -> nat)(n : nat) , Indec f -> (sum_f f n < INR 10)%Q.
+  Theorem sum_f_In_Search : forall (f : nat -> nat)(n : nat) , Indec f -> (sum_f f n < INQ 10)%Q.
   Proof.
     intros.
     pose proof sum_f_Same_Ipart f.
     assert ((f 0 = 0)%nat -> archimedean 0%nat (IQR (sum_f f O))).
     {
       simpl. split .
-      - apply IQR_le. apply INR_le. omega.
-      - apply IQR_lt. apply INR_lt. omega.
+      - apply IQR_le. apply INQ_le. omega.
+      - apply IQR_lt. apply INQ_lt. omega.
     }
     assert ((f 0 = 0)%nat -> forall n : nat , archimedean 0%nat (IQR (sum_f f n))).
     {
@@ -540,8 +540,8 @@ Module CR_uu (R : VIR_R).
     assert ((f 0 = 1)%nat -> archimedean 1%nat (IQR (sum_f f O))).
     {
       simpl. split .
-      - apply IQR_le. apply INR_le. omega.
-      - apply IQR_lt. apply INR_lt. omega.
+      - apply IQR_le. apply INQ_le. omega.
+      - apply IQR_lt. apply INQ_lt. omega.
     }
     assert ((f 0 = 1)%nat -> forall n : nat , archimedean 1%nat (IQR (sum_f f n))).
     {
@@ -555,13 +555,13 @@ Module CR_uu (R : VIR_R).
     }
     destruct (H O).
     - specialize (H1 H5). specialize (H2 H5).
-      apply Qlt_trans with (INR (1%nat)).
+      apply Qlt_trans with (INQ (1%nat)).
       + destruct (H2 n). simpl in H7. apply IQR_lt. auto.
-      + apply INR_lt. omega.
+      + apply INQ_lt. omega.
     - specialize (H3 H5). specialize (H4 H5).
-      apply Qlt_trans with (INR(2%nat)).
+      apply Qlt_trans with (INQ(2%nat)).
       + destruct (H4 n). simpl in H7. apply IQR_lt. auto.
-      + apply INR_lt. omega.
+      + apply INQ_lt. omega.
   Qed.
   
   Theorem In_search_sum_f : forall (f :nat -> nat)(n :nat) , Indec f -> In_Search (IQR (sum_f f n)).
@@ -570,7 +570,7 @@ Module CR_uu (R : VIR_R).
     split.
     * rewrite <- IQR_R0. apply Rle_ge. apply IQR_le.
       apply Qle_trans with (sum_f f O).
-      - rewrite <- INR_Qeq_0. simpl. apply INR_le. destruct (H O) ; omega.
+      - rewrite <- INQ_Qeq_0. simpl. apply INQ_le. destruct (H O) ; omega.
       - assert (forall n : nat , sum_f f n >= sum_f f O)%Q.
         { intros. induction n0 ; try (lra).
           apply Qle_trans with (sum_f f n0) ; auto.
@@ -601,8 +601,8 @@ Module CR_uu (R : VIR_R).
         simpl in H3 , H1.
         rewrite IQR_R1_same in *.
         rewrite Rmult_1_r in *.
-        apply IQR_lt in H3. apply INR_lt in H3.
-        apply IQR_le in H1. apply INR_le in H1.
+        apply IQR_lt in H3. apply INQ_lt in H3.
+        apply IQR_le in H1. apply INQ_le in H1.
         assert (f 0 = x)%nat. { omega. }
         subst. 
         destruct (H O) ; rewrite H2 ; auto.
@@ -611,13 +611,13 @@ Module CR_uu (R : VIR_R).
         split.
         * split ; simpl ; rewrite IQR_R1_same ; rewrite Rmult_1_r.
           ** apply Rle_refl.
-          ** apply IQR_lt. apply INR_lt. omega.
+          ** apply IQR_lt. apply INQ_lt. omega.
         * destruct (H O) ; rewrite H1 ; auto.
       + exists ( (f 0) * (10 ^ m))%nat.
         split.
         * split ; simpl ; rewrite IQR_mult.
-          ** apply IQR_le. rewrite INR_mult. apply Qle_refl.
-          ** apply IQR_lt. rewrite INR_mult. apply INR_lt. omega.
+          ** apply IQR_le. rewrite INQ_mult. apply Qle_refl.
+          ** apply IQR_lt. rewrite INQ_mult. apply INQ_lt. omega.
         * destruct (H O) ; rewrite H1 ; auto.
           rewrite mult_1_l.
           assert (m = m - 1 + 1)%nat. { omega. }
@@ -628,8 +628,8 @@ Module CR_uu (R : VIR_R).
           rewrite H3. rewrite mult_0_r. auto.
       + destruct (H O).
         * right. simpl. rewrite H0. apply IQR_R0. 
-        * left. simpl. rewrite H0. rewrite <- IQR_R0. apply IQR_lt. rewrite INR_Qeq_1. lra.
-      + destruct (H O) ; simpl ; apply IQR_lt ; apply INR_lt ; omega. 
+        * left. simpl. rewrite H0. rewrite <- IQR_R0. apply IQR_lt. rewrite INQ_Qeq_1. lra.
+      + destruct (H O) ; simpl ; apply IQR_lt ; apply INQ_lt ; omega. 
     - destruct IHn. repeat split ; intros ; auto.
       + inversion H2.
         * subst ; hnf.
@@ -770,11 +770,11 @@ Module CR_uu (R : VIR_R).
         hnf in H3.
         split .
         + apply Rle_ge.
-          apply Rle_trans with (IQR (INR (f 0)%nat)).
+          apply Rle_trans with (IQR (INQ (f 0)%nat)).
           ** rewrite <- IQR_R0. apply IQR_le.
-             rewrite <- INR_Qeq_0. apply INR_le. destruct (H O) ; omega.
+             rewrite <- INQ_Qeq_0. apply INQ_le. destruct (H O) ; omega.
           ** apply (H3 O).
-             hnf. exists (INR (f 0%nat)).
+             hnf. exists (INQ (f 0%nat)).
              split; auto.
              hnf. split ; intros.
              ++ split ; intros.
@@ -811,7 +811,7 @@ Module CR_uu (R : VIR_R).
              subst. apply sum_f_Dec_R_same ; auto. omega. 
   Qed.
   
-  Theorem sum_f_limit_eps : forall (f : nat -> nat)(n m : nat) , Indec f -> (n <= m) % nat -> (Qabs(sum_f f n - sum_f f m) < 1 / INR (10^n))%Q.
+  Theorem sum_f_limit_eps : forall (f : nat -> nat)(n m : nat) , Indec f -> (n <= m) % nat -> (Qabs(sum_f f n - sum_f f m) < 1 / INQ (10^n))%Q.
   Proof.
     intros.
     apply Qabs_diff_Qlt_condition.
@@ -835,7 +835,7 @@ Module CR_uu (R : VIR_R).
       - rewrite IQR_mult. reflexivity.
       - intro. apply (Qlt_irrefl 0).
         rewrite <- H3 at 2.
-        rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+        rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
     split ; apply IQR_lt.
     - apply Rlt_le_trans with (IQR (sum_f f m) + IQR 1 / IQR (10 ^ n)%nat) ; auto.
@@ -989,28 +989,28 @@ Module CR_uu (R : VIR_R).
       destruct H3.
       pose proof eps_arrow_correct eps.
       remember (eps_arrow_nat eps) as n0.
-      apply Qlt_trans with (y := (1 / INR(n0))%Q).
-      + apply Qlt_trans with (y := (1 / INR(10^n))%Q).
+      apply Qlt_trans with (y := (1 / INQ(n0))%Q).
+      + apply Qlt_trans with (y := (1 / INQ(10^n))%Q).
         * apply sum_f_limit_eps ; auto.
         * apply Qlt_shift_div_l.
           ** rewrite Heqn0. apply eps_arrow_pro ; auto.
           ** rewrite Qmult_comm.
-             assert (1 / INR (10 ^ n) == / INR (10 ^ n))%Q.
+             assert (1 / INQ (10 ^ n) == / INQ (10 ^ n))%Q.
              {
                field.
                unfold not.
                intros.
                apply (Qlt_irrefl 0). 
                rewrite <- H7 at 2.
-               rewrite <- INR_Qeq_0. apply INR_lt.
+               rewrite <- INQ_Qeq_0. apply INQ_lt.
                apply Max_powan_0. omega.
              }
              rewrite H7.
              clear H7.
              apply Qlt_shift_div_r.
-             rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+             rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
              rewrite Qmult_1_l.
-             apply INR_lt.
+             apply INQ_lt.
              apply le_lt_trans with (m := n) ; auto.
              apply Nat.pow_gt_lin_r . omega.
       + apply Qlt_shift_div_r.
@@ -1129,20 +1129,20 @@ Module CR_uu (R : VIR_R).
     clear X.
     unfold CR3 in *.
     destruct H as [f [N [? ?]]].
-    set (INR 1 / INR (10 ^ (S (S n))))%Q.
+    set (INQ 1 / INQ (10 ^ (S (S n))))%Q.
     assert (H' : (0 < q)%Q).
     {
       subst q.
-      rewrite INR_Qeq_1. unfold Qdiv. rewrite Qmult_1_l.
+      rewrite INQ_Qeq_1. unfold Qdiv. rewrite Qmult_1_l.
       apply Qinv_lt_0_compat.
-      rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+      rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
-    remember (q / INR 2)%Q as eps0.
+    remember (q / INQ 2)%Q as eps0.
     assert (H'' : (0 < eps0 )%Q).
     {
       subst.
       apply Qlt_shift_div_l.
-      - rewrite <- INR_Qeq_0. apply INR_lt. omega.
+      - rewrite <- INQ_Qeq_0. apply INQ_lt. omega.
       - rewrite Qmult_0_l. auto.
     }
     destruct H0. 
@@ -1175,18 +1175,18 @@ Module CR_uu (R : VIR_R).
       destruct H2.
       assert (q == eps0 + eps0)%Q.
       { subst. unfold Qdiv. rewrite <- Qmult_plus_distr_r. 
-        assert (/ INR 2 + / INR 2 == (2 # 1) * / INR 2)%Q. 
-        { field. intro. rewrite <- INR_Qeq_0 in H6. apply Qeq_INR_eq in H6. omega. }
-        assert (INR 2 > 0)%Q. { rewrite <- INR_Qeq_0. apply INR_lt. omega. }
+        assert (/ INQ 2 + / INQ 2 == (2 # 1) * / INQ 2)%Q. 
+        { field. intro. rewrite <- INQ_Qeq_0 in H6. apply Qeq_INQ_eq in H6. omega. }
+        assert (INQ 2 > 0)%Q. { rewrite <- INQ_Qeq_0. apply INQ_lt. omega. }
         rewrite H6.
         simpl. rewrite <- Qmult_1_r at 1.
         apply Qmult_inj_l.
-        lra. rewrite <- (Qmult_inv_r (INR 2)) ; try (lra).
+        lra. rewrite <- (Qmult_inv_r (INQ 2)) ; try (lra).
         apply Qinv_lt_0_compat in H7.
         apply Qmult_inj_r ; try (lra).
-        assert (INR (2) == INR (1) + INR(1))%Q.
-        { rewrite INR_plus. simpl. reflexivity. }
-        rewrite H8. rewrite INR_Qeq_1. reflexivity.
+        assert (INQ (2) == INQ (1) + INQ(1))%Q.
+        { rewrite INQ_plus. simpl. reflexivity. }
+        rewrite H8. rewrite INQ_Qeq_1. reflexivity.
       }
       assert (IQR q = IQR eps0 + IQR eps0).
       {
@@ -1209,7 +1209,7 @@ Module CR_uu (R : VIR_R).
         apply Rlt_Rminus_Rplus in H4.
         apply Rlt_trans with (IQR eps0 + IQR (f x0)) ; auto.
         rewrite Rplus_assoc.
-        apply Rlt_Rplus_l ; auto. 
+        apply Rplus_lt_compat_l ; auto. 
     }
     subst q.
     assert (IQR (1%nat / (10 ^ (S (S n)))%nat) = IQR 1 / IQR (10 ^ (S (S n)))%nat).
@@ -1218,7 +1218,7 @@ Module CR_uu (R : VIR_R).
       rewrite IQR_inv. rewrite IQR_mult. unfold Qdiv. reflexivity.
       intro.
       apply (Qlt_irrefl 0%Q).
-      rewrite <- H3 at 2. rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega. 
+      rewrite <- H3 at 2. rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega. 
     }
     rewrite H3 in H0.
     clear H3.
@@ -1226,11 +1226,11 @@ Module CR_uu (R : VIR_R).
     { intros. intro.
       apply (Qlt_irrefl 0%Q).
       rewrite <- H3 at 2.
-      rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+      rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
     assert (forall n : nat , (10 ^ n)%nat > 0)%Q.
     { intros. 
-      rewrite <- INR_Qeq_0. apply INR_lt. apply Max_powan_0. omega.
+      rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
     assert (Rabs (IQR (f n0) - limitTM'r) < IQR 1 / IQR (10 ^ S n)%nat).
     { apply Rlt_trans with (IQR 1 / IQR (10 ^ S (S n))%nat) ; auto.
@@ -1239,10 +1239,10 @@ Module CR_uu (R : VIR_R).
       apply IQR_lt. apply Qlt_shift_inv_r ; auto.
       rewrite Qmult_comm.
       assert ((10 ^ (S (S n)))%nat == 10%nat * (10 ^ S n)%nat)%Q.
-      { rewrite Nat.pow_succ_r'. rewrite INR_mult. ring. }
+      { rewrite Nat.pow_succ_r'. rewrite INQ_mult. ring. }
       rewrite H5.
       rewrite <- Qmult_assoc. rewrite Qmult_inv_r ; auto.
-      rewrite Qmult_1_r. rewrite <- INR_Qeq_1. apply INR_lt. omega.
+      rewrite Qmult_1_r. rewrite <- INQ_Qeq_1. apply INQ_lt. omega.
     }
     pose proof Dec_R_eps_same _ _ (S n) H5.
     assert (Same_Ipart_n limitTM'r (S n - 1)). 
