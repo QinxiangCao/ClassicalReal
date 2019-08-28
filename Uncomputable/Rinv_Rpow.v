@@ -22,7 +22,7 @@ Require Import Ring.
 From Coq Require Import Field.
 From Coq Require Import Omega.
 From CReal Require Import Uncomputable.TMSet.
-From CReal Require Import INR_libs.
+From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
 From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
@@ -40,9 +40,6 @@ Module Type Vir_R.
   Parameter Rinv : {a0 : R | a0 <> R0} -> R.
   Parameter Rlt : R -> R -> Prop.
   Parameter Rabs : R -> R.
-  Parameter up : R -> Z.
-  Parameter IZR : Z -> R.
-  Parameter IQR : Q -> R.
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.

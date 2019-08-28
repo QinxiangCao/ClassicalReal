@@ -134,9 +134,10 @@ Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_
 
 Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
                                           (exists sup : R , Sup X sup).
-
-Lemma RT: ring_theory R0 R1 Rplus Rmult Rminus Ropp (eq (A := R)).
-  constructor.
+                                          
+Lemma RTheory : ring_theory 0 1 Rplus Rmult Rminus Ropp (eq (A:=R)).
+Proof.
+constructor.
  intro; apply Rplus_0_l.
  exact Rplus_comm.
  symmetry ; apply Rplus_assoc.
@@ -151,14 +152,17 @@ Lemma RT: ring_theory R0 R1 Rplus Rmult Rminus Ropp (eq (A := R)).
  reflexivity.
  exact Rplus_opp_r.
 Qed.
-
-Lemma RF : field_theory 0 1 Rplus Rmult Rminus Ropp Rdiv Rinv (eq(A:=R)).
-  constructor.
- exact RT.
+  
+Lemma Rfield : field_theory 0 1 Rplus Rmult Rminus Ropp Rdiv Rinv (eq(A:=R)).
+Proof.
+constructor.
+ exact RTheory.
  exact R1_neq_R0.
  reflexivity.
  exact Rinv_l.
 Qed.
 
+Parameter RT: ring_theory R0 R1 Rplus Rmult Rminus Ropp (eq (A := R)).
 Add Ring ABS: RT (abstract).
+Parameter RF : field_theory 0 1 Rplus Rmult Rminus Ropp Rdiv Rinv (eq(A:=R)).
 Add Field ABS' : RF (abstract).
