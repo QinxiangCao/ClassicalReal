@@ -25,17 +25,22 @@ From Coq Require Import Omega.
 From CReal Require Import Uncomputable.TMSet.
 From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
-From CReal Require Import Uncomputable.ComRealBase.
-From CReal Require Import Uncomputable.ComRealBase_Dec.
+From CReal Require Import ComRealBase.
+From CReal Require Import ComRealField.
+From CReal Require Import ComRealBaseLemma1.
+From CReal Require Import ComRealLemmas.
+From CReal Require Import ComRealBase_Dec.
 From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_N_Q.
 
 Module CR_NQ (R : VIR_R).
+  Module RF := VirR_Field (R).
+  Module Lemma1 := VirRLemma1 (R).
   Module RLemmas := VirRLemmas (R).
   Module Dec := DEC_R (R).
-  Import R RLemmas Dec.
+  Import R RF Lemma1 RLemmas Dec.
   Local Open Scope R_scope.
 
   Definition limit (f : nat -> Q) (r : R) : Prop :=
@@ -50,15 +55,15 @@ Module CR_NQ (R : VIR_R).
     apply NNPP.
     unfold not in *.
     intros.
-    apply Rnot_eq_lt in H1.
+    apply Rdichotomy in H1.
     destruct H1 ; apply Rlt_mid in H1 ; destruct H1 ; destruct H1 ; 
       specialize (H x H1) ; specialize (H0 x H1) ; destruct H , H0 ;
       specialize (H (max x0 x1) (Nat.le_max_l x0 x1) ) ; specialize (H0 (max x0 x1) (Nat.le_max_r x0 x1))
       ; apply Rabs_tri in H ; apply Rabs_tri in H0 ; destruct H , H0 ; apply (Rlt_irrefl (IQR (f (max x0 x1)))).
-    - apply Rlt_trans with (r2 + IQR x) ; auto.
-      apply Rlt_trans with (r1 - IQR x) ; auto.
     - apply Rlt_trans with (r1 + IQR x) ; auto.
       apply Rlt_trans with (r2 - IQR x) ; auto.
+    - apply Rlt_trans with (r2 + IQR x) ; auto.
+      apply Rlt_trans with (r1 - IQR x) ; auto.
   Qed. 
 
   Definition CR2_r : Type := { r : R | CR2 r}.
@@ -76,9 +81,7 @@ Module CR_NQ (R : VIR_R).
     rewrite Rabs_pos.
     rewrite <- IQR_R0. apply IQR_lt. auto.
     apply Rle_refl.
-    symmetry.
-    apply Rplus_0.
-    auto.
+    ring.
    Qed.
 
   Theorem NQ_nat : injection (nat -> Q) nat.
@@ -292,9 +295,9 @@ Module CR_NQ (R : VIR_R).
             destruct H11.
             destruct H11 ; subst.
             destruct H12 , H12. 
-            apply Rle_ge. auto.
-          + apply Rle_lt_trans with R2.
-            * apply Rle_ge. apply H7 ; auto.
+            auto with Vir_real.
+          + apply Rle_lt_trans with 2.
+            * auto with Vir_real.
             * apply R2_Rlt_R10.
         - destruct H1.
           apply H7.

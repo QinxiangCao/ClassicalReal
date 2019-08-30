@@ -7,8 +7,12 @@ From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
 From Coq Require Import QArith.Qround.
 From Coq Require Import Psatz.
+From CReal Require Import INQ_libs.
 From CReal Require Import ComRealBase.
 From CReal Require Import ComRealField.
+From Coq Require Import Logic.Classical.
+From Coq Require Import Logic.FunctionalExtensionality.
+From Coq Require Import Logic.PropExtensionality.
 
 Module VirRLemma1 (R : VIR_R).
 
@@ -2140,6 +2144,22 @@ Notation not_O_IZR := not_0_IZR (only parsing).
 Notation le_O_IZR := le_0_IZR (only parsing).
 Notation lt_O_IZR := lt_0_IZR (only parsing).
 
+Lemma INR_R0 : INR 0 = 0.
+Proof. auto with Vir_real. Qed.
+
+Lemma INR_R1 : INR 1 = 1.
+Proof. auto with Vir_real. Qed.
+
+Hint Resolve INR_R0 INR_R1: Vir_real.
+
+Lemma IZR_R0 : IZR 0 = 0.
+Proof. auto with Vir_real. Qed.
+
+Lemma IZR_R1 : IZR 1 = 1.
+Proof. auto with Vir_real. Qed.
+
+Hint Resolve IZR_R0 IZR_R1: Vir_real.
+
 Lemma IQR_R0 : IQR (0%Q) = 0.
 Proof. unfold IQR. field. auto with Vir_real. Qed.
 
@@ -2242,7 +2262,24 @@ Proof.
   apply (Rlt_irrefl 0). rewrite <- H at 2. rewrite <- INR_IPR. auto with Vir_real.
 Qed.
 
+Lemma IQR_eq_R0 : forall n:Q, n == 0%Q -> IQR n = 0.
+Proof.
+  intros. induction n.
+  hnf in *. simpl in *.
+  rewrite Z.mul_1_r in H.
+  rewrite H. unfold Rdiv. rewrite IZR_R0. rewrite Rmult_0_l. auto.
+Qed.
+
 (**********)
+Lemma IQR_eq : forall n m : Q , n == m -> IQR n = IQR m.
+Proof.
+  intros. subst. 
+  assert (n - m == 0). { lra. }
+  apply IQR_eq_R0 in H0.
+  rewrite minus_IQR in H0. 
+  apply Rminus_diag_uniq. auto.
+Qed.
+
 Lemma eq_IQR : forall n m:Q, IQR n = IQR m -> n == m.
 Proof.
   intros.
@@ -2252,6 +2289,7 @@ Proof.
 Qed.
 
 Hint Resolve eq_IQR_R0 eq_IQR: Vir_real.
+Hint Resolve IQR_eq_R0 IQR_eq: Vir_real.
 (**********)
 Lemma not_0_IQR : forall n:Q, ~ n == 0%Q -> IQR n <> 0.
 Proof.
@@ -2317,5 +2355,17 @@ Hint Extern 0 (IQR _ >= IQR _) => apply Rle_ge, IQR_le, Qle_bool_imp_le, eq_refl
 Hint Extern 0 (IQR _ <  IQR _) => apply IQR_lt, eq_refl : Vir_real.
 Hint Extern 0 (IQR _ >  IQR _) => apply IQR_lt, eq_refl : Vir_real.
 Hint Extern 0 (~ IQR _ == IQR _) => apply IQR_neq, Qeq_bool_neq, eq_refl : Vir_real.
+
+Lemma INQ_IQR_INR : forall n : nat , IQR (INQ n) = INR n.
+Proof.
+  intros. induction n.
+  - rewrite INR_R0. rewrite <- IQR_R0.
+    simpl. auto.
+  - rewrite <- Nat.add_1_r.
+    rewrite plus_INR. rewrite <- IHn. rewrite INR_R1.
+    rewrite <- IQR_R1. rewrite <- plus_IQR.
+    simpl. rewrite Z.mul_1_r. 
+    rewrite Nat2Z.inj_add. auto.
+Qed.
 
 End VirRLemma1.

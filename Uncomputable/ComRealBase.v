@@ -143,6 +143,9 @@ Module Type VIR_R.
     Rmult_lt_compat_l : forall r r1 r2:R, 0 < r -> r1 < r2 -> r * r1 < r * r2.
   Hint Resolve Rlt_asym Rplus_lt_compat_l Rmult_lt_compat_l: Vir_real.
   
+  Parameter Rabs_tri : forall a b c : R , Rabs(a - b) < c <-> a < b + c /\ a > b - c.
+  Parameter Rabs_comm : forall a b : R , Rabs (a - b) = Rabs (b - a).
+  
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
 
   Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
@@ -153,7 +156,8 @@ Module Type VIR_R.
  
   Axiom Rabs_pos : forall r1 : R , (r1 >= R0) -> Rabs r1 = r1.
   Axiom Rabs_neg : forall r1 : R , (r1 <= R0) -> Rabs r1 = - r1.
-  Hint Resolve Rabs_pos Rabs_neg : Vir_real.
+  Axiom Rlt_mid : forall r r1 : R , r < r1 -> exists eps : Q , (eps > 0)%Q /\ r + IQR eps < r1 - IQR eps.
+  Hint Resolve Rabs_pos Rabs_neg Rlt_mid: Vir_real.
   (** Axioms of Vir_R *)
 
 End VIR_R.

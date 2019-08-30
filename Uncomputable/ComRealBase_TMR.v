@@ -23,23 +23,28 @@ From Coq Require Import Omega.
 From CReal Require Import Uncomputable.TMSet.
 From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
-From CReal Require Import Uncomputable.ComRealBase.
-From CReal Require Import Uncomputable.ComRealBase_Dec.
+From CReal Require Import ComRealBase.
+From CReal Require Import ComRealField.
+From CReal Require Import ComRealLemmas.
+From CReal Require Import ComRealBaseLemma1.
+From CReal Require Import ComRealBase_Dec.
 From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_u_u.
 
 Module TMR_Set (R : VIR_R).
+  Module RF := VirR_Field (R).
+  Module Lemma1 := VirRLemma1 (R).
   Module RLemmas := VirRLemmas (R).
   Module Dec := DEC_R (R).
   Include VIR_R_EXTRA R.
-  Import R RLemmas Dec.
+  Import R RF Lemma1 RLemmas Dec.
   Local Open Scope R_scope.
 
   Definition limit : (nat -> Q) -> R -> Prop.
     intros.
-    set (fun n q => q = H n).
+    set (fun n q => q == H n).
     apply (Un_cv' P X).
   Defined.
   
@@ -205,7 +210,8 @@ Module TMR_Set (R : VIR_R).
         * destruct (TM n0 n) ; simpl ; omega.
     - exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n).  apply Rle_lt_weak. auto.
+      subst. destruct (In_Search_TM'r n).
+      auto with Vir_real. 
   Qed.
   
   Definition limitTM'r : R.
@@ -250,7 +256,7 @@ Module TMR_Set (R : VIR_R).
     assert (exists r : R , upper_bound P r).
     { subst P. exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n0).  apply Rle_lt_weak. auto.
+      subst. destruct (In_Search_TM'r n0). auto with Vir_real.
     }
     pose proof limit_of_TM'r.
     pose proof mono_up_limit_sup P H H0 limitTM'r H1.
@@ -384,7 +390,7 @@ Module TMR_Set (R : VIR_R).
     assert (exists r : R , upper_bound P r).
     { subst P. exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n).  apply Rle_lt_weak. auto.
+      subst. destruct (In_Search_TM'r n). auto with Vir_real.
     }
     pose proof limit_of_TM'r.
     pose proof mono_up_limit_sup P H H0 limitTM'r H1.
@@ -394,23 +400,21 @@ Module TMR_Set (R : VIR_R).
       apply Rle_ge.
       apply Rle_trans with (TM'r O).
       + destruct (In_Search_TM'r O) ; auto.
-        apply Rle_ge. auto.
+        auto with Vir_real.
       + apply (H3 O). auto.
-    - apply Rle_lt_trans with R2.
-      + apply Rle_ge. apply H2.
+    - apply Rle_lt_trans with 2.
+      + apply Rge_le. apply H2.
         hnf. intros.
         subst P. simpl in *.
         subst. left.
         apply Dec_R_lt.
         apply In_Search_TM'r. 
-        * split. left. unfold R2.
-          rewrite <- IQR_R1. rewrite <- IQR_R0.
-          rewrite IQR_plus. apply IQR_lt. lra. 
+        * split. left. apply Rlt_gt. auto with Vir_real.
           apply R2_Rlt_R10.
         * exists O.
           split ; intros ; try (omega).
           pose proof Two_Dec.
-          assert (m2 = 2)%nat. { apply (partial_functional_Dec_R R2 0) ; auto. }
+          assert (m2 = 2)%nat. { apply (partial_functional_Dec_R 2 0) ; auto. }
           pose proof TM'r_InDecR n O.
           assert (m1 = 0 \/ m1 = 1)%nat.
           { destruct H5.
@@ -430,7 +434,7 @@ Module TMR_Set (R : VIR_R).
     destruct H.
     apply not_or_and in H.
     destruct H.
-    destruct (image_Defined_Dec_R limitTM'r x). 
+    destruct (image_Defined_Dec_R limitTM'r x). apply InSearch_limitTM'r. 
     assert (x0 <> 0 /\ x0 <> 1)%nat. { split ; intro ; subst ; auto. }
     assert (x0 > 1)%nat. { omega. }
     clear H2 H H0. 
@@ -442,7 +446,7 @@ Module TMR_Set (R : VIR_R).
       apply INQ_lt. apply Max_powan_0. omega.
     }
     assert (IQR 1 / IQR (10 ^ S x)%nat > R0).
-    { unfold Rdiv. rewrite IQR_inv ; auto. rewrite IQR_mult.
+    { unfold Rdiv. rewrite IQR_inv ; auto. rewrite <- mult_IQR.
       rewrite <- IQR_R0. apply IQR_lt. rewrite Qmult_1_l.
       apply Qinv_lt_0_compat.
       rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
@@ -457,31 +461,30 @@ Module TMR_Set (R : VIR_R).
     remember (TM'r (max (S x) x1)) as r2.
     apply Rle_neg_eqb in H7.
     rewrite Rabs_neg in H2 ; auto.
-    rewrite Ropp_minus in H2.
+    rewrite Ropp_minus_distr' in H2.
     apply Rle_neg_eqb in H7.
-    apply Rle_ge in H7.
+    apply Rge_le in H7.
     assert (IQR (10 ^ x)%nat > R0).
     { rewrite <- IQR_R0. apply IQR_lt. rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega. }
     apply Rmult_le_r with (r3 := IQR (10 ^ x)%nat) in H7 ; auto.
     apply Rmult_lt_r with (r3 := IQR (10 ^ x)%nat) in H2 ; auto.
-    rewrite Rmult_minus_distr_r in H2.
+    rewrite Rmult_comm in H2.
+    rewrite Rmult_minus_distr_l in H2.
     apply Rlt_Rminus_Rplus in H2.
     assert (IQR 1 / IQR (10 ^ S x)%nat * IQR (10 ^ x)%nat = IQR 1 / IQR (10)%nat ).
     {
       unfold Rdiv. 
       rewrite IQR_R1. rewrite !Rmult_1_l.
       assert (IQR (10 ^ S x)%nat = IQR (10 ^ x)%nat * IQR (10)%nat).
-      { rewrite IQR_mult.
-        apply NNPP. intro.
-        apply Rnot_eq_lt in H9. 
-        destruct H9 ; apply IQR_lt in H9 ; rewrite INQ_mult in H9 ; apply INQ_lt in H9;
-        rewrite Nat.pow_succ_r' in H9 ; rewrite mult_comm in H9 ; omega.
+      { rewrite !INQ_IQR_INR. rewrite <- mult_INR.
+        rewrite Nat.pow_succ_r'. rewrite mult_comm. auto.
       }
-      rewrite H9.
-      rewrite Rinv_mult. rewrite Rmult_comm.
+      rewrite H9. 
+      rewrite Rinv_mult_distr. rewrite Rmult_comm.
       rewrite <- Rmult_assoc.
-      rewrite Rinv_r. rewrite Rmult_1_l. auto.
-      apply Rnot_eq_lt. auto.
+      rewrite Rinv_r ; auto with Vir_real. 
+      auto with Vir_real. 
+      rewrite INQ_IQR_INR. rewrite <- INR_R0. auto with Vir_real.
     }
     rewrite H9 in *. 
     destruct H0 , H0 , H0 , H0 , H1 , H1 , H1.
@@ -499,14 +502,16 @@ Module TMR_Set (R : VIR_R).
       apply mod_exists in H12 ; auto. apply mod_exists in H10 ; try (omega).
       destruct H12 , H10.
       assert (x3 >= x2 + 1 + 1)%nat. { omega. }
+      rewrite Rmult_comm in H2.
       pose proof Rle_lt_trans _ _ _ H1 H2.
-      apply Rlt_Rplus_r with (r3 := IQR 1 / IQR 10%nat) in H11.
+      apply Rplus_lt_compat_r with (r := IQR 1 / IQR 10%nat) in H11.
+      rewrite Rmult_comm in H11.
       pose proof Rlt_trans _ _ _ H17 H11.
       apply (Rlt_irrefl (IQR (x2 + 1)%nat + IQR 1%nat)).
       apply INQ_le in H16.
       rewrite <- INQ_plus in H16.
       apply IQR_le in H16.
-      rewrite <- IQR_plus in H16.
+      rewrite plus_IQR in H16.
       apply Rle_lt_trans with (IQR x3) ; auto.
       apply Rlt_trans with (IQR (x2 + 1)%nat + IQR 1 / IQR 10%nat) ; auto.
       apply Rplus_lt_compat_l. unfold Rdiv.
@@ -534,26 +539,28 @@ Module TMR_Set (R : VIR_R).
       assert (x3  >= x2 + 1)%nat. { omega. }
       assert (Same_Ipart (r2 * IQR (10 ^ x)%nat) (r2 * IQR (10 ^ x)%nat + IQR 1 / IQR 10%nat)).
       { rewrite <- H9. rewrite <- Rmult_plus_distr_r.
-        rewrite IQR_R1. rewrite <- IQR_R1_same.
+        rewrite IQR_R1. rewrite <- INR_R1. rewrite <- INQ_IQR_INR.
         pose proof Same_Ipart_pow10n.
         assert (IQR 1%nat / IQR (10 ^ S x)%nat = IQR (1%nat / (10 ^ S x)%nat)).
-        { unfold Rdiv. rewrite IQR_inv ; auto. rewrite IQR_mult.
+        { unfold Rdiv. rewrite IQR_inv ; auto. rewrite <- mult_IQR.
           apply IQR_eq. reflexivity.
         }
         rewrite H18.
         apply H17.
-        subst r2.
-        apply InDecR_all_n.
+        subst r2. apply In_Search_TM'r.
+        apply InDecR_all_n. subst r2.
         apply TM'r_InDecR.
       }
       destruct H17 , H17 , H18 , H19.
-      assert (x6 = x2)%nat. { apply (Ipart_unique (r2 * IQR (10 ^ x)%nat)) ; auto. }
+      assert (x6 = x2)%nat. { apply (Ipart_unique (r2 * IQR (10 ^ x)%nat)) ; split; auto. }
       subst x6.
       apply (Rlt_irrefl (IQR (x2 + 1)%nat)).
       apply Rlt_trans with (r2 * IQR (10 ^ x)%nat + IQR 1 / IQR 10%nat) ; auto.
       apply Rle_lt_trans with (limitTM'r * IQR (10 ^ x)%nat) ; auto.
       apply Rle_trans with (IQR x3) ; auto.
       apply IQR_le. apply INQ_le. omega.
+      rewrite Rmult_comm. 
+      rewrite (Rmult_comm r2 (IQR (10 ^ x)%nat)). auto.
   Qed.
   
   Theorem limitTM'r_pro : forall (n : nat) , Dec_R limitTM'r n 1 <-> exists j : nat , TM n j = true.
@@ -569,7 +576,7 @@ Module TMR_Set (R : VIR_R).
       set (eps := (IQR 1 / IQR (10 ^ S n)%nat)).
       assert (eps > R0).
       { rewrite <- IQR_R0. subst eps. unfold Rdiv. 
-        rewrite IQR_inv ; auto. rewrite IQR_mult. apply IQR_lt.
+        rewrite IQR_inv ; auto. rewrite <- mult_IQR. apply IQR_lt.
         rewrite Qmult_1_l. apply Qinv_lt_0_compat.
         rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
       }
@@ -579,8 +586,32 @@ Module TMR_Set (R : VIR_R).
       specialize (H0 _ _ H4 H5).
       exists x.
       apply TM'r_pro0. clear H4 H5.
-      assert (Same_Ipart_n (TM'r x) (S n - 1)). { apply Same_Ipart_pow10n. apply InDecR_all_n. apply TM'r_InDecR. }
-      assert (Same_Ipart_n limitTM'r (S n - 1)). { apply Same_Ipart_pow10n. apply InDecR_all_n. apply limitTM'r_pro0. }
+      assert (Same_Ipart_n (TM'r x) (S n - 1)). 
+      { hnf. rewrite <- !INQ_IQR_INR.
+        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat = IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
+        { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
+          rewrite IQR_inv.
+          apply IQR_eq.
+          unfold Qdiv. rewrite INQ_eq_1. rewrite Qmult_1_l. reflexivity.
+          intro. rewrite <- INQ_Qeq_0 in H4. 
+          apply Qeq_INQ_eq in H4. apply lt_irrefl with O.
+          rewrite <- H4 at 2. apply Max_powan_0. omega.
+        }
+        rewrite H4.
+        apply Same_Ipart_pow10n. apply In_Search_TM'r. apply InDecR_all_n. apply TM'r_InDecR. }
+      assert (Same_Ipart_n limitTM'r (S n - 1)). 
+      { hnf. rewrite <- !INQ_IQR_INR.
+        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat = IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
+        { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
+          rewrite IQR_inv.
+          apply IQR_eq.
+          unfold Qdiv. rewrite INQ_eq_1. rewrite Qmult_1_l. reflexivity.
+          intro. rewrite <- INQ_Qeq_0 in H5. 
+          apply Qeq_INQ_eq in H5. apply lt_irrefl with O.
+          rewrite <- H5 at 2. apply Max_powan_0. omega.
+        }
+        rewrite H5.
+        apply Same_Ipart_pow10n. apply InSearch_limitTM'r. apply InDecR_all_n. apply limitTM'r_pro0. }
       pose proof (Dec_R_eps_same (TM'r x) limitTM'r _ H0 H4 H5).
       apply H6 ; auto.
     - destruct H1.
@@ -591,7 +622,7 @@ Module TMR_Set (R : VIR_R).
       set (eps := (IQR 1 / IQR (10 ^ S (max x n))%nat)).
       assert (eps > R0).
       { rewrite <- IQR_R0. subst eps. unfold Rdiv. 
-        rewrite IQR_inv ; auto. rewrite IQR_mult. apply IQR_lt.
+        rewrite IQR_inv ; auto. rewrite <- mult_IQR. apply IQR_lt.
         rewrite Qmult_1_l. apply Qinv_lt_0_compat.
         rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
       }
@@ -600,8 +631,32 @@ Module TMR_Set (R : VIR_R).
       assert (TM'r (max x0 x) = TM'r (max x0 x)). { auto. }
       specialize (H0 _ _ H4 H5). clear H4 H5 H2.
       assert (max x0 x >= x)%nat. { apply Nat.le_max_r. }
-      assert (Same_Ipart_n (TM'r (max x0 x)) (S (max x n) - 1)). {  apply Same_Ipart_pow10n. apply InDecR_all_n. apply TM'r_InDecR. }
-      assert (Same_Ipart_n (limitTM'r) (S (max x n) - 1)). {  apply Same_Ipart_pow10n. apply InDecR_all_n. apply limitTM'r_pro0. }
+      assert (Same_Ipart_n (TM'r (max x0 x)) (S (max x n) - 1)). 
+      { hnf. rewrite <- !INQ_IQR_INR.
+        assert (IQR 1%nat / IQR (10 ^ S (S (max x n) - 1))%nat = IQR (1%nat / (10 ^ S (S (max x n) - 1))%nat)).
+        { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
+          rewrite IQR_inv.
+          apply IQR_eq.
+          unfold Qdiv. rewrite INQ_eq_1. rewrite Qmult_1_l. reflexivity.
+          intro. rewrite <- INQ_Qeq_0 in H4. 
+          apply Qeq_INQ_eq in H4. apply lt_irrefl with O.
+          rewrite <- H4 at 2. apply Max_powan_0. omega.
+        }
+        rewrite H4.
+        apply Same_Ipart_pow10n. apply In_Search_TM'r. apply InDecR_all_n. apply TM'r_InDecR. }
+      assert (Same_Ipart_n (limitTM'r) (S (max x n) - 1)). 
+      { hnf. rewrite <- !INQ_IQR_INR.
+        assert (IQR 1%nat / IQR (10 ^ S (S (max x n) - 1))%nat = IQR (1%nat / (10 ^ S (S (max x n) - 1))%nat)).
+        { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
+          rewrite IQR_inv.
+          apply IQR_eq.
+          unfold Qdiv. rewrite INQ_eq_1. rewrite Qmult_1_l. reflexivity.
+          intro. rewrite <- INQ_Qeq_0 in H5. 
+          apply Qeq_INQ_eq in H5. apply lt_irrefl with O.
+          rewrite <- H5 at 2. apply Max_powan_0. omega.
+        }
+        rewrite H5.
+        apply Same_Ipart_pow10n. apply InSearch_limitTM'r. apply InDecR_all_n. apply limitTM'r_pro0. }
       pose proof (Dec_R_eps_same (TM'r (max x0 x)) limitTM'r _ H0 H4 H5).
       apply H6 ; auto.
       unfold lt. apply le_n_S. apply Nat.le_max_r.
