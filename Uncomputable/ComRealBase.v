@@ -66,7 +66,7 @@ Module Type VIR_R.
   Notation "0" := R0 : R_scope.
   Notation "1" := R1 : R_scope.
   Notation "2" := (1+1) : R_scope.
-  Notation "-1" := (- 1) : R_scope.
+  Notation "-1" := (- 1%R) : R_scope.
   
   Fixpoint pow (r:R) (n:nat) : R :=
     match n with
