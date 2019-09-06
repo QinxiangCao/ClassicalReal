@@ -34,12 +34,10 @@ Import ListNotations.
 Import TM_u_u.
 
 Module TMR_Set (R : VIR_R).
-  Module RF := VirR_Field (R).
-  Module Lemma1 := VirRLemma1 (R).
-  Module RLemmas := VirRLemmas (R).
   Module Dec := DEC_R (R).
   Include VIR_R_EXTRA R.
-  Import R RF Lemma1 RLemmas Dec.
+  Import R.
+  Export Dec.
   Local Open Scope R_scope.
 
   Definition limit : (nat -> Q) -> R -> Prop.
@@ -612,6 +610,7 @@ Module TMR_Set (R : VIR_R).
         }
         rewrite H5.
         apply Same_Ipart_pow10n. apply InSearch_limitTM'r. apply InDecR_all_n. apply limitTM'r_pro0. }
+      
       pose proof (Dec_R_eps_same (TM'r x) limitTM'r _ H0 H4 H5).
       apply H6 ; auto.
     - destruct H1.

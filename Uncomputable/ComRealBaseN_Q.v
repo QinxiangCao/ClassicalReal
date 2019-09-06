@@ -36,11 +36,10 @@ Import ListNotations.
 Import TM_N_Q.
 
 Module CR_NQ (R : VIR_R).
-  Module RF := VirR_Field (R).
   Module Lemma1 := VirRLemma1 (R).
   Module RLemmas := VirRLemmas (R).
   Module Dec := DEC_R (R).
-  Import R RF Lemma1 RLemmas Dec.
+  Import R Lemma1 RLemmas Dec.
   Local Open Scope R_scope.
 
   Definition limit (f : nat -> Q) (r : R) : Prop :=

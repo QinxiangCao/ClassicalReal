@@ -37,12 +37,10 @@ Import ListNotations.
 Import TM_u_u.
 
 Module Wrong_Up (R : VIR_R).
-  Module RF := VirR_Field (R).
-  Module Lemma1 := VirRLemma1 (R).
-  Module RLemmas := VirRLemmas (R).
-  Module Dec := DEC_R (R).
   Module TMR := TMR_Set (R).
-  Import R RF Lemma1 RLemmas Dec TMR.
+  Include VIR_R_EXTRA R. 
+  Import R.
+  Export TMR.
   Local Open Scope R_scope.
   
   Parameter up : R -> Z.
@@ -96,12 +94,10 @@ Module Wrong_Up (R : VIR_R).
 End Wrong_Up.
 
 Module CR_uu (R : VIR_R).
-  Module RF := VirR_Field (R).
-  Module Lemma1 := VirRLemma1 (R).
-  Module RLemmas := VirRLemmas (R).
-  Module Dec := DEC_R (R).
   Module TMR := TMR_Set (R).
-  Import R RF Lemma1 RLemmas Dec TMR.
+  Include VIR_R_EXTRA R.
+  Import R.
+  Export TMR.
   Local Open Scope R_scope.
 
   Fixpoint sum_f (f : nat -> nat) (n : nat) : Q :=

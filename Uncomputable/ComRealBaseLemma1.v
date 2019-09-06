@@ -17,7 +17,8 @@ From Coq Require Import Logic.PropExtensionality.
 Module VirRLemma1 (R : VIR_R).
 
   Module RF := VirR_Field (R).
-  Import R RF.
+  Import R.
+  Export RF.
   Local Open Scope R_scope.
 
 (*********************************************************)

@@ -41,7 +41,6 @@ Module Type VIR_R.
   Parameter Ropp : R -> R.
   Parameter Rinv : R -> R.
   Parameter Rlt : R -> R -> Prop.
-  Parameter Rabs : R -> R.
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.
@@ -143,9 +142,6 @@ Module Type VIR_R.
     Rmult_lt_compat_l : forall r r1 r2:R, 0 < r -> r1 < r2 -> r * r1 < r * r2.
   Hint Resolve Rlt_asym Rplus_lt_compat_l Rmult_lt_compat_l: Vir_real.
   
-  Parameter Rabs_tri : forall a b c : R , Rabs(a - b) < c <-> a < b + c /\ a > b - c.
-  Parameter Rabs_comm : forall a b : R , Rabs (a - b) = Rabs (b - a).
-  
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
 
   Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
@@ -154,17 +150,16 @@ Module Type VIR_R.
   Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
                                           (exists sup : R , Sup X sup).
  
-  Axiom Rabs_pos : forall r1 : R , (r1 >= R0) -> Rabs r1 = r1.
-  Axiom Rabs_neg : forall r1 : R , (r1 <= R0) -> Rabs r1 = - r1.
-  Axiom Rlt_mid : forall r r1 : R , r < r1 -> exists eps : Q , (eps > 0)%Q /\ r + IQR eps < r1 - IQR eps.
-  Hint Resolve Rabs_pos Rabs_neg Rlt_mid: Vir_real.
   (** Axioms of Vir_R *)
 
 End VIR_R.
 
 Module Type VIR_R_EXTRA (VirR: VIR_R).
   Import VirR.
-  Parameter Rsinglefun : {X: R -> Prop | (forall x1 x2, X x1 -> X x2 -> x1 = x2)
-         /\ (exists x, X x) /\ Proper (Reqb ==> iff) X} -> R.
+ 
+  Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 = x2)
+         /\ (exists x, X x) /\ Proper (Reqb ==> iff) X.
+  Parameter Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
+  
 End VIR_R_EXTRA.

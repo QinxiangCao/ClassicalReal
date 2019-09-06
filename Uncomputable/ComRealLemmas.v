@@ -31,11 +31,78 @@ From CReal Require Import ComRealField.
 From CReal Require Import ComRealBaseLemma1.
 
 Module VirRLemmas (VirR : VIR_R).
-  Module RF := VirR_Field (VirR).
   Module Lemma1 := VirRLemma1 (VirR).
-  Import VirR RF Lemma1.
+  Export Lemma1.
+  Import VirR.
+  Include VIR_R_EXTRA VirR.
   Local Open Scope R_scope.
   
+  Definition If_fun (P : Prop) (x y : R) := (fun z => (P /\ x = z) \/ (~ P /\ y = z)).
+  
+  Theorem If_fun_single : forall (P : Prop)(x y : R), P_singlefun (If_fun P x y).
+  Proof.
+    intros. 
+    repeat split ; intros.
+    - destruct H , H0 , H , H0 ; subst ; auto ; try (exfalso ; auto).
+    - destruct (classic P).
+      + exists x. hnf. auto.
+      + exists y. hnf. auto.
+    - destruct H. auto. 
+    - destruct H. auto.
+  Qed.
+  
+  Definition Rif (P : Prop)(x y  : R) : R.
+    apply Rsinglefun. 
+    exists (If_fun P x y).
+    apply If_fun_single.
+  Defined.
+  
+  Theorem Rif_left : forall (P:Prop) (x y:R), P -> Rif P x y = x.
+  Proof.
+    intros. unfold Rif. 
+    pose proof If_fun_single P x y.
+    pose proof Rsinglefun_correct (If_fun P x y) H0.
+    assert (H0 = If_fun_single P x y).
+    { apply proof_irrelevance. }
+    subst.
+    destruct H1 , H0 ; auto.
+    exfalso. auto.
+  Qed.
+  
+  Theorem Rif_right : forall (P:Prop) (x y:R), ~ P -> Rif P x y = y.
+  Proof.
+    intros. unfold Rif. 
+    pose proof If_fun_single P x y.
+    pose proof Rsinglefun_correct (If_fun P x y) H0.
+    assert (H0 = If_fun_single P x y).
+    { apply proof_irrelevance. }
+    subst.
+    destruct H1 , H0 ; auto.
+    exfalso. auto.
+  Qed. 
+  
+  Definition Rabs : R -> R.
+    intros.
+    apply (Rif (X >= 0) X (- X)).
+  Defined.
+
+  Theorem Rabs_pos : forall r1 : R , (r1 >= 0) -> Rabs r1 = r1.
+  Proof.
+    intros.
+    unfold Rabs. apply Rif_left. auto.
+  Qed.
+  
+  Theorem Rabs_neg : forall r1 : R , (r1 <= 0) -> Rabs r1 = (- r1).
+  Proof.
+    intros.
+    unfold Rabs. 
+    destruct H.
+    - apply Rif_right. auto with Vir_real.
+    - rewrite H. rewrite Ropp_0. apply Rif_left. auto with Vir_real.
+  Qed.
+  
+  Hint Resolve Rabs_pos Rabs_neg: Vir_real.
+
   Theorem Rabs_le_0 : forall r : R , Rabs r >= 0.
   Proof.
     intros.
@@ -294,6 +361,60 @@ Module VirRLemmas (VirR : VIR_R).
   
   Hint Resolve Rgt_Rinv Rge_Rinv Rlt_Rinv Rle_Rinv : Vir_real.
   
+  Theorem Rabs_tri : forall a b c : R , Rabs(a - b) < c <-> a < b + c /\ a > b - c.
+  Proof.
+    intros.
+    split ; intros.
+    - assert (c > 0).
+      { apply Rle_lt_trans with (Rabs (a - b)) ; auto with Vir_real. }
+      destruct (classic (a - b >= 0)).
+      + rewrite Rabs_pos in H ; auto.
+        split.
+        * apply Rlt_Rminus_Rplus ; auto.
+        * apply Rlt_le_trans with b.
+          -- apply Rminus_gt_0_lt. 
+             assert (b - (b - c) = c). { ring. }
+             rewrite H2.  auto.
+          -- apply Rge_le. apply Rminus_ge. auto.
+      + apply Rnot_ge_lt in H1.
+        rewrite Rabs_neg in H ; auto with Vir_real.
+        split.
+        * apply Rlt_trans with b.
+          -- apply Rminus_lt. auto.
+          -- rewrite <- Rplus_0_r at 1. apply Rplus_lt_compat_l. auto.
+        * rewrite Ropp_minus_distr' in H.
+          apply Rlt_Rminus_r. auto.
+    - destruct H.
+      apply Rlt_Rminus_Rplus in H.
+      rewrite <- Rplus_0_l in H0 at 1.
+      assert (b - b = 0). {ring. }
+      rewrite <- H1 in H0. unfold Rminus in H0. 
+      rewrite Rplus_assoc in H0.
+      apply Rplus_lt_reg_l in H0. rewrite Rplus_comm in H0.
+      destruct (Rle_dec (a - b) R0).
+      + rewrite Rabs_neg ; auto.
+        apply Ropp_lt_cancel ; auto.
+        rewrite Ropp_involutive. auto.
+      + apply Rnot_le_gt in H2.
+        rewrite Rabs_pos ; auto with Vir_real.
+        left. auto.
+  Qed.
+  
+  Theorem Rabs_comm : forall a b : R , Rabs (a - b) = Rabs (b - a).
+  Proof.
+    intros.
+    destruct (classic (a - b >= 0)).
+    - rewrite Rabs_pos ; auto with Vir_real.
+      rewrite Rabs_neg ; auto with Vir_real.
+      apply Ropp_le_cancel.
+      rewrite Ropp_0. rewrite Ropp_minus_distr'. auto with Vir_real.
+    - apply Rnot_ge_lt in H.
+      rewrite Rabs_neg ; auto with Vir_real.
+      rewrite Rabs_pos ; auto with Vir_real.
+      apply Rle_ge. apply Ropp_le_cancel.
+      rewrite Ropp_0. rewrite Ropp_minus_distr'. left. auto.
+  Qed.
+
   Definition archimedean : nat -> R -> Prop .
     intros n r.
     apply (IQR (INQ n) <= r /\ r < IQR (INQ (n + 1))).
@@ -316,6 +437,42 @@ Module VirRLemmas (VirR : VIR_R).
       rewrite Z2Nat.id ; try (omega). simpl.
       assert (x - 1 + 1 = x)%Z. { ring. }
       rewrite H3. auto with Vir_real.
+  Qed.
+  
+  Theorem Rlt_mid : forall r r1 : R , r < r1 -> exists eps : Q , (eps > 0)%Q /\ r + IQR eps < r1 - IQR eps.
+  Proof.
+    intros.
+    apply Rlt_Rminus in H.
+    assert ((r1 - r) / 2 > 0). { apply Rdiv_lt_0_compat ; auto with Vir_real. }
+    assert (2 / (r1 - r) > 0). { apply Rdiv_lt_0_compat ; auto with Vir_real. }
+    destruct (archimedean_exists (2 / (r1 - r))).
+    - left. auto.
+    - destruct H2.
+      assert ((r1 - r) / 2 > / IQR (x + 1)%nat).
+      { assert ((r1 - r) / 2 = / (2 / (r1 - r))).
+        { field. auto with Vir_real. }
+        rewrite H4. apply Rinv_lt_contravar ; auto.
+        apply Rmult_lt_0_compat ; auto.
+        rewrite INQ_IQR_INR.
+        rewrite <- INR_R0. apply lt_INR. omega.
+      }
+      rewrite IQR_inv in H4.
+      + exists (/ (INQ (x + 1)%nat))%Q.
+        split.
+        * apply Qinv_lt_0_compat. rewrite <- INQ_Qeq_0.
+          apply INQ_lt. omega.
+        * apply Rlt_trans with (r + (r1 - r) / 2).
+          apply Rplus_lt_compat_l ; auto.
+          assert (r + (r1 - r) / 2 = r1 - (r1 - r) / 2).
+          { field. }
+          rewrite H5.
+          unfold Rminus. apply Rplus_lt_compat_l.
+          apply Ropp_lt_contravar.
+          auto.
+      + intro.
+        apply (Qlt_irrefl 0%Q).
+        rewrite <- H5 at 2.
+        rewrite <- INQ_Qeq_0. apply INQ_lt. omega.
   Qed.
   
   Definition Same_Ipart : R -> R -> Prop.

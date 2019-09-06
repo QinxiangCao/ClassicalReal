@@ -32,12 +32,12 @@ Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 
 Module DEC_R (R : VIR_R).
-  Module RF := VirR_Field (R).
-  Module Lemma1 := VirRLemma1 (R).
   Module RLemmas := VirRLemmas (R).
-  Import R RF Lemma1 RLemmas.
+  Include VIR_R_EXTRA R.
+  Export RLemmas.
+  Import R.
   Local Open Scope R_scope. 
-  
+
   Definition In_Search : R -> Prop.
     intros.
     apply ( X >= R0 /\ X < IQR( INQ 10)).
