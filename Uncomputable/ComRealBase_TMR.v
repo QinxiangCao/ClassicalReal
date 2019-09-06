@@ -209,7 +209,7 @@ Module TMR_Set (R : VIR_R).
     - exists (IQR (10%nat)).
       hnf. intros.
       subst. destruct (In_Search_TM'r n).
-      auto with Vir_real. 
+      auto with real. 
   Qed.
   
   Definition limitTM'r : R.
@@ -254,7 +254,7 @@ Module TMR_Set (R : VIR_R).
     assert (exists r : R , upper_bound P r).
     { subst P. exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n0). auto with Vir_real.
+      subst. destruct (In_Search_TM'r n0). auto with real.
     }
     pose proof limit_of_TM'r.
     pose proof mono_up_limit_sup P H H0 limitTM'r H1.
@@ -388,7 +388,7 @@ Module TMR_Set (R : VIR_R).
     assert (exists r : R , upper_bound P r).
     { subst P. exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n). auto with Vir_real.
+      subst. destruct (In_Search_TM'r n). auto with real.
     }
     pose proof limit_of_TM'r.
     pose proof mono_up_limit_sup P H H0 limitTM'r H1.
@@ -398,7 +398,7 @@ Module TMR_Set (R : VIR_R).
       apply Rle_ge.
       apply Rle_trans with (TM'r O).
       + destruct (In_Search_TM'r O) ; auto.
-        auto with Vir_real.
+        auto with real.
       + apply (H3 O). auto.
     - apply Rle_lt_trans with 2.
       + apply Rge_le. apply H2.
@@ -407,7 +407,7 @@ Module TMR_Set (R : VIR_R).
         subst. left.
         apply Dec_R_lt.
         apply In_Search_TM'r. 
-        * split. left. apply Rlt_gt. auto with Vir_real.
+        * split. left. apply Rlt_gt. auto with real.
           apply R2_Rlt_R10.
         * exists O.
           split ; intros ; try (omega).
@@ -480,9 +480,9 @@ Module TMR_Set (R : VIR_R).
       rewrite H9. 
       rewrite Rinv_mult_distr. rewrite Rmult_comm.
       rewrite <- Rmult_assoc.
-      rewrite Rinv_r ; auto with Vir_real. 
-      auto with Vir_real. 
-      rewrite INQ_IQR_INR. rewrite <- INR_R0. auto with Vir_real.
+      rewrite Rinv_r ; auto with real. 
+      auto with real. 
+      rewrite INQ_IQR_INR. rewrite <- INR_R0. auto with real.
     }
     rewrite H9 in *. 
     destruct H0 , H0 , H0 , H0 , H1 , H1 , H1.

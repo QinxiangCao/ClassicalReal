@@ -109,8 +109,8 @@ Proof gen_phiZ_complete Rset Rext Rfield Rgen_phiPOS_not_0.
 
 Lemma Rdef_pow_add : forall (x:R) (n m:nat), pow x  (n + m) = pow x n * pow x m.
 Proof.
-  intros x n; elim n; simpl; auto with Vir_real.
-  intros n0 H' m; rewrite H'; auto with Vir_real.
+  intros x n; elim n; simpl; auto with real.
+  intros n0 H' m; rewrite H'; auto with real.
 Qed.
 
 Lemma R_power_theory : power_theory 1%R Rmult (@eq R) N.to_nat pow.

@@ -170,7 +170,7 @@ Module DEC_R (R : VIR_R).
     intros.
     destruct (archimedean_exists (r * IQR (INQ (10 ^ n)))).
     rewrite INQ_IQR_INR.
-    apply Rle_ge. apply Rmult_le_pos ; auto with Vir_real.
+    apply Rle_ge. apply Rmult_le_pos ; auto with real.
     exists (x mod 10).
     hnf. exists x.  auto.
   Qed.
@@ -206,14 +206,14 @@ Module DEC_R (R : VIR_R).
       rewrite Rmult_plus_distr_r.
       rewrite Rmult_1_l.
       assert (2 = 1 + 1)%Z. { auto. }
-      rewrite H. rewrite plus_IZR. unfold Rdiv. rewrite Rmult_plus_distr_r. auto with Vir_real. 
+      rewrite H. rewrite plus_IZR. unfold Rdiv. rewrite Rmult_plus_distr_r. auto with real. 
     - simpl.
       rewrite Rmult_plus_distr_r.
       rewrite Rmult_1_l.
       unfold Rdiv.
       rewrite <- Rmult_plus_distr_r. rewrite <- plus_IZR. simpl.
-      apply Rmult_lt_r ; auto with Vir_real.
-      apply Rinv_0_lt_compat. auto with Vir_real.
+      apply Rmult_lt_r ; auto with real.
+      apply Rinv_0_lt_compat. auto with real.
   Qed.
   
   Theorem Dec_R_eq_Same_Ipart : forall (r1 r2 :R)(n :nat) , In_Search r1 -> In_Search r2 -> (forall (j : nat) ,(j <= n)%nat -> 
@@ -374,35 +374,35 @@ Module DEC_R (R : VIR_R).
         * apply Rlt_le_trans with (IQR (x + 1)%nat).
           ** apply Rle_lt_trans with (r1 * IQR 1%nat) ; auto.
              rewrite Rmult_comm. destruct H.
-             destruct H ; auto with Vir_real.
+             destruct H ; auto with real.
           ** apply Rle_trans with (IQR x + IQR 1%nat).
              *** rewrite <- plus_IQR. apply IQR_le.
                  rewrite INQ_plus. lra.
              *** apply Rle_trans with (r2 + IQR 1%nat).
                  **** apply Rplus_le_compat_r . apply Rle_trans with (r2 * IQR 1%nat) ; auto.
-                      rewrite <- Rmult_1_r. destruct H0. auto with Vir_real.
+                      rewrite <- Rmult_1_r. destruct H0. auto with real.
                  **** rewrite Rmult_1_l. apply Rplus_le_compat_l. 
                       rewrite INQ_IQR_INR. unfold Rdiv. simpl.
                       rewrite IZR_R1. assert (IPR 1 = 1). { auto. }
-                      rewrite H2. assert (/ 1 = 1). { auto with Vir_real. }
-                      rewrite H7. rewrite !Rmult_1_l. auto with Vir_real.
+                      rewrite H2. assert (/ 1 = 1). { auto with real. }
+                      rewrite H7. rewrite !Rmult_1_l. auto with real.
       + apply Rlt_Rminus_Rplus. apply Rmult_lt_l with (R1).
         * rewrite <- IQR_R0. rewrite <- IQR_R1. apply IQR_lt. lra.
         * apply Rlt_le_trans with (IQR (x + 1)%nat).
           ** apply Rle_lt_trans with (r2 * IQR 1%nat) ; auto.
              rewrite Rmult_comm. destruct H0.
-             destruct H0 ; auto with Vir_real.
+             destruct H0 ; auto with real.
           ** apply Rle_trans with (IQR x + IQR 1%nat).
              *** rewrite <- plus_IQR. apply IQR_le.
                  rewrite INQ_plus. lra.
              *** apply Rle_trans with (r1 + IQR 1%nat).
                  **** apply Rplus_le_compat_r . apply Rle_trans with (r1 * IQR 1%nat) ; auto.
-                      rewrite <- Rmult_1_r. destruct H. auto with Vir_real.
+                      rewrite <- Rmult_1_r. destruct H. auto with real.
                  **** rewrite Rmult_1_l. rewrite Rplus_comm. apply Rplus_le_compat_r. 
                       rewrite INQ_IQR_INR. unfold Rdiv. simpl.
                       rewrite IZR_R1. assert (IPR 1 = 1). { auto. }
-                      rewrite H2. assert (/ 1 = 1). { auto with Vir_real. }
-                      rewrite H7. rewrite !Rmult_1_l. auto with Vir_real.
+                      rewrite H2. assert (/ 1 = 1). { auto with real. }
+                      rewrite H7. rewrite !Rmult_1_l. auto with real.
     - assert (forall j : nat, (j <= n)%nat -> forall m : nat, Dec_R r1 j m <-> Dec_R r2 j m).
       {  intros. apply H1. omega. }
       assert (S n <= S n)%nat. { omega. }
@@ -459,7 +459,7 @@ Module DEC_R (R : VIR_R).
     destruct H2.
     apply Rlt_trans with (IQR 1 * / IQR (10 ^ x)%nat) ; auto.
     apply Dec_R_eq_lemma ; auto.
-    rewrite !INQ_IQR_INR. rewrite IQR_R1. auto with Vir_real.
+    rewrite !INQ_IQR_INR. rewrite IQR_R1. auto with real.
   Qed.
   
   Theorem Dec_R_not_eq : forall (r1 r2 : R) , In_Search r1 -> In_Search r2 -> r1 <> r2 <-> exists (j : nat), (forall m : nat,  Dec_R r1 j m -> ~ Dec_R r2 j m).
@@ -524,7 +524,7 @@ Module DEC_R (R : VIR_R).
       apply lt_le_S in H5. rewrite <- Nat.add_1_r in H5.
       rewrite <- Rmult_1_r. rewrite <- Rmult_1_r at 1.
       rewrite mult_0_r in *. rewrite plus_0_l in *.
-      assert (IQR (10 ^ 0)%nat = 1). { auto with Vir_real. }
+      assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
       rewrite H6 in *.
       apply Rlt_le_trans with (IQR (x + 1)%nat) ; auto.
       apply Rle_trans with (IQR x0) ; auto.
@@ -657,7 +657,7 @@ Module DEC_R (R : VIR_R).
                                       (forall (k : nat) , (k < j)%nat -> (forall m1 m2 : nat , Dec_R r1 k m1 -> Dec_R r2 k m2 -> (m1 = m2)%nat)).
   Proof.
     split ; intros.
-    - assert (r1 <> r2). { auto with Vir_real. }
+    - assert (r1 <> r2). { auto with real. }
       apply Dec_R_not_eq in H2 ; auto.
       destruct H2.
       set (fun x => forall m : nat, Dec_R r1 x m -> ~ Dec_R r2 x m).
@@ -789,7 +789,7 @@ Module DEC_R (R : VIR_R).
     intros r n pH. intros. 
     destruct (archimedean_exists (r * IQR (10 ^ n)%nat)).
     rewrite INQ_IQR_INR. destruct pH. apply Rle_ge.
-    apply Rmult_le_pos ; auto with Vir_real.
+    apply Rmult_le_pos ; auto with real.
     destruct H0.
     exists x.
     repeat split ; auto ; rewrite Rmult_plus_distr_r in * ; repeat rewrite mult_IQR in *.
@@ -1001,7 +1001,7 @@ Module DEC_R (R : VIR_R).
                  rewrite INQ_mult ; simpl ; try (apply INQ_le ; omega);  try (apply INQ_lt ; omega). 
           ** hnf. destruct (archimedean_exists (IQR 1%nat * IQR (10 ^ m)%nat)). 
              rewrite !INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
-             auto with Vir_real.
+             auto with real.
              exists x0. split ; auto. destruct H3.
              rewrite <- mult_IQR in * ; apply le_IQR in H3 ; apply lt_IQR in H4 ;
              rewrite INQ_mult in * ; rewrite mult_1_l in * ; apply INQ_le in H3 ; apply INQ_lt in H4.
@@ -1077,7 +1077,7 @@ Module DEC_R (R : VIR_R).
                  apply H1 ; auto. hnf in *.
                  destruct H4 , H4 , H4.
                  destruct (archimedean_exists (IQR x0 * IQR (10 ^ m)%nat)) .
-                 rewrite !INQ_IQR_INR. apply Rle_ge. apply Rmult_le_pos ; auto with Vir_real.
+                 rewrite !INQ_IQR_INR. apply Rle_ge. apply Rmult_le_pos ; auto with real.
                  destruct H1. apply Rge_le. apply H8.
                  exists x2. split ; auto. destruct H8.
                  assert (Same_Ipart (IQR (x0 + 1%nat / (10 ^ S n)%nat) * IQR (10 ^ m)%nat) ((IQR x0 * IQR (10 ^ m)%nat))).
@@ -1371,7 +1371,7 @@ Module DEC_R (R : VIR_R).
     apply not_and_or in H3.
     destruct H3.
     - exfalso. apply H3. apply (H5 n) ; auto.
-      hnf. exists x ; split ; auto with Vir_real.  
+      hnf. exists x ; split ; auto with real.  
     - apply Rnot_gt_le. apply IQR_eq in H8. rewrite H8. auto.  
   Qed.
   
@@ -1399,7 +1399,7 @@ Module DEC_R (R : VIR_R).
     apply not_and_or in H3.
     destruct H3.
     - exfalso. apply H3. apply Rle_ge. apply (H5 n); auto.
-      hnf. exists x0 ; split ; auto with Vir_real. 
+      hnf. exists x0 ; split ; auto with real. 
     - apply Rnot_gt_le. apply IQR_eq in H8. rewrite H8. auto.
   Qed.
 
@@ -1436,7 +1436,7 @@ Module DEC_R (R : VIR_R).
       { hnf. exists (-x)%Q. auto. }
       specialize (H2 n (IQR (-x)) H5).
       rewrite opp_IQR in H2.
-      rewrite H3 in H2. auto with Vir_real.
+      rewrite H3 in H2. auto with real.
   Qed.
   
   Theorem upper_bound_exists_Sup_Q : forall (X : nat -> Q -> Prop) , is_function_Q X -> (exists r : R , upper_bound_Q X r) ->
@@ -1486,7 +1486,7 @@ Module DEC_R (R : VIR_R).
     destruct H , H0.
     pose proof (H r2 H2).
     pose proof (H0 r1 H1).
-    auto with Vir_real.
+    auto with real.
   Qed.
 
   Theorem Inf_unique_Q : forall (X : nat -> Q -> Prop) (r1 r2 : R), Inf_Q X r1 -> Inf_Q X r2 -> r1 = r2.
@@ -1496,7 +1496,7 @@ Module DEC_R (R : VIR_R).
     destruct H , H0.
     pose proof (H r2 H2).
     pose proof (H0 r1 H1).
-    auto with Vir_real.
+    auto with real.
   Qed.
 
   Theorem mono_up_upper_bound_seq_has_limit_Q : forall (X : nat -> Q -> Prop) , mono_up_Q X -> (exists r : R , upper_bound_Q X r) -> exists r : R ,Un_cv' X r.
@@ -1543,7 +1543,7 @@ Module DEC_R (R : VIR_R).
     apply Dec_R_lt.
     * apply H2.
     * split.
-      - apply Rle_ge. apply Rlt_le. auto with Vir_real.
+      - apply Rle_ge. apply Rlt_le. auto with real.
       - apply R2_Rlt_R10.
     * exists O.
       split ; intros.
@@ -1695,12 +1695,12 @@ Module DEC_R (R : VIR_R).
     destruct H. rewrite <- plus_IQR in *.
     destruct (archimedean_exists (IQR (x1 + 1%nat / (10 ^ S n)%nat) * IQR (10 ^ n)%nat)).
     apply Rle_ge. apply Rmult_le_pos.
-    apply Rle_trans with r ; auto with Vir_real.
-    rewrite INQ_IQR_INR. auto with Vir_real.
+    apply Rle_trans with r ; auto with real.
+    rewrite INQ_IQR_INR. auto with real.
     destruct H7 .
     destruct (archimedean_exists (IQR x1 * IQR (10 ^ n)%nat)). 
     apply Rle_ge. apply Rmult_le_pos.
-    apply Rge_le. apply pH1. rewrite INQ_IQR_INR. auto with Vir_real.
+    apply Rge_le. apply pH1. rewrite INQ_IQR_INR. auto with real.
     destruct H12.
     assert (Same_Ipart (IQR (x1 + 1%nat / (10 ^ S n)%nat) * IQR (10 ^ n)%nat) ((IQR x1 * IQR (10 ^ n)%nat))).
     {
@@ -1736,15 +1736,15 @@ Module DEC_R (R : VIR_R).
     split ; intros ; hnf in *  ; destruct H0 , H0, H0.
     - destruct (archimedean_exists (IQR x1 * IQR (10 ^ n)%nat)). 
       apply Rle_ge. apply Rmult_le_pos.
-      apply Rge_le. apply pH1. rewrite INQ_IQR_INR. auto with Vir_real.
+      apply Rge_le. apply pH1. rewrite INQ_IQR_INR. auto with real.
       exists x6. split ; auto.
       destruct H4.
       assert (x4 = x5)%nat. { apply (Ipart_unique (r * IQR (10 ^ n)%nat)) ; split ; auto. }
       assert (x4 = x6)%nat. { apply (Ipart_unique (IQR x1 * IQR (10 ^ n)%nat)) ; split ; auto. }
       subst ; auto.
     - destruct (archimedean_exists (r * IQR (10 ^ n)%nat)). 
-      apply Rle_ge. apply Rmult_le_pos ; auto with Vir_real.
-      rewrite INQ_IQR_INR. auto with Vir_real.
+      apply Rle_ge. apply Rmult_le_pos ; auto with real.
+      rewrite INQ_IQR_INR. auto with real.
       exists x6. split ; auto.
       destruct H4.
       assert (x4 = x6)%nat. { apply (Ipart_unique (r * IQR (10 ^ n)%nat)) ; split ;auto. }
@@ -2060,7 +2060,7 @@ Module DEC_R (R : VIR_R).
     destruct H0 , H , H.
     destruct (archimedean_exists (r * IQR (10 ^ n)%nat)). 
     apply Rle_ge. apply Rmult_le_pos.
-    apply Rge_le. auto. rewrite INQ_IQR_INR. auto with Vir_real. 
+    apply Rge_le. auto. rewrite INQ_IQR_INR. auto with real. 
     destruct H3.
     exists x1.
     rewrite <- !INQ_IQR_INR in *.
@@ -2068,10 +2068,10 @@ Module DEC_R (R : VIR_R).
     - rewrite Rmult_plus_distr_r.
       apply Rle_trans with (r * IQR (10 ^ n)%nat) ; auto.
       rewrite <- Rplus_0_r at 1.
-      apply Rplus_le_compat ; auto with Vir_real. unfold Rdiv.
+      apply Rplus_le_compat ; auto with real. unfold Rdiv.
       rewrite !INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
-      apply Rmult_le_pos ; auto with Vir_real.
-      apply Rlt_le. apply Rinv_0_lt_compat. auto with Vir_real.
+      apply Rmult_le_pos ; auto with real.
+      apply Rlt_le. apply Rinv_0_lt_compat. auto with real.
       rewrite <- INR_R0. apply lt_INR. apply Max_powan_0. omega.
     - symmetry in H0.
       apply mod_exists in H0 ; auto.
@@ -2354,7 +2354,7 @@ Module DEC_R (R : VIR_R).
       destruct H8 ,H9, H10 , H17.
       assert (x2 < 10)%nat. 
       { apply INQ_lt. apply lt_IQR. apply Rle_lt_trans with r ; auto.
-        destruct H16. assert (IQR (10 ^ 0)%nat = 1). { auto with Vir_real. }
+        destruct H16. assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
         rewrite H20 in H16. rewrite Rmult_1_r in H16. auto.
         apply a.
       }  
@@ -2371,7 +2371,7 @@ Module DEC_R (R : VIR_R).
       destruct H8 ,H9, H10 , H17.
       assert (x2 < 10)%nat. 
       { apply INQ_lt. apply lt_IQR. apply Rle_lt_trans with r ; auto.
-        destruct H16. assert (IQR (10 ^ 0)%nat = 1). { auto with Vir_real. }
+        destruct H16. assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
         rewrite H20 in H16. rewrite Rmult_1_r in H16. auto.
         apply a.
       }  

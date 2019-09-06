@@ -97,50 +97,50 @@ Module VirRLemmas (VirR : VIR_R).
     intros.
     unfold Rabs. 
     destruct H.
-    - apply Rif_right. auto with Vir_real.
-    - rewrite H. rewrite Ropp_0. apply Rif_left. auto with Vir_real.
+    - apply Rif_right. auto with real.
+    - rewrite H. rewrite Ropp_0. apply Rif_left. auto with real.
   Qed.
   
-  Hint Resolve Rabs_pos Rabs_neg: Vir_real.
+  Hint Resolve Rabs_pos Rabs_neg: real.
 
   Theorem Rabs_le_0 : forall r : R , Rabs r >= 0.
   Proof.
     intros.
     destruct (Rtotal_order r 0).
-    - rewrite Rabs_neg ; auto with Vir_real.
-      rewrite <- Ropp_0. auto with Vir_real.
+    - rewrite Rabs_neg ; auto with real.
+      rewrite <- Ropp_0. auto with real.
     - rewrite or_comm in H. rewrite Rabs_pos ; auto.
   Qed.
   
-  Hint Resolve Rabs_le_0 : Vir_real.
+  Hint Resolve Rabs_le_0 : real.
   Theorem Rabs_le : forall r : R , r <= Rabs r.
   Proof.
     intros.
     destruct (Rtotal_order r 0).
-    - apply Rle_trans with 0 ; auto with Vir_real.
-    - rewrite or_comm in H. rewrite Rabs_pos ; auto with Vir_real.
+    - apply Rle_trans with 0 ; auto with real.
+    - rewrite or_comm in H. rewrite Rabs_pos ; auto with real.
   Qed.
-  Hint Resolve Rabs_le : Vir_real.
+  Hint Resolve Rabs_le : real.
    
   Theorem IQR_inv : forall r : Q, (~ r == 0)%Q -> / IQR r = IQR (/ r).
   Proof. 
     intros.
     destruct r.
     simpl. unfold Rdiv , Qinv. simpl.
-    assert (forall p , IPR p <> 0). { intros. rewrite <- INR_IPR. auto with Vir_real. } 
+    assert (forall p , IPR p <> 0). { intros. rewrite <- INR_IPR. auto with real. } 
     destruct Qnum ; simpl.
     - assert (0 # Qden == 0). { unfold Qeq. auto. }
       exfalso. auto.
     - unfold IZR. field. split ; auto.
     - unfold IZR. field. split ; auto. 
   Qed.
-  Hint Resolve IQR_inv : Vir_real.
+  Hint Resolve IQR_inv : real.
   
   Theorem Rlt_opp : forall r : R , r > R0 -> - r < R0.
-  Proof. auto with Vir_real. Qed.
+  Proof. auto with real. Qed.
   Theorem Rle_opp : forall r : R , r >= R0 -> - r <= R0.
-  Proof. auto with Vir_real. Qed.
-  Hint Resolve Rlt_opp Rle_opp : Vir_real.
+  Proof. auto with real. Qed.
+  Hint Resolve Rlt_opp Rle_opp : real.
 
   Theorem Rlt_pos_eqb : forall r1 r2 : R  , r1 < r2 <-> r2 - r1 > R0.
   Proof. 
@@ -151,11 +151,11 @@ Module VirRLemmas (VirR : VIR_R).
   
   Theorem Rlt_neg_eqb : forall r1 r2 : R  , r1 > r2 <-> r2 - r1 < R0.
   Proof.
-    split ; intros ; auto with Vir_real.
+    split ; intros ; auto with real.
     hnf. apply Rminus_lt. auto.
   Qed.
   
-  Hint Resolve Rlt_pos_eqb Rlt_neg_eqb : Vir_real.
+  Hint Resolve Rlt_pos_eqb Rlt_neg_eqb : real.
   
   Theorem Rle_pos_eqb : forall r1 r2 : R  , r1 <= r2 <-> r2 - r1 >= R0.
   Proof.
@@ -163,7 +163,7 @@ Module VirRLemmas (VirR : VIR_R).
     - left. rewrite <- Rlt_pos_eqb. auto.
     - right. subst. ring.
     - left. apply Rlt_pos_eqb. auto.
-    - right. subst. auto with Vir_real.
+    - right. subst. auto with real.
   Qed.
    
   Theorem Rle_neg_eqb : forall r1 r2 : R  , r1 >= r2 <-> r2 - r1 <= R0.
@@ -172,83 +172,83 @@ Module VirRLemmas (VirR : VIR_R).
     - left. rewrite <- Rlt_neg_eqb. auto.
     - right. subst. ring.
     - left. apply Rlt_neg_eqb. auto.
-    - right. subst. auto with Vir_real.
+    - right. subst. auto with real.
   Qed. 
 
-  Hint Resolve Rle_pos_eqb Rle_neg_eqb : Vir_real.
+  Hint Resolve Rle_pos_eqb Rle_neg_eqb : real.
   
   Theorem Rmult_le_l : forall r1 r2 r3 : R , r3 > R0 -> r3 * r1  <= r3 * r2 <-> r1 <= r2.
-  Proof.  split ; intros ; auto with Vir_real. apply Rmult_le_reg_l with r3 ; auto. Qed.
+  Proof.  split ; intros ; auto with real. apply Rmult_le_reg_l with r3 ; auto. Qed.
   
   Theorem Rmult_lt_l : forall r1 r2 r3 : R , r3 > R0 -> r3 * r1 < r3 * r2 <-> r1 < r2.
-  Proof.  split ; intros ; auto with Vir_real. apply Rmult_gt_reg_l with r3 ; auto. Qed.
+  Proof.  split ; intros ; auto with real. apply Rmult_gt_reg_l with r3 ; auto. Qed.
   
   Theorem Rmult_le_r : forall r1 r2 r3 : R , r3 > R0 -> r1 * r3 <= r2 * r3 <-> r1 <= r2.
-  Proof.  split ; intros ; auto with Vir_real. apply Rmult_le_reg_r with r3 ; auto. Qed.
+  Proof.  split ; intros ; auto with real. apply Rmult_le_reg_r with r3 ; auto. Qed.
   
   Theorem Rmult_lt_r : forall r1 r2 r3 : R , r3 > R0 -> r1 * r3 < r2 * r3 <-> r1 < r2.
-  Proof. split ; intros ; auto with Vir_real. apply Rmult_lt_reg_r with r3 ; auto. Qed.
+  Proof. split ; intros ; auto with real. apply Rmult_lt_reg_r with r3 ; auto. Qed.
   
-  Hint Resolve Rmult_le_l Rmult_le_r  Rmult_lt_l Rmult_le_l : Vir_real.
+  Hint Resolve Rmult_le_l Rmult_le_r  Rmult_lt_l Rmult_le_l : real.
   
   Theorem Rmult_lt_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 < r2 * r3 <-> r1  / r3  < r2.
   Proof. 
-    split ; intros ; auto with Vir_real.
+    split ; intros ; auto with real.
     - apply Rmult_lt_r with r3 ; auto.
       unfold Rdiv. rewrite Rmult_assoc. rewrite Rinv_l. rewrite Rmult_1_r. auto.
-      auto with Vir_real.
+      auto with real.
     - apply Rmult_lt_r with (/ r3 ) ; auto.
       apply Rinv_0_lt_compat ; auto.
       rewrite Rmult_assoc. rewrite Rinv_r. rewrite Rmult_1_r. auto.
-      auto with Vir_real.
+      auto with real.
   Qed.
   
   Theorem Rmult_le_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 <= r2 * r3 <-> r1 / r3 <= r2.
   Proof.
-    split ; intros ; auto with Vir_real.
+    split ; intros ; auto with real.
     - apply Rmult_le_r with r3 ; auto.
       unfold Rdiv. rewrite Rmult_assoc. rewrite Rinv_l. rewrite Rmult_1_r. auto.
-      auto with Vir_real.
+      auto with real.
     - apply Rmult_le_r with (/ r3) ; auto.
       apply Rinv_0_lt_compat ; auto. 
       rewrite Rmult_assoc. rewrite Rinv_r. rewrite Rmult_1_r. auto.
-      auto with Vir_real.
+      auto with real.
   Qed.
   
-  Hint Resolve Rmult_lt_divr Rmult_le_divr : Vir_real.
+  Hint Resolve Rmult_lt_divr Rmult_le_divr : real.
   
   Theorem Rmult_gt_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 > r2 * r3 <-> r1 / r3  > r2.
   Proof.
-    split ; intros ; auto with Vir_real.
+    split ; intros ; auto with real.
     - apply Rmult_lt_r with r3 ; auto.
       unfold Rdiv. rewrite Rmult_assoc. rewrite Rinv_l. rewrite Rmult_1_r. auto.
-      auto with Vir_real.
+      auto with real.
     - apply Rmult_lt_r with (/ r3) ; auto.
       apply Rinv_0_lt_compat ; auto. 
       rewrite Rmult_assoc. rewrite Rinv_r. rewrite Rmult_1_r. auto.
-      auto with Vir_real.
+      auto with real.
   Qed.
 
   Theorem Rmult_ge_divr : forall r1 r2 r3 : R , r3 > R0 -> r1 >= r2 * r3 <-> r1 / r3 >= r2.
   Proof.
-    split ; intros ; apply Rle_ge ; auto with Vir_real.
+    split ; intros ; apply Rle_ge ; auto with real.
     - apply Rmult_le_r with r3 ; auto.
-      unfold Rdiv. rewrite Rmult_assoc. rewrite Rinv_l ; auto with Vir_real. rewrite Rmult_1_r. 
-      auto with Vir_real.
+      unfold Rdiv. rewrite Rmult_assoc. rewrite Rinv_l ; auto with real. rewrite Rmult_1_r. 
+      auto with real.
     - apply Rmult_le_r with (/ r3) ; auto.
       apply Rinv_0_lt_compat ; auto. 
-      rewrite Rmult_assoc. rewrite Rinv_r ; auto with Vir_real. rewrite Rmult_1_r. 
-      auto with Vir_real.
+      rewrite Rmult_assoc. rewrite Rinv_r ; auto with real. rewrite Rmult_1_r. 
+      auto with real.
   Qed.
   
-  Hint Resolve Rmult_gt_divr Rmult_ge_divr : Vir_real.
+  Hint Resolve Rmult_gt_divr Rmult_ge_divr : real.
   
   Theorem Rlt_Rlt_minus : forall r1 r2 r3 r4 : R , r1 < r2 -> r3 < r4 -> r3 - r2 < r4 - r1.
   Proof. intros. apply Rplus_lt_reg_r with (r2 + r1). 
     assert (r3 - r2 + (r2 + r1) = r3 + r1). { ring. }
     assert (r4 - r1 + (r2 + r1) = r4 + r2). { ring. }
     rewrite H1 , H2.
-    auto with Vir_real.
+    auto with real.
   Qed.
   
   Theorem Rle_Rle_minus : forall r1 r2 r3 r4 : R , r1 <= r2 -> r3 <= r4 -> r3 - r2 <= r4 - r1.
@@ -256,7 +256,7 @@ Module VirRLemmas (VirR : VIR_R).
     assert (r3 - r2 + (r2 + r1) = r3 + r1). { ring. }
     assert (r4 - r1 + (r2 + r1) = r4 + r2). { ring. }
     rewrite H1 , H2.
-    auto with Vir_real.
+    auto with real.
   Qed.
   
   Theorem Rlt_Rle_minus : forall r1 r2 r3 r4 : R , r1 < r2 -> r3 <= r4 -> r3 - r2 < r4 - r1.
@@ -264,7 +264,7 @@ Module VirRLemmas (VirR : VIR_R).
     assert (r3 - r2 + (r2 + r1) = r3 + r1). { ring. }
     assert (r4 - r1 + (r2 + r1) = r4 + r2). { ring. }
     rewrite H1 , H2.
-    auto with Vir_real.
+    auto with real.
   Qed.
   
   Theorem Rle_Rlt_minus : forall r1 r2 r3 r4 : R , r1 <= r2 -> r3 < r4 -> r3 - r2 < r4 - r1.
@@ -272,16 +272,16 @@ Module VirRLemmas (VirR : VIR_R).
     assert (r3 - r2 + (r2 + r1) = r3 + r1). { ring. }
     assert (r4 - r1 + (r2 + r1) = r4 + r2). { ring. }
     rewrite H1 , H2.
-    auto with Vir_real.
+    auto with real.
   Qed.
-  Hint Resolve Rlt_Rlt_minus Rle_Rlt_minus Rlt_Rle_minus Rle_Rle_minus : Vir_real.
+  Hint Resolve Rlt_Rlt_minus Rle_Rlt_minus Rlt_Rle_minus Rle_Rle_minus : real.
   
   Theorem Rlt_Rminus_r : forall r1 r2 r3: R , r1 - r2 < r3 -> r1 - r3 < r2.
   Proof. intros. apply Rplus_lt_reg_r with (r3 - r2). 
     assert (r1 - r3 + (r3 - r2) = r1 - r2). { ring. }
     assert (r2 + (r3 - r2) = r3). { ring. }
     rewrite H0 , H1.
-    auto with Vir_real.
+    auto with real.
   Qed.
   
   Theorem Rlt_Rminus_Rplus : forall r1 r2 r3: R , r1 < r2 + r3 <-> r1 - r2 < r3.
@@ -307,7 +307,7 @@ Module VirRLemmas (VirR : VIR_R).
       assert (r2 + r3 + - r2 = r3). { ring. } rewrite H0. auto.
   Qed.
   
-  Hint Resolve Rlt_Rminus_r  Rlt_Rminus_Rplus  Rle_Rminus_r Rle_Rminus_Rplus : Vir_real.
+  Hint Resolve Rlt_Rminus_r  Rlt_Rminus_Rplus  Rle_Rminus_r Rle_Rminus_Rplus : real.
   
   Theorem Rle_Rminus :forall r1 r2 r3 : R , r1 + r3 <= r2 <-> r1 <= r2 - r3.
   Proof. split ; intros.
@@ -316,7 +316,7 @@ Module VirRLemmas (VirR : VIR_R).
     - apply Rplus_le_reg_r with (-r3). 
       assert (r1 + r3 + - r3 = r1). { ring. } rewrite H0. auto.
   Qed.
-  Hint Resolve Rle_Rminus : Vir_real.
+  Hint Resolve Rle_Rminus : real.
 
   Theorem Rlt_opp_eqb :forall r1 r2 :R , r1 < -r2 <->  r2 < - r1.
   Proof. split ; intros ; rewrite <- Ropp_involutive at 1;  apply Ropp_lt_contravar; auto. Qed.
@@ -324,49 +324,49 @@ Module VirRLemmas (VirR : VIR_R).
   Theorem Rle_opp_eqb :forall r1 r2 :R , r1 <= -r2 <-> r2 <= - r1.
   Proof. split ; intros ; rewrite <- Ropp_involutive at 1; apply Ropp_le_contravar ; auto. Qed.
   
-  Hint Resolve Rlt_opp_eqb Rle_opp_eqb : Vir_real.
+  Hint Resolve Rlt_opp_eqb Rle_opp_eqb : real.
   
   Theorem Rgt_Rinv : forall r1 : R , r1 > R1 -> r1 > / r1.
-  Proof. intros. assert (r1 > 0). { apply Rlt_trans with 1 ; auto with Vir_real. }
+  Proof. intros. assert (r1 > 0). { apply Rlt_trans with 1 ; auto with real. }
     apply Rmult_lt_r with r1 ; auto.
-    rewrite Rinv_l ; auto with Vir_real.
+    rewrite Rinv_l ; auto with real.
     apply Rlt_trans with r1 ; auto.
     rewrite <- Rmult_1_r at 1. apply Rmult_lt_l ; auto.
   Qed.
   
   Theorem Rge_Rinv : forall r1 : R , r1 >= R1 -> r1 >= / r1.
-  Proof. intros. assert (r1 > 0). { apply Rlt_le_trans with 1 ; auto with Vir_real. }
+  Proof. intros. assert (r1 > 0). { apply Rlt_le_trans with 1 ; auto with real. }
     apply Rle_ge.
     apply Rmult_le_r with r1 ; auto.
-    rewrite Rinv_l ; auto with Vir_real.
-    apply Rle_trans with r1 ; auto with Vir_real.
-    rewrite <- Rmult_1_r at 1. apply Rmult_le_compat_l ; auto with Vir_real.
+    rewrite Rinv_l ; auto with real.
+    apply Rle_trans with r1 ; auto with real.
+    rewrite <- Rmult_1_r at 1. apply Rmult_le_compat_l ; auto with real.
   Qed.
   
   Theorem Rlt_Rinv : forall r1 : R , r1 < R1 /\ r1 > R0 -> r1 < / r1.
   Proof.  intros. destruct H.
     apply Rmult_lt_r with r1 ; auto.
-    rewrite Rinv_l ; auto with Vir_real.
-    apply Rlt_trans with r1 ; auto with Vir_real.
-    rewrite <- Rmult_1_r. apply Rmult_lt_l ; auto with Vir_real.
+    rewrite Rinv_l ; auto with real.
+    apply Rlt_trans with r1 ; auto with real.
+    rewrite <- Rmult_1_r. apply Rmult_lt_l ; auto with real.
   Qed.
   
   Theorem Rle_Rinv : forall r1 : R , r1 <= R1 /\ r1 > R0 -> r1 <= / r1.
   Proof. intros. destruct H.
     apply Rmult_le_r with r1 ; auto.
-    rewrite Rinv_l ; auto with Vir_real.
-    apply Rle_trans with r1 ; auto with Vir_real.
-    rewrite <- Rmult_1_r. apply Rmult_le_l ; auto with Vir_real.
+    rewrite Rinv_l ; auto with real.
+    apply Rle_trans with r1 ; auto with real.
+    rewrite <- Rmult_1_r. apply Rmult_le_l ; auto with real.
   Qed.
   
-  Hint Resolve Rgt_Rinv Rge_Rinv Rlt_Rinv Rle_Rinv : Vir_real.
+  Hint Resolve Rgt_Rinv Rge_Rinv Rlt_Rinv Rle_Rinv : real.
   
   Theorem Rabs_tri : forall a b c : R , Rabs(a - b) < c <-> a < b + c /\ a > b - c.
   Proof.
     intros.
     split ; intros.
     - assert (c > 0).
-      { apply Rle_lt_trans with (Rabs (a - b)) ; auto with Vir_real. }
+      { apply Rle_lt_trans with (Rabs (a - b)) ; auto with real. }
       destruct (classic (a - b >= 0)).
       + rewrite Rabs_pos in H ; auto.
         split.
@@ -377,7 +377,7 @@ Module VirRLemmas (VirR : VIR_R).
              rewrite H2.  auto.
           -- apply Rge_le. apply Rminus_ge. auto.
       + apply Rnot_ge_lt in H1.
-        rewrite Rabs_neg in H ; auto with Vir_real.
+        rewrite Rabs_neg in H ; auto with real.
         split.
         * apply Rlt_trans with b.
           -- apply Rminus_lt. auto.
@@ -396,7 +396,7 @@ Module VirRLemmas (VirR : VIR_R).
         apply Ropp_lt_cancel ; auto.
         rewrite Ropp_involutive. auto.
       + apply Rnot_le_gt in H2.
-        rewrite Rabs_pos ; auto with Vir_real.
+        rewrite Rabs_pos ; auto with real.
         left. auto.
   Qed.
   
@@ -404,13 +404,13 @@ Module VirRLemmas (VirR : VIR_R).
   Proof.
     intros.
     destruct (classic (a - b >= 0)).
-    - rewrite Rabs_pos ; auto with Vir_real.
-      rewrite Rabs_neg ; auto with Vir_real.
+    - rewrite Rabs_pos ; auto with real.
+      rewrite Rabs_neg ; auto with real.
       apply Ropp_le_cancel.
-      rewrite Ropp_0. rewrite Ropp_minus_distr'. auto with Vir_real.
+      rewrite Ropp_0. rewrite Ropp_minus_distr'. auto with real.
     - apply Rnot_ge_lt in H.
-      rewrite Rabs_neg ; auto with Vir_real.
-      rewrite Rabs_pos ; auto with Vir_real.
+      rewrite Rabs_neg ; auto with real.
+      rewrite Rabs_pos ; auto with real.
       apply Rle_ge. apply Ropp_le_cancel.
       rewrite Ropp_0. rewrite Ropp_minus_distr'. left. auto.
   Qed.
@@ -426,7 +426,7 @@ Module VirRLemmas (VirR : VIR_R).
     elim archimed with r ; intros.
     exists (Z.to_nat (x - 1)).
     destruct H0.
-    assert (x > 0)%Z. { apply Z.lt_gt. apply lt_IZR. rewrite IZR_R0. apply Rle_lt_trans with r ; auto with Vir_real. }
+    assert (x > 0)%Z. { apply Z.lt_gt. apply lt_IZR. rewrite IZR_R0. apply Rle_lt_trans with r ; auto with real. }
     split ;  rewrite INQ_IQR_INR ;  rewrite INR_IZR_INZ.  
     - rewrite Z2Nat.id ; try (omega).
       rewrite minus_IZR. rewrite IZR_R1.
@@ -436,21 +436,21 @@ Module VirRLemmas (VirR : VIR_R).
     - rewrite Nat2Z.inj_add.
       rewrite Z2Nat.id ; try (omega). simpl.
       assert (x - 1 + 1 = x)%Z. { ring. }
-      rewrite H3. auto with Vir_real.
+      rewrite H3. auto with real.
   Qed.
   
   Theorem Rlt_mid : forall r r1 : R , r < r1 -> exists eps : Q , (eps > 0)%Q /\ r + IQR eps < r1 - IQR eps.
   Proof.
     intros.
     apply Rlt_Rminus in H.
-    assert ((r1 - r) / 2 > 0). { apply Rdiv_lt_0_compat ; auto with Vir_real. }
-    assert (2 / (r1 - r) > 0). { apply Rdiv_lt_0_compat ; auto with Vir_real. }
+    assert ((r1 - r) / 2 > 0). { apply Rdiv_lt_0_compat ; auto with real. }
+    assert (2 / (r1 - r) > 0). { apply Rdiv_lt_0_compat ; auto with real. }
     destruct (archimedean_exists (2 / (r1 - r))).
     - left. auto.
     - destruct H2.
       assert ((r1 - r) / 2 > / IQR (x + 1)%nat).
       { assert ((r1 - r) / 2 = / (2 / (r1 - r))).
-        { field. auto with Vir_real. }
+        { field. auto with real. }
         rewrite H4. apply Rinv_lt_contravar ; auto.
         apply Rmult_lt_0_compat ; auto.
         rewrite INQ_IQR_INR.
@@ -506,13 +506,13 @@ Module VirRLemmas (VirR : VIR_R).
     destruct H0 , H0 , H1 , H2.
     rewrite !INQ_IQR_INR in *.
     assert (INR (k) > 0).
-    { apply lt_INR in H. auto with Vir_real. }
+    { apply lt_INR in H. auto with real. }
     apply Rmult_le_divr in H0; auto.
     apply Rmult_le_divr in H1; auto.
     apply Rmult_gt_divr in H2; auto.
     apply Rmult_gt_divr in H3; auto.
     destruct (archimedean_exists (INR x / INR k)).
-    apply Rmult_ge_divr ; auto. rewrite Rmult_0_l. auto with Vir_real.
+    apply Rmult_ge_divr ; auto. rewrite Rmult_0_l. auto with real.
     destruct H5. rewrite !INQ_IQR_INR in *.
     assert (INR (x + 1) / INR k <= INR (x0 + 1)).
     { apply Rmult_le_divr ; auto.
@@ -587,7 +587,7 @@ Module VirRLemmas (VirR : VIR_R).
     apply not_and_or in H3.
     destruct H3.
     - exfalso. apply H3. apply (H5 n) ; auto.
-    - apply Rnot_lt_ge in H3. auto with Vir_real. 
+    - apply Rnot_lt_ge in H3. auto with real. 
   Qed.
   
   Theorem Inf_pro : forall (X : nat -> R -> Prop) (inf : R) , is_function X -> Inf X inf -> forall y : R , (y > inf -> 
@@ -686,7 +686,7 @@ Module VirRLemmas (VirR : VIR_R).
     destruct H , H0.
     pose proof (H r2 H2).
     pose proof (H0 r1 H1).
-    auto with Vir_real.
+    auto with real.
   Qed.
 
   Theorem Inf_unique : forall (X : nat -> R -> Prop) (r1 r2 : R), Inf X r1 -> Inf X r2 -> r1 = r2.
@@ -696,7 +696,7 @@ Module VirRLemmas (VirR : VIR_R).
     destruct H , H0.
     pose proof (H r2 H2).
     pose proof (H0 r1 H1).
-    auto with Vir_real.
+    auto with real.
   Qed.
 
   Theorem mono_up_upper_bound_seq_has_limit : forall (X : nat -> R -> Prop) , mono_up X -> (exists r : R , upper_bound X r) -> exists r : R ,Un_cv X r.
@@ -913,7 +913,7 @@ Module VirRLemmas (VirR : VIR_R).
       apply Rdichotomy in H0.
       destruct H0.
       + apply Rlt_neg_eqb in H0.
-        assert (r1 - r2 <= R0). { auto with Vir_real. }
+        assert (r1 - r2 <= R0). { auto with real. }
         apply Rlt_neg_eqb in H0. apply Rlt_pos_eqb in H0.
         apply eps_gt_10n in H0.
         destruct H0.
@@ -927,7 +927,7 @@ Module VirRLemmas (VirR : VIR_R).
           apply Max_powan_0. omega.
         * rewrite Rmult_0_l. rewrite <- INR_R0. apply lt_INR. omega.
      + apply Rlt_pos_eqb in H0.
-        assert (r1 - r2 >= R0). { apply Rle_ge. auto with Vir_real. }
+        assert (r1 - r2 >= R0). { apply Rle_ge. auto with real. }
         apply eps_gt_10n in H0.
         destruct H0.
         apply (Rlt_irrefl (INR 1 / INR (10^ x))).
@@ -940,14 +940,14 @@ Module VirRLemmas (VirR : VIR_R).
   Qed.
 
   Theorem Z_same_R' : forall z1 z2 : Z , (z1 <> z2)%Z <-> IZR z1 <> IZR z2.
-  Proof. split ; intros ; auto with Vir_real.
+  Proof. split ; intros ; auto with real.
     apply Rdichotomy in H.
     destruct H ; apply lt_IZR in H ; omega.
   Qed.
   
   Theorem Ex_Z_R' : forall z : Z , (z <> 0)%Z <-> IZR z <> R0.
   Proof.
-    split ; intros ; auto with Vir_real.
+    split ; intros ; auto with real.
     rewrite <- IZR_R0 in H.
     apply Rdichotomy in H. destruct H ; apply lt_IZR in H ; omega.
   Qed.

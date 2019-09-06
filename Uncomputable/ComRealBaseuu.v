@@ -66,7 +66,7 @@ Module Wrong_Up (R : VIR_R).
       rewrite IZR_R0 in H5.
       apply Rge_le in H2.
       pose proof conj H5 H2.
-      assert (X0 = 0). { auto with Vir_real. }
+      assert (X0 = 0). { auto with real. }
       clear H6.
       pose proof H7 as H6. clear H7.
       right.
@@ -333,13 +333,13 @@ Module CR_uu (R : VIR_R).
     - apply Max_powan_0. omega.
     - destruct (archimedean_exists (IQR (sum_f f n) * IQR (10 ^ n)%nat)).
       apply Rle_ge. apply Rmult_le_pos. apply sum_f_le_0 ; auto.
-      rewrite INQ_IQR_INR. auto with Vir_real.
+      rewrite INQ_IQR_INR. auto with real.
       exists x. destruct H0.
       rewrite <- INQ_IQR_INR.
       repeat split ; auto.
       + apply Rle_trans with (IQR (sum_f f n) * IQR (10 ^ n)%nat) ; auto.
         rewrite INQ_IQR_INR.
-        apply Rmult_le_compat_r. auto with Vir_real.
+        apply Rmult_le_compat_r. auto with real.
         apply IQR_le. apply Mono_up_sum_f. omega.
       + rewrite <- mult_IQR in *. apply IQR_lt. apply lt_IQR in H1. apply le_IQR in H0.
         rewrite sum_f_expand.
@@ -465,7 +465,7 @@ Module CR_uu (R : VIR_R).
           - destruct (archimedean_exists (IQR ((sum_f f n) * INQ (10 ^ n)))).
             rewrite mult_IQR. apply Rle_ge. apply Rmult_le_pos.
             apply sum_f_le_0 ; auto. 
-            rewrite INQ_IQR_INR. auto with Vir_real.
+            rewrite INQ_IQR_INR. auto with real.
             destruct H8.
             exists x1.
             assert (((10 ^ m)%nat * (10 ^ (n - m))%nat) == (10 ^ n)%nat)%Q.
@@ -625,7 +625,7 @@ Module CR_uu (R : VIR_R).
     induction n.
     - repeat split; intros ; hnf in * .
       + destruct H1 , H1 , H1. inversion H0. subst.
-        assert (IQR (10 ^ 0)%nat = 1). { auto with Vir_real. }
+        assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
         rewrite H2 in *. clear H2.
         rewrite Rmult_1_r in *.
         apply lt_IQR in H3. apply INQ_lt in H3.
@@ -636,7 +636,7 @@ Module CR_uu (R : VIR_R).
       + inversion H0. subst.
         exists (f 0%nat).
         split.
-        * assert (IQR (10 ^ 0)%nat = 1). { auto with Vir_real.  }
+        * assert (IQR (10 ^ 0)%nat = 1). { auto with real.  }
           rewrite H1. clear H1.
           split ; rewrite Rmult_1_r.
           ** apply Rle_refl.
@@ -676,7 +676,7 @@ Module CR_uu (R : VIR_R).
       + apply sum_f_Dec_R_up ;  auto.
       + apply Rle_ge.
         apply Rle_trans with (IQR (sum_f f n)).
-        destruct H1. auto with Vir_real.
+        destruct H1. auto with real.
         apply IQR_le. apply Mono_up_sum_f. auto.
       + apply IQR_lt. apply (sum_f_In_Search f (S n)). auto. 
   Qed.
@@ -935,8 +935,8 @@ Module CR_uu (R : VIR_R).
     intros.
     pose proof (X r1 r2).
     clear X.
-    destruct H ; auto with Vir_real.
-    destruct s ; auto with Vir_real.
+    destruct H ; auto with real.
+    destruct s ; auto with real.
   Qed.
   
   Theorem Two_dimensions2 : (forall r1 r2 : R, {r1 >= r2} + {r1 < r2}) -> Halting.
@@ -948,7 +948,7 @@ Module CR_uu (R : VIR_R).
     destruct H ; auto.
     pose proof (X r2 r1).
     destruct H ; auto.
-    left. left. auto with Vir_real.
+    left. left. auto with real.
   Qed.
   
   Theorem Exam_dimensions2 : (forall r : R , {r = R0} + {r <> R0}) -> Halting.
@@ -959,8 +959,8 @@ Module CR_uu (R : VIR_R).
     intros.
     pose proof X (r1 - r2).
     destruct H.
-    - left. auto with Vir_real.
-    - right. auto with Vir_real.
+    - left. auto with real.
+    - right. auto with real.
   Qed.
   
   Definition CR (r : R) : Prop := 

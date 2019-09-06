@@ -294,9 +294,9 @@ Module CR_NQ (R : VIR_R).
             destruct H11.
             destruct H11 ; subst.
             destruct H12 , H12. 
-            auto with Vir_real.
+            auto with real.
           + apply Rle_lt_trans with 2.
-            * auto with Vir_real.
+            * auto with real.
             * apply R2_Rlt_R10.
         - destruct H1.
           apply H7.
