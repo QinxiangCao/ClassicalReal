@@ -42,7 +42,7 @@ Module TMR_Set (R : VIR_R).
 
   Definition limit : (nat -> Q) -> R -> Prop.
     intros.
-    set (fun n q => q == H n).
+    set (fun n q => q == H n)%Q.
     apply (Un_cv' P X).
   Defined.
   

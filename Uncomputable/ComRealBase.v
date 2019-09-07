@@ -1,5 +1,6 @@
-(** Uncomputablity in the definition of R function **)
-(** For convenience's sake, we focus on real numbers in [0,1] **) 
+(* Uncomputablity in the definition of R function *)
+(* For convenience's sake, we focus on real numbers in [0,1] *) 
+(* All definitions are copied from Coq standard library Rdefinitions.v Rpow_def.v Raxioms.v*)
 Set Warnings "-notation-overridden,-parsing".
 From Coq Require Import Bool.Bool.
 From Coq Require Import Logic.Classical.
@@ -41,16 +42,23 @@ Module Type VIR_R.
   Parameter Ropp : R -> R.
   Parameter Rinv : R -> R.
   Parameter Rlt : R -> R -> Prop.
+  
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.
   Notation "/ x" := (Rinv x) : R_scope.
   Infix "<" := Rlt : R_scope.
+  
   Definition Rgt (r1 r2:R) : Prop := r2 < r1.
+  
   Definition Rle (r1 r2:R) : Prop := r1 < r2 \/ r1 = r2.
+  
   Definition Rge (r1 r2:R) : Prop := Rgt r1 r2 \/ r1 = r2.
+  
   Definition Rminus (r1 r2:R) : R := r1 + - r2.
+  
   Definition Rdiv (r1 r2 :R) : R := r1 * / r2.
+  
   Infix "-" := Rminus : R_scope.
   Infix "/" := Rdiv : R_scope.
   Infix "<=" := Rle : R_scope.
@@ -60,19 +68,28 @@ Module Type VIR_R.
   Notation "x <= y < z"  := (x <= y /\ y <  z) : R_scope.
   Notation "x < y < z"   := (x <  y /\ y <  z) : R_scope.
   Notation "x < y <= z"  := (x <  y /\ y <= z) : R_scope.
+  
+  (* Definitions copied from Rdefinitions.v *)
+  (* Delete the definition of up *)
+  
   Definition Reqb (x y : R) : Prop := x = y.
   
+  Infix "==" := Reqb : R_scope. 
   Notation "0" := R0 : R_scope.
   Notation "1" := R1 : R_scope.
   Notation "2" := (1+1) : R_scope.
   Notation "-1" := (- 1%R) : R_scope.
+  
+  (* Complementary definition of Real Equivalence. *)
   
   Fixpoint pow (r:R) (n:nat) : R :=
     match n with
       | O => 1
       | S n => Rmult r (pow r n)
     end.
-    
+  
+  (* Definition copied from Rpow_def.v *)
+  
   Fixpoint IPR_2 (p:positive) : R :=
     match p with
     | xH => R1 + R1
@@ -97,6 +114,8 @@ Module Type VIR_R.
     end.
   Arguments IZR z%Z : simpl never.
   
+  (* Definitions copied from Rdefinitions.v *)
+  
   Fixpoint INR (n:nat) : R :=
     match n with
     | O => 0
@@ -105,12 +124,18 @@ Module Type VIR_R.
     end.
   Arguments INR n%nat.
   
+  (* Definition copied from Raxioms.v *)
+  
   Definition IQR(q : Q) : R :=
     match q with
     | p # q => IZR p / IPR q
     end.
   Arguments IQR q%Q.
-  (** Definition of Vir_R *)
+  
+  (* Complementary definition of Injection from Q to R. *)
+  
+  (* Definition of Vir_R *)
+  
   Axiom Rplus_comm : forall r1 r2:R, r1 + r2 = r2 + r1.
   Hint Resolve Rplus_comm: real.
   Axiom Rplus_assoc : forall r1 r2 r3:R, r1 + r2 + r3 = r1 + (r2 + r3).
@@ -150,7 +175,10 @@ Module Type VIR_R.
   Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
                                           (exists sup : R , Sup X sup).
  
-  (** Axioms of Vir_R *)
+  (* Axioms copied from Raxioms.v *)
+  (* Change { | } -> exists , sumbool to or *)
+  
+  (* Axioms of Vir_R *)
 
 End VIR_R.
 

@@ -14,6 +14,10 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Logic.PropExtensionality.
 
+(* Lemmas copied from RIneq.v *)
+(* Change dec into or *)
+(* Supplementary Theorem about IQR *)
+
 Module VirRLemma1 (R : VIR_R).
 
   Module RF := VirR_Field (R).
@@ -2252,7 +2256,7 @@ Qed.
 
 Hint Resolve lt_0_IQR lt_IQR: real.
 (**********)
-Lemma eq_IQR_R0 : forall n:Q, IQR n = 0 -> n == 0%Q.
+Lemma eq_IQR_R0 : forall n:Q, IQR n = 0 -> (n == 0)%Q.
 Proof.
   intros. destruct n. simpl in *.
   unfold Qeq. simpl. rewrite Zmult_1_r.
@@ -2262,7 +2266,7 @@ Proof.
   apply (Rlt_irrefl 0). rewrite <- H at 2. rewrite <- INR_IPR. auto with real.
 Qed.
 
-Lemma IQR_eq_R0 : forall n:Q, n == 0%Q -> IQR n = 0.
+Lemma IQR_eq_R0 : forall n:Q, (n == 0)%Q -> IQR n = 0.
 Proof.
   intros. induction n.
   hnf in *. simpl in *.
@@ -2271,16 +2275,16 @@ Proof.
 Qed.
 
 (**********)
-Lemma IQR_eq : forall n m : Q , n == m -> IQR n = IQR m.
+Lemma IQR_eq : forall n m : Q , (n == m)%Q -> IQR n = IQR m.
 Proof.
   intros. subst. 
-  assert (n - m == 0). { lra. }
+  assert (n - m == 0)%Q. { lra. }
   apply IQR_eq_R0 in H0.
   rewrite minus_IQR in H0. 
   apply Rminus_diag_uniq. auto.
 Qed.
 
-Lemma eq_IQR : forall n m:Q, IQR n = IQR m -> n == m.
+Lemma eq_IQR : forall n m:Q, IQR n = IQR m -> (n == m)%Q.
 Proof.
   intros.
   assert (n - m == 0)%Q.
@@ -2291,7 +2295,7 @@ Qed.
 Hint Resolve eq_IQR_R0 eq_IQR: real.
 Hint Resolve IQR_eq_R0 IQR_eq: real.
 (**********)
-Lemma not_0_IQR : forall n:Q, ~ n == 0%Q -> IQR n <> 0.
+Lemma not_0_IQR : forall n:Q, ~ (n == 0)%Q -> IQR n <> 0.
 Proof.
   intros z H; red; intros H0; case H.
   apply eq_IQR. rewrite H0. auto with real.
@@ -2345,7 +2349,7 @@ Proof.
   lra.
 Qed.
 
-Lemma IQR_neq : forall z1 z2:Q, ~ z1 == z2 -> IQR z1 <> IQR z2.
+Lemma IQR_neq : forall z1 z2:Q, ~ (z1 == z2)%Q -> IQR z1 <> IQR z2.
 Proof.
 intros; red; intro; elim H; apply eq_IQR; assumption.
 Qed.

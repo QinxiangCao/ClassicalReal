@@ -61,7 +61,7 @@ Module DEC_R (R : VIR_R).
   Defined.
   
   
-  Definition partial_functional_Q (R : nat -> Q -> Prop) :=  forall (a : nat) (b1 b2 : Q), R a b1 -> R a b2 -> b1 == b2.
+  Definition partial_functional_Q (R : nat -> Q -> Prop) :=  forall (a : nat) (b1 b2 : Q), R a b1 -> R a b2 -> (b1 == b2)%Q.
   Definition is_function_Q (R : nat -> Q -> Prop) := image_defined R /\ partial_functional_Q R.
   Definition Un_cv'(A : nat -> Q -> Prop) (r : R) : Prop := 
      is_function_Q A /\ (forall eps : R , eps > R0 -> (exists n : nat , 
@@ -1286,7 +1286,7 @@ Module DEC_R (R : VIR_R).
   
   Theorem partial_functional_NNP_T_NQP : forall (x : nat -> nat -> Prop) ,
                   InDec x -> forall (a : nat) (b1 b2 : Q), 
-                              NNP_T_NQP x a b1 -> NNP_T_NQP x a b2 -> b1 == b2.
+                              NNP_T_NQP x a b1 -> NNP_T_NQP x a b2 -> (b1 == b2)%Q.
   Proof.
     intros.
     hnf; intros.
@@ -1364,7 +1364,7 @@ Module DEC_R (R : VIR_R).
     destruct H6.
     destruct H6.
     destruct H3.
-    assert (x == x0).
+    assert (x == x0)%Q.
     { apply (H4 n) ; auto.  apply not_imply_elim in H3. auto. }
     subst.
     apply not_imply_elim2 in H3.
@@ -1392,7 +1392,7 @@ Module DEC_R (R : VIR_R).
     apply not_all_ex_not in H3.
     destruct H3.
     destruct H6. destruct H6.
-    assert (x0 == x).
+    assert (x0 == x)%Q.
     { apply (H4 n) ; auto. apply not_imply_elim in H3. auto. }
     subst.
     apply not_imply_elim2 in H3.
@@ -1574,7 +1574,7 @@ Module DEC_R (R : VIR_R).
   Theorem Dec_mono_up : forall (D : Dec) , mono_up_Q (NNP_T_NQP (proj1_sig D)).
   Proof.
     destruct D , i.
-    assert (forall n1 x1 x2 , (NNP_T_NQP x) n1 x1 -> (NNP_T_NQP x) n1 x2 -> x1 == x2).
+    assert (forall n1 x1 x2 , (NNP_T_NQP x) n1 x1 -> (NNP_T_NQP x) n1 x2 -> (x1 == x2)%Q).
     {
       intros.
       apply eq_IQR. apply Dec_R_eq ; intros.

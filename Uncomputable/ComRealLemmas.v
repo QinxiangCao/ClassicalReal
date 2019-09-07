@@ -129,7 +129,7 @@ Module VirRLemmas (VirR : VIR_R).
     simpl. unfold Rdiv , Qinv. simpl.
     assert (forall p , IPR p <> 0). { intros. rewrite <- INR_IPR. auto with real. } 
     destruct Qnum ; simpl.
-    - assert (0 # Qden == 0). { unfold Qeq. auto. }
+    - assert (0 # Qden == 0)%Q. { unfold Qeq. auto. }
       exfalso. auto.
     - unfold IZR. field. split ; auto.
     - unfold IZR. field. split ; auto. 

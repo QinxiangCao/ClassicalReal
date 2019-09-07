@@ -696,7 +696,7 @@ Module CR_uu (R : VIR_R).
         destruct H3.
         exists x.
         intros.
-        assert (q == sum_f f m).
+        assert (q == sum_f f m)%Q.
         { apply (partial_functional_NNP_T_NQP (NN_T_NNP f) H0 m) ; auto.
           apply sum_f_NQ_eqb ; auto.
         }

@@ -3,6 +3,8 @@ Require Import ArithRing.
 Require Export Ring Field.
 From CReal Require Import ComRealBase.
 
+(* All theorems and proofs copied from RealField.v *)
+
 Module VirR_Field (R : VIR_R).
 
 Import R.
