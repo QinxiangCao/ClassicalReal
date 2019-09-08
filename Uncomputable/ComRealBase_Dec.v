@@ -42,6 +42,12 @@ Module DEC_R (R : VIR_R).
     intros.
     apply ( X >= R0 /\ X < IQR( INQ 10)).
   Defined.
+
+  Instance In_Search_comp : Proper (Req ==> iff) In_Search.
+  Proof.
+    hnf ; intros.
+    split ; intros ; hnf in *; rewrite H in * ; auto.
+  Qed.
   
   Theorem R2_Rlt_R10 : 2 < IQR ( INQ 10).
   Proof.
@@ -55,18 +61,51 @@ Module DEC_R (R : VIR_R).
     - apply Rle_refl.
     - rewrite <- IQR_R0. apply IQR_lt. rewrite <- INQ_Qeq_0. apply INQ_lt. omega.
   Qed.
+  
+  Instance archimedean_comp : Proper (eq ==> Req ==> iff) archimedean.
+  Proof.
+    hnf ; red ; intros.
+    subst.
+    split ; intros ; hnf in * ; rewrite H0 in * ; auto.
+  Qed.
+  
   Definition Dec_R : R -> nat -> nat -> Prop .
     intros r x y.
     apply (exists x0 : nat , (archimedean  x0 (r * IQR (INQ (10 ^ x)))) /\ (y = x0 mod 10)%nat).
   Defined.
   
+  Instance Dec_R_comp : Proper (Req ==> eq ==> eq ==> iff) Dec_R.
+  Proof.
+    hnf ; red ; intros ; hnf ; intros.
+    subst.
+    split ; intros ; hnf in *.
+    - destruct H0. exists x0.
+      destruct H0 , H0.
+      split ; auto.
+      rewrite H in *. split ; auto.
+    - destruct H0. exists x0.
+      destruct H0 , H0.
+      split ; auto.
+      split; rewrite H ; auto.
+  Qed.
   
-  Definition partial_functional_Q (R : nat -> Q -> Prop) :=  forall (a : nat) (b1 b2 : Q), R a b1 -> R a b2 -> (b1 == b2)%Q.
-  Definition is_function_Q (R : nat -> Q -> Prop) := image_defined R /\ partial_functional_Q R.
   Definition Un_cv'(A : nat -> Q -> Prop) (r : R) : Prop := 
-     is_function_Q A /\ (forall eps : R , eps > R0 -> (exists n : nat , 
+     is_function eq Qeq A /\ (forall eps : R , eps > R0 -> (exists n : nat , 
           forall (m : nat) (q : Q) , (m >= n)%nat -> A m q -> Rabs(IQR q - r) < eps)).
-
+          
+  Instance Un_cv'_comp : Proper (eq ==> Req ==> iff) Un_cv'.
+  Proof.
+    hnf ; red ; intros ; split; subst ; intros.
+    - destruct H. split;  auto.
+      intros. specialize (H1 _ H2).
+      destruct H1. exists x. intros.
+      rewrite <- H0. apply (H1 m) ; auto.
+    - destruct H. split;  auto.
+      intros. specialize (H1 _ H2).
+      destruct H1. exists x. intros.
+      rewrite H0. apply (H1 m) ; auto.
+  Qed.
+  
   Definition InDec (R : nat -> nat -> Prop) : Prop := (forall x , R x 0%nat \/ R x 1%nat) /\
         (forall x y z , R x y -> R x z -> y = z).
   Definition Indec (R : nat -> nat ) : Prop := forall x , R x = 0%nat \/ R x = 1%nat.
@@ -101,17 +140,43 @@ Module DEC_R (R : VIR_R).
 
   Definition Dec_r (D : Dec) (r : R) : Prop := (forall n m : nat , Dec_R r n m <-> proj1_sig D n m) /\ In_Search r.
 
+  Instance Dec_r_comp : Proper (eq ==> Req ==> iff) Dec_r.
+  Proof.
+    hnf ; red ; intros ; subst.
+    split ; intros ; destruct H.
+    - rewrite H0 in *. split ; auto.
+      intros. rewrite <- H. rewrite H0. reflexivity.
+    - rewrite <- H0 in *. split ; auto.
+      intros. rewrite <- H. rewrite H0. reflexivity.
+  Qed.
+  
   Definition NNP_T_NQP (x : nat -> nat -> Prop) : nat -> Q -> Prop.
     intros n q.
     apply ((forall m : nat , ((m <= n)%nat -> forall l : nat , Dec_R (IQR q) m l <-> x m l)
                                                /\ ((m > n)%nat -> Dec_R (IQR q) m 0%nat)) /\ (In_Search (IQR q))).
   Defined.
 
+  Instance NNP_T_NQP_comp : Proper (eq ==> eq ==> Qeq ==> iff) NNP_T_NQP.
+  Proof.
+    hnf ; red ; intros ; red ; intros.
+    subst.
+    repeat split ; intros ; destruct H ; try (rewrite <- H1 in * ; apply H ; auto) ;
+    try (rewrite H1 in * ; apply H ; auto) ; try (rewrite <- H1 ; apply H0) ; try (rewrite H1 ; apply H0).
+    apply H ; auto.   
+  Qed.
+  
   Definition NQP_T_NRP (x : nat -> Q -> Prop) : nat -> R -> Prop.
     intros n r.
-    apply (exists q : Q , IQR q = r /\ x n q).
+    apply (exists q : Q , IQR q == r /\ x n q).
   Defined.
 
+  Instance NQP_T_NRP_comp : Proper (eq ==> eq ==> Req ==> iff) NQP_T_NRP.
+  Proof.
+    hnf ; red ; intros ; red ; intros.
+    subst.
+    split ; intros ; destruct H ; exists x ; rewrite H1 in * ; auto.
+  Qed.
+  
   Theorem Same_Ipart_refl : forall r : R , r >= 0 -> Same_Ipart r r.
   Proof.
     intros r pH.
@@ -137,23 +202,28 @@ Module DEC_R (R : VIR_R).
     exists x. repeat split ; auto.
   Qed.
   
+  Instance Same_Ipart_comp : Proper (Req ==> Req ==> iff) Same_Ipart.
+  Proof.
+    hnf ; red ; intros ; split ; intros ; destruct H1 ; exists x1 ; rewrite H , H0 in * ; auto.
+  Qed.
+  
   Theorem Same_Ipart_Dec_0 : forall r1 r2 : R , r1 >= 0 -> r2 >= 0 -> Same_Ipart r1 r2 -> forall l : nat , Dec_R r1 0 l <-> Dec_R r2 0 l.
   Proof. 
     intros r1 r2 pH1 pH2. intros.
     hnf in H.
     destruct H , H , H0 , H1.
     assert (10 ^ 0 = 1)%nat. { auto. }
-    assert (IQR 1%nat = R1). { rewrite INQ_IQR_INR. reflexivity. }
-    split ; intros ; hnf in H5 ; hnf ; rewrite H3 in * ; rewrite H4 in * ; rewrite Rmult_1_r in * ;
-    destruct (archimedean_exists r1) ; auto ; destruct H5 , (archimedean_exists r2) ; auto; destruct H6 , H7, H5 , H5.
+    assert (IQR 1%nat == R1). { rewrite INQ_IQR_INR. reflexivity. }
+    split ; intros ; hnf in H5 ; destruct H5 ; rewrite H3 in * ; rewrite H4 in * ; rewrite Rmult_1_r in * ;
+    destruct (archimedean_exists r1) ; auto ; destruct H5 , (archimedean_exists r2) ; auto ; destruct H6 , H5, H8.
     - assert (x0 = x)%nat. { apply (Ipart_unique r1) ; split ; auto. }
       assert (x2 = x)%nat. { apply (Ipart_unique r2) ; split ; auto. }
       assert (x1 = x)%nat. { apply (Ipart_unique r1) ; split ; auto. }
-      subst. exists x. split ; auto. split; auto.  
-    - assert (x0 = x)%nat. { apply (Ipart_unique r1) ; split ; auto. }
-      assert (x1 = x)%nat. { apply (Ipart_unique r2) ; split ; auto. }
-      assert (x2 = x1)%nat. { apply (Ipart_unique r2) ; split ; auto. }
-      subst. exists x. split ; auto. split ; auto.
+      subst. exists x. rewrite H3. rewrite H4. rewrite Rmult_1_r. split ; auto. split; auto.  
+    - assert (x0 = x)%nat. { apply (Ipart_unique r2) ; split ; auto. }
+      assert (x1 = x)%nat. { apply (Ipart_unique r1) ; split ; auto. }
+      assert (x0 = x2)%nat. { apply (Ipart_unique r2) ; split ; auto. }
+      subst. exists x2. rewrite H3 , H4 , Rmult_1_r. split ; auto. split ; auto.
   Qed.
 
   Theorem partial_functional_Dec_R : forall (r : R) (n m1 m2 : nat) , Dec_R r n m1 -> Dec_R r n m2 -> m1 = m2.
@@ -285,7 +355,7 @@ Module DEC_R (R : VIR_R).
             * rewrite Rmult_assoc. apply Rmult_le_l ; auto.
               rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
               rewrite Nat.pow_succ_r'. omega.
-            * subst. rewrite !Rmult_0_l. apply Rle_refl.
+            * rewrite H in *. clear H. rewrite !Rmult_0_l. apply Rle_refl.
           + apply Rlt_le_trans with (IQR (x + 1)%nat * IQR 10%nat).
             * apply Rmult_lt_r ; auto. destruct H. apply Rge_le in H.
               apply Rle_lt_trans with r1 ; auto.
@@ -309,7 +379,7 @@ Module DEC_R (R : VIR_R).
               ** rewrite Rmult_assoc. apply Rmult_le_l ; auto.
                  rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
                  rewrite Nat.pow_succ_r'. omega.
-              ** subst. rewrite !Rmult_0_l. apply Rle_refl.
+              ** rewrite H in *. clear H. rewrite !Rmult_0_l. apply Rle_refl.
       }
       assert (x = x4)%nat.
       {
@@ -329,7 +399,7 @@ Module DEC_R (R : VIR_R).
             * rewrite Rmult_assoc. apply Rmult_le_l ; auto.
               rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
               rewrite Nat.pow_succ_r'. omega.
-            * subst. rewrite !Rmult_0_l. apply Rle_refl.
+            * rewrite H0 in *. clear H0. subst. rewrite !Rmult_0_l. apply Rle_refl.
           + apply Rlt_le_trans with (IQR (x + 1)%nat * IQR 10%nat).
             * apply Rmult_lt_r ; auto. destruct H. apply Rge_le in H.
               apply Rle_lt_trans with r1 ; auto.
@@ -353,7 +423,7 @@ Module DEC_R (R : VIR_R).
               ** rewrite Rmult_assoc. apply Rmult_le_l ; auto.
                  rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
                  rewrite Nat.pow_succ_r'. omega.
-              ** subst. rewrite !Rmult_0_l. apply Rle_refl.
+              ** rewrite H0 in *. rewrite !Rmult_0_l. apply Rle_refl.
       }
       subst.
       exists (10 * x4 + x0)%nat. repeat split ; auto.
@@ -379,12 +449,13 @@ Module DEC_R (R : VIR_R).
              *** rewrite <- plus_IQR. apply IQR_le.
                  rewrite INQ_plus. lra.
              *** apply Rle_trans with (r2 + IQR 1%nat).
-                 **** apply Rplus_le_compat_r . apply Rle_trans with (r2 * IQR 1%nat) ; auto.
-                      rewrite <- Rmult_1_r. destruct H0. auto with real.
+                 **** apply Rplus_le_compat_r . apply Rle_trans with (r2 * IQR 1%nat) ; auto with real.
+                      rewrite <- Rmult_1_r. destruct H0. 
+                      right. rewrite IQR_R1. ring.
                  **** rewrite Rmult_1_l. apply Rplus_le_compat_l. 
                       rewrite INQ_IQR_INR. unfold Rdiv. simpl.
-                      rewrite IZR_R1. assert (IPR 1 = 1). { auto. }
-                      rewrite H2. assert (/ 1 = 1). { auto with real. }
+                      rewrite IZR_R1. assert (IPR 1 == 1). { auto with real. }
+                      rewrite H2. assert (/ 1 == 1). { auto with real. }
                       rewrite H7. rewrite !Rmult_1_l. auto with real.
       + apply Rlt_Rminus_Rplus. apply Rmult_lt_l with (R1).
         * rewrite <- IQR_R0. rewrite <- IQR_R1. apply IQR_lt. lra.
@@ -397,11 +468,11 @@ Module DEC_R (R : VIR_R).
                  rewrite INQ_plus. lra.
              *** apply Rle_trans with (r1 + IQR 1%nat).
                  **** apply Rplus_le_compat_r . apply Rle_trans with (r1 * IQR 1%nat) ; auto.
-                      rewrite <- Rmult_1_r. destruct H. auto with real.
+                      rewrite <- Rmult_1_r. destruct H. right. rewrite IQR_R1. ring.
                  **** rewrite Rmult_1_l. rewrite Rplus_comm. apply Rplus_le_compat_r. 
                       rewrite INQ_IQR_INR. unfold Rdiv. simpl.
-                      rewrite IZR_R1. assert (IPR 1 = 1). { auto. }
-                      rewrite H2. assert (/ 1 = 1). { auto with real. }
+                      rewrite IZR_R1. assert (IPR 1 == 1). { auto with real. }
+                      rewrite H2. assert (/ 1 == 1). { auto with real. }
                       rewrite H7. rewrite !Rmult_1_l. auto with real.
     - assert (forall j : nat, (j <= n)%nat -> forall m : nat, Dec_R r1 j m <-> Dec_R r2 j m).
       {  intros. apply H1. omega. }
@@ -450,9 +521,9 @@ Module DEC_R (R : VIR_R).
                          apply INQ_lt. apply Max_powan_0. omega.
   Qed.
   
-  Theorem Dec_R_eq  : forall (r1 r2 : R) , In_Search r1 -> In_Search r2 -> r1 = r2 <-> (forall (j : nat) , forall m : nat , Dec_R r1 j m <-> Dec_R r2 j m).
+  Theorem Dec_R_eq  : forall (r1 r2 : R) , In_Search r1 -> In_Search r2 -> r1 == r2 <-> (forall (j : nat) , forall m : nat , Dec_R r1 j m <-> Dec_R r2 j m).
   Proof.
-    split ; intros ; subst ; try (reflexivity).
+    split ; intros ; try (rewrite H1 ; reflexivity).
     apply Req_same.
     intros.
     apply eps_gt_10n in H2.
@@ -462,7 +533,7 @@ Module DEC_R (R : VIR_R).
     rewrite !INQ_IQR_INR. rewrite IQR_R1. auto with real.
   Qed.
   
-  Theorem Dec_R_not_eq : forall (r1 r2 : R) , In_Search r1 -> In_Search r2 -> r1 <> r2 <-> exists (j : nat), (forall m : nat,  Dec_R r1 j m -> ~ Dec_R r2 j m).
+  Theorem Dec_R_not_eq : forall (r1 r2 : R) , In_Search r1 -> In_Search r2 -> ~ r1 == r2 <-> exists (j : nat), (forall m : nat,  Dec_R r1 j m -> ~ Dec_R r2 j m).
   Proof.
     intros.
     split.
@@ -485,12 +556,13 @@ Module DEC_R (R : VIR_R).
         subst ; auto.
     - intros.
       destruct H1.
-      unfold not.
-      intros.
-      subst.
+      intro.
       pose proof image_Defined_Dec_R r2 x.
-      destruct H2. apply H0.
-      specialize (H1 x0 H2). auto. 
+      assert (r2 >= 0). { apply H0. }
+      specialize (H3 H4). 
+      destruct H3. 
+      apply (H1 x0) ; auto.
+      rewrite H2 ; auto.
   Qed.
   
   Theorem Dec_R_lt_lemma :forall (r1 r2 : R) , In_Search r1 -> In_Search r2 -> (exists (j : nat), (forall m1 m2 : nat ,Dec_R r1 j m1 -> Dec_R r2 j m2 -> (m1 < m2)%nat) /\ 
@@ -524,8 +596,8 @@ Module DEC_R (R : VIR_R).
       apply lt_le_S in H5. rewrite <- Nat.add_1_r in H5.
       rewrite <- Rmult_1_r. rewrite <- Rmult_1_r at 1.
       rewrite mult_0_r in *. rewrite plus_0_l in *.
-      assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
-      rewrite H6 in *.
+      assert (IQR (10 ^ 0)%nat == 1). { auto with real. }
+      rewrite H6 in *. rewrite !Rmult_1_r in *.
       apply Rlt_le_trans with (IQR (x + 1)%nat) ; auto.
       apply Rle_trans with (IQR x0) ; auto.
       apply IQR_le. apply INQ_le. auto.
@@ -570,7 +642,7 @@ Module DEC_R (R : VIR_R).
             * rewrite Rmult_assoc. apply Rmult_le_l ; auto.
               rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
               rewrite Nat.pow_succ_r'. omega.
-            * subst. rewrite !Rmult_0_l. apply Rle_refl.
+            * rewrite H. rewrite !Rmult_0_l. apply Rle_refl.
           + apply Rlt_le_trans with (IQR (x0 + 1)%nat * IQR 10%nat).
             * apply Rmult_lt_r ; auto. destruct H. apply Rge_le in H.
               apply Rle_lt_trans with r1 ; auto.
@@ -594,7 +666,7 @@ Module DEC_R (R : VIR_R).
               ** rewrite Rmult_assoc. apply Rmult_le_l ; auto.
                  rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
                  rewrite Nat.pow_succ_r'. omega.
-              ** subst. rewrite !Rmult_0_l. apply Rle_refl.
+              ** rewrite H. rewrite !Rmult_0_l. apply Rle_refl.
       }
       subst x5.
       assert (x0 = x6)%nat.
@@ -615,7 +687,7 @@ Module DEC_R (R : VIR_R).
             * rewrite Rmult_assoc. apply Rmult_le_l ; auto.
               rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
               rewrite Nat.pow_succ_r'. omega.
-            * subst. rewrite !Rmult_0_l. apply Rle_refl.
+            * rewrite H0. rewrite !Rmult_0_l. apply Rle_refl.
           + apply Rlt_le_trans with (IQR (x0 + 1)%nat * IQR 10%nat).
             * apply Rmult_lt_r ; auto. destruct H. apply Rge_le in H.
               apply Rle_lt_trans with r1 ; auto.
@@ -639,7 +711,7 @@ Module DEC_R (R : VIR_R).
               ** rewrite Rmult_assoc. apply Rmult_le_l ; auto.
                  rewrite <- mult_IQR. apply IQR_le. rewrite INQ_mult. apply INQ_le. 
                  rewrite Nat.pow_succ_r'. omega.
-              ** subst. rewrite !Rmult_0_l. apply Rle_refl.
+              ** rewrite H0. rewrite !Rmult_0_l. apply Rle_refl.
       }
       subst.
       assert (10 * x6 + x1 < 10 * x6 + x2)%nat. { omega. }
@@ -657,7 +729,7 @@ Module DEC_R (R : VIR_R).
                                       (forall (k : nat) , (k < j)%nat -> (forall m1 m2 : nat , Dec_R r1 k m1 -> Dec_R r2 k m2 -> (m1 = m2)%nat)).
   Proof.
     split ; intros.
-    - assert (r1 <> r2). { auto with real. }
+    - assert (~ r1 == r2). { auto with real. }
       apply Dec_R_not_eq in H2 ; auto.
       destruct H2.
       set (fun x => forall m : nat, Dec_R r1 x m -> ~ Dec_R r2 x m).
@@ -813,12 +885,12 @@ Module DEC_R (R : VIR_R).
           + apply (Qlt_irrefl 0%Q). rewrite <- H3 at 2.
             rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0 ; omega.
       }
-      assert (IQR (1%nat / (10 ^ S n)%nat * (10 ^ n)%nat) = IQR (1%nat / 10%nat)).
+      assert (IQR (1%nat / (10 ^ S n)%nat * (10 ^ n)%nat) == IQR (1%nat / 10%nat)).
       { apply NNPP. 
         intro. apply Rdichotomy in H4.
         destruct H4 ; apply lt_IQR in H4; rewrite H3 in H4 ; apply Qlt_irrefl in H4 ; auto.
       }
-      assert (IQR (10 ^ S n)%nat = IQR (10 ^ n)%nat * IQR (10)%nat).
+      assert (IQR (10 ^ S n)%nat == IQR (10 ^ n)%nat * IQR (10)%nat).
       { rewrite <- mult_IQR. 
         apply NNPP.  intro. apply Rdichotomy in H5.
         destruct H5 ; apply lt_IQR in H5 ; rewrite INQ_mult in * ; apply INQ_lt in H5 ;
@@ -831,12 +903,12 @@ Module DEC_R (R : VIR_R).
       - rewrite plus_0_r in H3. subst x0.
         rewrite H5 in *. rewrite <- Rmult_assoc in *.
         rewrite mult_comm in *.
-        assert (IQR (x1 * 10)%nat = IQR x1 * IQR (10)%nat).
+        assert (IQR (x1 * 10)%nat == IQR x1 * IQR (10)%nat).
         { rewrite <- mult_IQR. apply NNPP. intro.
           apply Rdichotomy in H3. 
           destruct H3 ; apply lt_IQR in H3 ; rewrite INQ_mult in * ; apply Qlt_irrefl in H3 ; auto.
         }
-        assert (IQR (x1 * 10 + 1)%nat = (IQR x1 + IQR (1%nat / 10%nat)) * IQR 10%nat).
+        assert (IQR (x1 * 10 + 1)%nat == (IQR x1 + IQR (1%nat / 10%nat)) * IQR 10%nat).
         {
           rewrite <- plus_IQR. rewrite <- mult_IQR.
           apply NNPP. intro. apply Rdichotomy in H6.
@@ -883,7 +955,7 @@ Module DEC_R (R : VIR_R).
       - subst x0. 
         rewrite H5 in *. rewrite <- Rmult_assoc in *.
         rewrite mult_comm in *. rewrite <- plus_assoc in H4. 
-        assert (IQR (x1 * 10 + (1+1))%nat = (IQR x1 + IQR (2%nat / 10%nat)) * IQR 10%nat).
+        assert (IQR (x1 * 10 + (1+1))%nat == (IQR x1 + IQR (2%nat / 10%nat)) * IQR 10%nat).
         {
           rewrite <- plus_IQR. rewrite <- mult_IQR.
           apply NNPP. intro. apply Rdichotomy in H3.
@@ -892,7 +964,7 @@ Module DEC_R (R : VIR_R).
           destruct H3 ; apply lt_IQR in H3 ; rewrite Qmult_plus_distr_l in H3 ; rewrite <- H6 in H3 ;
           rewrite INQ_mult in H3 ; rewrite INQ_plus in H3;  apply Qlt_irrefl in H3; auto.
         }
-        assert (IQR (x1 * 10 + 1)%nat = (IQR x1 + IQR (1%nat / 10%nat)) * IQR 10%nat).
+        assert (IQR (x1 * 10 + 1)%nat == (IQR x1 + IQR (1%nat / 10%nat)) * IQR 10%nat).
         {
           rewrite <- plus_IQR. rewrite <- mult_IQR.
           apply NNPP. intro. apply Rdichotomy in H6.
@@ -1085,12 +1157,12 @@ Module DEC_R (R : VIR_R).
                     - apply Max_powan_0 ; omega.
                     - apply Same_Ipart_comm.
                       rewrite plus_IQR.
-                      assert (IQR (10 ^ m)%nat * INR (10 ^ (n - m)) = IQR (10 ^ n)%nat). 
+                      assert (IQR (10 ^ m)%nat * INR (10 ^ (n - m)) == IQR (10 ^ n)%nat). 
                       {
                         assert (n = n - m + m)%nat. { omega. }
                         rewrite H10 at 2. rewrite Nat.pow_add_r. rewrite mult_comm.
                         rewrite !INQ_IQR_INR.
-                        rewrite <- mult_INR. auto.
+                        rewrite <- mult_INR. ring.
                       }
                       rewrite !Rmult_assoc. rewrite !H10.
                       apply Same_Ipart_pow10n. apply H1.
@@ -1170,12 +1242,12 @@ Module DEC_R (R : VIR_R).
                     - apply Max_powan_0 ; omega.
                     - apply Same_Ipart_comm.
                       rewrite plus_IQR.
-                      assert (IQR (10 ^ m)%nat * INR (10 ^ (n - m))%nat = IQR (10 ^ n)%nat). 
+                      assert (IQR (10 ^ m)%nat * INR (10 ^ (n - m))%nat == IQR (10 ^ n)%nat). 
                       {
                         assert (n = n - m + m)%nat. { omega. }
                         rewrite H10 at 2. rewrite Nat.pow_add_r. rewrite mult_comm.
                         rewrite !INQ_IQR_INR.
-                        rewrite <- mult_INR. auto.
+                        rewrite <- mult_INR. ring.
                       }
                       rewrite !Rmult_assoc. rewrite !H10.
                       apply Same_Ipart_pow10n. apply H1.
@@ -1306,38 +1378,49 @@ Module DEC_R (R : VIR_R).
         subst. auto.
   Qed.
   
-  Theorem Uncv_eqb_Uncv' : forall (x : nat -> Q -> Prop)(r : R) , Un_cv' x r <-> Un_cv (NQP_T_NRP x) r.
+  Theorem is_function_NNP_T_NQP : forall (x : nat -> nat -> Prop) , InDec x -> is_function eq Qeq (NNP_T_NQP x).
+  Proof.
+    intros.
+    repeat split ; intros ; try(subst; rewrite <- H1 in *; apply H2 ; auto) ; 
+    try(subst; rewrite H1 in *; apply H2 ; auto) .
+    - intro. apply image_defined_NNP_T_NQP. auto.
+    - intro. apply partial_functional_NNP_T_NQP. auto.
+  Qed.
+  
+  Theorem is_function_NQP_T_NRP : forall (x : nat -> Q -> Prop) , is_function eq Qeq x -> is_function eq Req (NQP_T_NRP x).
+  Proof.
+    intros. destruct H.
+    destruct H0.
+    repeat split ; hnf ; intros ; try (subst; rewrite H3 in *; auto).
+    + destruct (H a). exists (IQR x0). exists x0. auto with real.
+    + repeat destruct H2 , H3. rewrite <- H2 , <- H3. apply IQR_eq. 
+      apply (H0 a); auto.
+  Qed.
+  
+  Theorem Uncv_eqb_Uncv' : forall (x : nat -> Q -> Prop)(r : R) , is_function eq Qeq x -> Un_cv' x r <-> Un_cv (NQP_T_NRP x) r.
   Proof.
     split ; hnf in * ; intros.
     * repeat destruct H.
-      split ; hnf ; intros.
-      - split ; hnf ; intros.
-        + destruct (H a). exists (IQR x0). hnf. exists x0 ; auto.
-        + repeat destruct H2 , H3.
-          specialize (H1 a x0 x1 H4 H5).
-          apply IQR_eq ; auto.
-      - specialize (H0 eps H2).
-        destruct H0.
-        exists x0. intros.
-        repeat destruct H4.
-        apply (H0 m x1 H3 H5).
-    * repeat destruct H.
+      split ; hnf in * ; intros.
+      - apply is_function_NQP_T_NRP. apply H0.
+      - destruct H0.
+        specialize (H3 eps H2).
+        destruct H3.
+        exists x0. intros. destruct H5. destruct H5.
+        specialize (H3 _ _ H4 H6).
+        rewrite H5 in *. auto.
+    * repeat destruct H0.
       split ; hnf; intros.
-      - split ; hnf ; intros.
-        + destruct (H a). repeat destruct H2. exists x1. auto.
-        + assert (NQP_T_NRP x a (IQR b1)). { exists b1. auto. }
-          assert (NQP_T_NRP x a (IQR b2)). { exists b2. auto. }
-          pose proof (H1 a (IQR b1) (IQR b2) H4 H5).
-          apply eq_IQR in H6. auto.
-      - specialize (H0 eps H2).
-        destruct H0.
+      - auto.
+      - specialize (H1 eps H3).
+        destruct H1.
         exists x0. intros.
-        apply (H0 m) ; auto.
-        exists q ; auto.
+        apply (H1 m) ; auto.
+        exists q ; auto with real. 
   Qed.
   
-  Definition mono_up_Q (X : nat -> Q -> Prop) : Prop := mono_up (NQP_T_NRP X). 
-  Definition mono_down_Q (X : nat -> Q -> Prop) : Prop := mono_down (NQP_T_NRP X).
+  Definition mono_up_Q (X : nat -> Q -> Prop) : Prop := is_function eq Qeq X /\ mono_up (NQP_T_NRP X). 
+  Definition mono_down_Q (X : nat -> Q -> Prop) : Prop := is_function eq Qeq X /\  mono_down (NQP_T_NRP X).
   Definition mono_Q (X : nat -> Q -> Prop) : Prop := mono_up_Q X \/ mono_down_Q X.
   Definition upper_bound_Q (X : nat -> Q -> Prop) (U : R) : Prop := upper_bound (NQP_T_NRP X) U.
   Definition Sup_Q (X : nat -> Q -> Prop) (sup : R) : Prop := Sup (NQP_T_NRP X) sup.
@@ -1345,7 +1428,7 @@ Module DEC_R (R : VIR_R).
   Definition Inf_Q (X : nat -> Q -> Prop) (inf : R) : Prop := Inf (NQP_T_NRP X) inf.
   Definition bound_Q (X : nat -> Q -> Prop) : Prop := bound (NQP_T_NRP X).
 
-  Theorem Sup_pro_Q : forall (X : nat -> Q -> Prop) (sup : R) , is_function_Q X -> Sup_Q X sup -> forall y : R , (y < sup -> 
+  Theorem Sup_pro_Q : forall (X : nat -> Q -> Prop) (sup : R) , is_function eq Qeq X -> Sup_Q X sup -> forall y : R , (y < sup -> 
                               (exists n : nat , forall q : Q , X n q -> ( IQR q <= sup /\ y < IQR q))).
   Proof.
     intros.
@@ -1365,17 +1448,17 @@ Module DEC_R (R : VIR_R).
     destruct H6.
     destruct H3.
     assert (x == x0)%Q.
-    { apply (H4 n) ; auto.  apply not_imply_elim in H3. auto. }
+    { destruct H4. apply (H4 n) ; auto.  apply not_imply_elim in H3. auto. }
     subst.
     apply not_imply_elim2 in H3.
     apply not_and_or in H3.
     destruct H3.
     - exfalso. apply H3. apply (H5 n) ; auto.
       hnf. exists x ; split ; auto with real.  
-    - apply Rnot_gt_le. apply IQR_eq in H8. rewrite H8. auto.  
+    - apply Rnot_gt_le. apply IQR_eq in H8. rewrite <- H6 , H8. auto.  
   Qed.
   
-  Theorem Inf_pro_Q : forall (X : nat -> Q -> Prop) (inf : R) , is_function_Q X -> Inf_Q X inf -> forall y : R , (y > inf -> 
+  Theorem Inf_pro_Q : forall (X : nat -> Q -> Prop) (inf : R) , is_function eq Qeq X -> Inf_Q X inf -> forall y : R , (y > inf -> 
                               (exists n : nat , forall q : Q , X n q -> (IQR q >= inf /\ y > IQR q))).
   Proof.
     intros.
@@ -1393,17 +1476,17 @@ Module DEC_R (R : VIR_R).
     destruct H3.
     destruct H6. destruct H6.
     assert (x0 == x)%Q.
-    { apply (H4 n) ; auto. apply not_imply_elim in H3. auto. }
+    { destruct H4. apply (H4 n) ; auto. apply not_imply_elim in H3. auto. }
     subst.
     apply not_imply_elim2 in H3.
     apply not_and_or in H3.
     destruct H3.
     - exfalso. apply H3. apply Rle_ge. apply (H5 n); auto.
       hnf. exists x0 ; split ; auto with real. 
-    - apply Rnot_gt_le. apply IQR_eq in H8. rewrite H8. auto.
+    - apply Rnot_gt_le. apply IQR_eq in H8. rewrite <- H6 , H8. auto.
   Qed.
 
-  Theorem upper_bound_T_lower_bound_Q : forall (X P : nat -> Q -> Prop) , is_function_Q X -> is_function_Q P
+  Theorem upper_bound_T_lower_bound_Q : forall (X P : nat -> Q -> Prop) , is_function eq Qeq X -> is_function eq Qeq P
                                                                      -> (forall n r , X n r <-> P n (-r)%Q) 
                                                                       -> forall r , upper_bound_Q X r <-> lower_bound_Q P (-r).
   Proof.
@@ -1412,19 +1495,18 @@ Module DEC_R (R : VIR_R).
     - hnf. intros.
       destruct H3. destruct H3.
       specialize (H1 n (-x)%Q).
-      assert (IQR (- - x) = - - q).
+      assert (IQR (- - x) == - - q).
       { rewrite Ropp_involutive. rewrite <- H3. apply IQR_eq. lra. }
       destruct (H2 n (IQR (-x))). 
-      + hnf. exists (-x)%Q. split ; auto.
+      + hnf. exists (-x)%Q. split ; auto with real.
         apply H1. destruct H0. 
         rewrite <- H3 in H5. rewrite Ropp_involutive in H5. 
-        apply eq_IQR in H5. hnf in H6.
-        assert (- - x = x)%Q.
-        { unfold Qopp. simpl. rewrite Z.opp_involutive. destruct x ; auto. }  
-        rewrite H7 ; auto.
+        apply eq_IQR in H5. destruct H6.
+        specialize (H7 n n).
+        apply H7 with x ; auto.
       + rewrite opp_IQR in H6. rewrite H3 in H6.
         apply Rlt_le in H6.
-        rewrite <- Ropp_involutive.
+        rewrite <- (Ropp_involutive q).
         apply Rle_opp_eqb. rewrite Ropp_involutive. auto.
       + rewrite <- H6. rewrite <- opp_IQR. rewrite <- H3.
         apply IQR_le. lra.
@@ -1433,13 +1515,13 @@ Module DEC_R (R : VIR_R).
       specialize (H1 n x).
       rewrite H1 in H4.
       assert (NQP_T_NRP P n (IQR (- x))).
-      { hnf. exists (-x)%Q. auto. }
+      { hnf. exists (-x)%Q. auto with real. }
       specialize (H2 n (IQR (-x)) H5).
       rewrite opp_IQR in H2.
       rewrite H3 in H2. auto with real.
   Qed.
   
-  Theorem upper_bound_exists_Sup_Q : forall (X : nat -> Q -> Prop) , is_function_Q X -> (exists r : R , upper_bound_Q X r) ->
+  Theorem upper_bound_exists_Sup_Q : forall (X : nat -> Q -> Prop) , is_function eq Qeq X -> (exists r : R , upper_bound_Q X r) ->
                                           (exists sup : R , Sup_Q X sup).
   Proof.
     intros.
@@ -1447,9 +1529,11 @@ Module DEC_R (R : VIR_R).
     {
       destruct H.
       apply upper_bound_exists_Sup.
-      - split; hnf ; intros.
-        + destruct (H a). exists (IQR x). exists x ; auto.
-        + repeat destruct H2 , H3. apply IQR_eq. apply (H1 a) ; auto.
+      - repeat split; hnf ; intros.
+        + destruct (H a). exists (IQR x). exists x ; auto with real.
+        + repeat destruct H2 , H3. rewrite <- H2 , <- H3. apply IQR_eq. destruct H1. apply (H1 a) ; auto.
+        + subst. rewrite H3 in *. auto.
+        + subst. rewrite H3 in *. auto.
       - destruct H0.
         exists x.
         hnf ; intros.
@@ -1459,7 +1543,7 @@ Module DEC_R (R : VIR_R).
     auto.
   Qed.
   
-  Theorem lower_bound_exists_Inf_Q : forall (X : nat -> Q -> Prop) , is_function_Q X -> (exists r : R , lower_bound_Q X r) ->
+  Theorem lower_bound_exists_Inf_Q : forall (X : nat -> Q -> Prop) , is_function eq Qeq X -> (exists r : R , lower_bound_Q X r) ->
                                           (exists inf : R , Inf_Q X inf).
   Proof.
    intros.
@@ -1467,9 +1551,11 @@ Module DEC_R (R : VIR_R).
     {
       destruct H.
       apply lower_bound_exists_Inf.
-      - split; hnf ; intros.
-        + destruct (H a). exists (IQR x). exists x ; auto.
-        + repeat destruct H2 , H3. apply IQR_eq. apply (H1 a) ; auto.
+      - repeat split; hnf ; intros.
+        + destruct (H a). exists (IQR x). exists x ; auto with real.
+        + repeat destruct H2 , H3. rewrite <- H2 , <- H3. apply IQR_eq. destruct H1. apply (H1 a) ; auto.
+        + subst. rewrite H3 in *. auto.
+        + subst. rewrite H3 in *. auto.
       - destruct H0.
         exists x.
         hnf ; intros.
@@ -1479,7 +1565,7 @@ Module DEC_R (R : VIR_R).
     auto.
   Qed.
   
-  Theorem Sup_unique_Q : forall (X : nat -> Q -> Prop) (r1 r2 : R), Sup_Q X r1 -> Sup_Q X r2 -> r1 = r2.
+  Theorem Sup_unique_Q : forall (X : nat -> Q -> Prop) (r1 r2 : R), Sup_Q X r1 -> Sup_Q X r2 -> r1 == r2.
   Proof. 
     intros.
     unfold Sup_Q in *.
@@ -1489,7 +1575,7 @@ Module DEC_R (R : VIR_R).
     auto with real.
   Qed.
 
-  Theorem Inf_unique_Q : forall (X : nat -> Q -> Prop) (r1 r2 : R), Inf_Q X r1 -> Inf_Q X r2 -> r1 = r2.
+  Theorem Inf_unique_Q : forall (X : nat -> Q -> Prop) (r1 r2 : R), Inf_Q X r1 -> Inf_Q X r2 -> r1 == r2.
   Proof.
     intros.
     unfold Inf_Q in *.
@@ -1501,25 +1587,26 @@ Module DEC_R (R : VIR_R).
 
   Theorem mono_up_upper_bound_seq_has_limit_Q : forall (X : nat -> Q -> Prop) , mono_up_Q X -> (exists r : R , upper_bound_Q X r) -> exists r : R ,Un_cv' X r.
   Proof. 
-    intros.
-    pose proof mono_up_upper_bound_seq_has_limit (NQP_T_NRP X) H H0.
-    destruct H1.
+    intros. destruct H.
+    pose proof mono_up_upper_bound_seq_has_limit (NQP_T_NRP X) H1 H0.
+    destruct H2.
     exists x.
     apply Uncv_eqb_Uncv' ; auto.
   Qed. 
   
   Theorem mono_up_limit_sup_Q : forall (X : nat -> Q -> Prop) , mono_up_Q X -> (exists r : R , upper_bound_Q X r) -> forall r : R , Un_cv' X r -> Sup_Q X r.
   Proof.
-    intros.
-    apply (mono_up_limit_sup (NQP_T_NRP X) H H0 r).
-    apply Uncv_eqb_Uncv'. auto.
+    intros. 
+    destruct H.
+    apply (mono_up_limit_sup (NQP_T_NRP X) H2 H0 r).
+    apply Uncv_eqb_Uncv'; auto.
   Qed.
   
   Theorem mono_down_lower_bound_seq_has_limit_Q : forall (X : nat -> Q -> Prop) , mono_down_Q X -> (exists r : R , lower_bound_Q X r) -> exists r : R , Un_cv' X r.
   Proof.
-    intros.
-    pose proof mono_down_lower_bound_seq_has_limit (NQP_T_NRP X) H H0.
-    destruct H1.
+    intros. destruct H.
+    pose proof mono_down_lower_bound_seq_has_limit (NQP_T_NRP X) H1 H0.
+    destruct H2.
     exists x.
     apply Uncv_eqb_Uncv' ; auto.
   Qed. 
@@ -1541,7 +1628,7 @@ Module DEC_R (R : VIR_R).
     destruct H2.
     left.
     apply Dec_R_lt.
-    * apply H2.
+    * rewrite H0 in *. apply H3.
     * split.
       - apply Rle_ge. apply Rlt_le. auto with real.
       - apply R2_Rlt_R10.
@@ -1549,17 +1636,17 @@ Module DEC_R (R : VIR_R).
       split ; intros.
       - pose proof Two_Dec.
         assert (m2 = 2 %nat). { apply (partial_functional_Dec_R 2 O) ; auto. }
-        subst. 
-        specialize (H0 O). destruct H0.
+        subst.
+        specialize (H2 O). destruct H2.
         assert (0 <= n)%nat. { omega. }
-        specialize (H0 H7).
-        apply H0 in H3.
+        specialize (H2 H8). rewrite <- H0 in *. 
+        apply H2 in H4.
         destruct (H O).
         + assert (m1 = 0)%nat. { apply (H1 O) ; auto. }
           subst. auto.
         + assert (m1 = 1)%nat. { apply (H1 O) ; auto. }
           subst. auto.
-      - inversion H3.
+      - omega.
   Qed.
    
   Theorem Dec_upper_bound : forall (D : Dec) , exists r : R , upper_bound_Q (NNP_T_NQP (proj1_sig D)) r.
@@ -1590,68 +1677,70 @@ Module DEC_R (R : VIR_R).
           + exfalso. apply n. apply (partial_functional_Dec_R (IQR x2) j) ; auto.
     }
     split ; intros.
-    - split ; hnf ; simpl in * ; intros.
+    - repeat split ; hnf ; simpl in * ; intros ; try (subst ; apply IQR_eq in H1 ; rewrite <- H1 in *;
+        apply H2 ; auto) ; try (subst ; apply IQR_eq in H1 ; rewrite H1 in * ; apply H2 ; auto).
       + assert (exists q , (NNP_T_NQP x) a q). { apply image_defined_NNP_T_NQP . split ; auto. }
-        destruct H0. exists (IQR x0). exists x0. auto.
+        destruct H0. exists x0. auto.
       + repeat destruct H0 , H1.
-        apply IQR_eq.
-        apply (H a) ; auto.
+        apply (H a) ; hnf ; simpl in * ; auto with real. 
     - simpl in *.
-      repeat destruct H0 , H1.
-      apply Rle_ge.
-      apply IQR_le.
-      destruct (classic (x1 <= x0)%Q) ; auto.
-      apply Qnot_le_lt in H0.
-      exfalso.
-      apply IQR_lt in H0.
-      apply Dec_R_lt in H0.
-      repeat destruct H0.
-      destruct H3 , H4. clear H5 H6.
-      specialize (H3 x2).
-      destruct H3.
-      specialize (H4 x2).
-      destruct H4.
-      destruct (o x2) ; destruct (classic (x2 <= n1)%nat).
-      + specialize (H4 H8 O).
-        pose proof (le_trans x2 n1 n H8 H2).
-        specialize (H3 H9 O).
-        apply (lt_irrefl O).
-        apply H0.
-        * rewrite H3 ; auto.
-        * rewrite H4 ; auto.
-      + apply not_le in H8.
-        specialize (H6 H8).
-        clear H4.
-        destruct (classic (x2 <= n)%nat).
-        * specialize (H3 H4 O).
-          rewrite <- H3 in H7.
-          specialize (H0 O 0%nat H7 H6).
-          inversion H0.
-        * apply not_le in H4.
-          specialize (H5 H4).
+      split ; intros.
+      + apply is_function_NQP_T_NRP. apply is_function_NNP_T_NQP. split ; auto.
+      + repeat destruct H0 , H1.
+        apply Rle_ge. rewrite <- H0 , <- H1. clear H0 H1. 
+        apply IQR_le.
+        destruct (classic (x1 <= x0)%Q) ; auto.
+        apply Qnot_le_lt in H0.
+        exfalso.
+        apply IQR_lt in H0.
+        apply Dec_R_lt in H0.
+        repeat destruct H0.
+        destruct H3 , H4. clear H5 H6.
+        specialize (H3 x2).
+        destruct H3.
+        specialize (H4 x2).
+        destruct H4.
+        destruct (o x2) ; destruct (classic (x2 <= n1)%nat).
+        ++ specialize (H4 H8 O).
+          pose proof (le_trans x2 n1 n H8 H2).
+          specialize (H3 H9 O).
           apply (lt_irrefl O).
-          apply H0 ; auto.
-      + specialize (H4 H8 1%nat).
-        pose proof (le_trans x2 n1 n H8 H2).
-        specialize (H3 H9 1%nat).
-        apply (lt_irrefl 1%nat).
-        apply H0.
-        * rewrite H3 ; auto.
-        * rewrite H4 ; auto.
-      + apply not_le in H8.
-        specialize (H6 H8).
-        clear H4.
-        destruct (classic (x2 <= n)%nat).
-        * specialize (H3 H4 1%nat).
-          rewrite <- H3 in H7.
-          specialize (H0 1%nat 0%nat H7 H6).
-          inversion H0.
-        * apply not_le in H4.
-          specialize (H5 H4).
-          apply (lt_irrefl O).
-          apply H0 ; auto.
-      + apply H3.
-      + apply H4.
+          apply H0.
+          * rewrite H3 ; auto.
+          * rewrite H4 ; auto.
+        ++ apply not_le in H8.
+          specialize (H6 H8).
+          clear H4.
+          destruct (classic (x2 <= n)%nat).
+          * specialize (H3 H4 O).
+            rewrite <- H3 in H7.
+            specialize (H0 O 0%nat H7 H6).
+            inversion H0.
+          * apply not_le in H4.
+            specialize (H5 H4).
+            apply (lt_irrefl O).
+            apply H0 ; auto.
+        ++ specialize (H4 H8 1%nat).
+          pose proof (le_trans x2 n1 n H8 H2).
+          specialize (H3 H9 1%nat).
+          apply (lt_irrefl 1%nat).
+          apply H0.
+          * rewrite H3 ; auto.
+          * rewrite H4 ; auto.
+        ++ apply not_le in H8.
+          specialize (H6 H8).
+          clear H4.
+          destruct (classic (x2 <= n)%nat).
+          * specialize (H3 H4 1%nat).
+            rewrite <- H3 in H7.
+            specialize (H0 1%nat 0%nat H7 H6).
+            inversion H0.
+          * apply not_le in H4.
+            specialize (H5 H4).
+            apply (lt_irrefl O).
+            apply H0 ; auto.
+        ++ apply H3.
+        ++ apply H4.
   Qed.
 
   Theorem Un_cv'_Dec : forall (x : nat -> nat -> Prop) (r : R) , InDec x -> Un_cv' (NNP_T_NQP x) r ->
@@ -1676,7 +1765,7 @@ Module DEC_R (R : VIR_R).
     specialize (H2 p x1 H6 H5).
     destruct H1 , H3.
     hnf in H8.
-    assert (IQR x1 <= r). { apply (H8 p). exists x1. split ; auto. }
+    assert (IQR x1 <= r). { apply (H8 p). exists x1. auto with real. }
     apply Rle_ge in H9 as goal.
     rewrite Rle_neg_eqb in goal.
     apply Rabs_neg in goal.
@@ -1779,8 +1868,7 @@ Module DEC_R (R : VIR_R).
         destruct H1 , H1 , (H1 O).
         assert ((NQP_T_NRP (NNP_T_NQP x)) O (IQR x1)).
         {
-          exists x1.
-          split ; auto.
+          exists x1. auto with real.
         }
         specialize (H3 O (IQR x1) H8).
         apply Rle_ge.
@@ -1792,7 +1880,7 @@ Module DEC_R (R : VIR_R).
        * apply R2_Rlt_R10.
   Qed.
 
-  Theorem partial_functional_Dec_r : partial_functional Dec_r.
+  Theorem partial_functional_Dec_r : partial_functional Req Dec_r.
   Proof. 
     unfold partial_functional ,  Dec_r .
     intros.
@@ -1803,7 +1891,7 @@ Module DEC_R (R : VIR_R).
     tauto.
   Qed.
 
-  Theorem injective_Dec_r : injective Dec_r.
+  Theorem injective_Dec_r : injective eq Dec_r.
   Proof. 
     hnf in *. intros.
     hnf in *.
@@ -1824,7 +1912,7 @@ Module DEC_R (R : VIR_R).
     auto.
   Qed.
   
-  Theorem Equiv_R_DecR : Countable R -> Countable Dec.
+  Theorem Equiv_R_DecR : Countable R Req -> Countable Dec eq.
   Proof.
     intros.
     destruct X.
@@ -1833,20 +1921,22 @@ Module DEC_R (R : VIR_R).
     pose proof injective_Dec_r.
     set (fun (D : Dec) (n : nat) => exists r : R , Dec_r D r /\ inj_R r n).
     exists P ; subst P ; hnf in *; intros.
-    -  destruct (H a).
-       destruct (im_inj x).
-       exists x0 , x. split ; auto.
+    - hnf. intros. subst. reflexivity.
+    - destruct (H a).
+      destruct (im_inj x).
+      exists x0 , x. split ; auto.
+    - destruct H2 , H3. destruct H2 , H3.
+      assert (x == x0).  { apply (H0 a); auto. }
+      specialize (wd_inj _ _ H6). apply (wd_inj b1 b1) in H4 ; auto.
+      apply (pf_inj x0) ; auto.
     -  destruct H2 , H3. destruct H2 , H3.
-       assert (x = x0).  { apply (H0 a); auto. }
-       subst .
-       apply (pf_inj x0) ; auto.
-    -  destruct H2 , H3. destruct H2 , H3.
-       assert (x = x0).  { apply (in_inj _ _ b) ; auto. }
+       assert (x == x0).  { apply (in_inj _ _ b) ; auto. }
        subst .
        apply (H1 _ _ x0) ; auto.
+       rewrite <- H6. auto.
   Qed.
   
-  Theorem UnCountable_DecR : Countable Dec -> False.
+  Theorem UnCountable_DecR : Countable Dec eq -> False.
   Proof.
     intros.
     destruct X.
@@ -1938,7 +2028,7 @@ Module DEC_R (R : VIR_R).
       inversion H.
   Qed.
   
-  Theorem UnCountable_R : Countable R -> False.
+  Theorem UnCountable_R : Countable R Req -> False.
   Proof.
     intros.
     apply UnCountable_DecR.
@@ -2084,7 +2174,7 @@ Module DEC_R (R : VIR_R).
       apply Rmult_le_r with (r3 := IQR (10 ^ 1)%nat) in H3 ; auto.
       apply Rmult_lt_r with (r3 := IQR (10 ^ 1)%nat) in H4 ; auto.
       apply Rmult_lt_r with (r3 := IQR (10 ^ 1)%nat) ; auto.
-      assert (IQR (10 ^ n)%nat * IQR (10 ^ 1)%nat = IQR (10 ^ (S n))%nat).
+      assert (IQR (10 ^ n)%nat * IQR (10 ^ 1)%nat == IQR (10 ^ (S n))%nat).
       { apply NNPP. intro.
         apply Rdichotomy in H7.
         destruct H7 ; rewrite <- mult_IQR in H7 ; apply lt_IQR in H7 ; rewrite INQ_mult in H7 ; apply INQ_lt in H7 ; 
@@ -2093,7 +2183,7 @@ Module DEC_R (R : VIR_R).
       rewrite Rmult_assoc in *.
       rewrite H7 in *. rewrite Rmult_plus_distr_r.
       clear H7.
-      assert (IQR 1%nat / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat = IQR 1%nat).
+      assert (IQR 1%nat / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat == IQR 1%nat).
       {
         field. rewrite INQ_IQR_INR.
         apply Rgt_not_eq. rewrite <- INR_R0. apply lt_INR. apply Max_powan_0. omega.
@@ -2127,12 +2217,12 @@ Module DEC_R (R : VIR_R).
     hnf in H0.
     assert (forall m : nat , IQR (10 ^ m)%nat > R0). 
     { intros. rewrite <- IQR_R0. apply IQR_lt. rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega. }
-    assert (forall m : nat , (m < n)%nat -> (IQR (10 ^ m)%nat * INR (10 ^ (n - 1 - m))%nat) = IQR (10 ^ (n - 1))%nat).
+    assert (forall m : nat , (m < n)%nat -> (IQR (10 ^ m)%nat * INR (10 ^ (n - 1 - m))%nat) == IQR (10 ^ (n - 1))%nat).
     { intros.
       assert (n - 1 = n - 1 - m0 + m0)%nat. { omega. }
       rewrite !INQ_IQR_INR. rewrite <- mult_INR.
       rewrite <- Nat.pow_add_r.
-      rewrite plus_comm. rewrite H6 at 2. auto.
+      rewrite plus_comm. rewrite H6 at 2. auto with real.
     }
     assert (~ INQ (10 ^ S (n - 1)) == 0)%Q.
     { intro.
@@ -2141,11 +2231,10 @@ Module DEC_R (R : VIR_R).
       rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
     hnf in H1.
-    assert (IQR (1%nat / (10 ^ (S (n - 1)))%nat) = IQR 1 / IQR (10 ^ (S (n - 1)))%nat).
+    assert (IQR (1%nat / (10 ^ (S (n - 1)))%nat) == IQR 1 / IQR (10 ^ (S (n - 1)))%nat).
     { unfold Rdiv.  
-      rewrite IQR_inv ; auto. rewrite <- mult_IQR. unfold Qdiv ;  auto.
+      rewrite IQR_inv ; auto. rewrite <- mult_IQR. unfold Qdiv ;  auto with real.
     }
-    rewrite <- !INQ_IQR_INR in *.
     assert (Same_Ipart (r1 * IQR (10 ^ m)%nat) (r2 * IQR (10 ^ m)%nat)).
     {
       apply Same_Ipart_mult with (10 ^ (n - 1 - m))%nat.
@@ -2158,7 +2247,7 @@ Module DEC_R (R : VIR_R).
         apply Rmult_lt_r with (r3 := IQR (10 ^ (n-1))%nat) in H3 ; auto.
         assert (S (n - 1) = n)%nat. { omega. }
         rewrite H14 in *.
-        exists x. repeat split ; auto.
+        exists x. repeat split ; rewrite <- !INQ_IQR_INR in * ; auto with real.
         + pose proof (Rle_lt_trans _ _ _ H0 H).
           assert (x <= x0)%nat.
           { apply NNPP. intro.
@@ -2202,7 +2291,7 @@ Module DEC_R (R : VIR_R).
     apply Rmult_lt_r with (r3 := IQR (10 ^ S n)%nat) in H8 ; auto.
     clear H1.
     rewrite Rmult_plus_distr_r in *.
-    assert (IQR 1 / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat = IQR 1). { field. apply Rgt_not_eq. auto. }
+    assert (IQR 1 / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat == IQR 1). { field. apply Rgt_not_eq. auto. }
     rewrite H1 in *. clear H1.
     assert (x0 < x + 1 + 1)%nat.
     { apply INQ_lt. rewrite <- INQ_plus. apply lt_IQR. rewrite plus_IQR.
@@ -2233,7 +2322,7 @@ Module DEC_R (R : VIR_R).
     { rewrite <- IQR_R0. apply IQR_lt. rewrite <- INQ_Qeq_0. apply INQ_lt. omega. }
     apply Rmult_le_r with (r3 := IQR (10)%nat) in H ; auto.
     apply Rmult_lt_r with (r3 := IQR (10)%nat) in H1 ; auto.
-    assert (IQR (10 ^ n)%nat * IQR (10)%nat = IQR (10 ^ (S n))%nat).
+    assert (IQR (10 ^ n)%nat * IQR (10)%nat == IQR (10 ^ (S n))%nat).
     { apply NNPP. intro.
       apply Rdichotomy in H6.
       destruct H6 ; rewrite <- mult_IQR in H6 ; apply lt_IQR in H6 ; rewrite INQ_mult in H6; apply INQ_lt in H6 ; 
@@ -2287,7 +2376,7 @@ Module DEC_R (R : VIR_R).
     apply Rmult_lt_r with (r3 := IQR (10 ^ S n)%nat) in H ; auto.
     apply Rmult_lt_r with (r3 := IQR (10 ^ S n)%nat) in H4 ; auto.
     rewrite Rmult_plus_distr_r in *.
-    assert (IQR 1 / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat = IQR 1).
+    assert (IQR 1 / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat == IQR 1).
     { field. apply Rgt_not_eq. auto. }
     rewrite H1 in *. clear H1.
     destruct H5 , H6 , H7 , H8.
@@ -2324,7 +2413,7 @@ Module DEC_R (R : VIR_R).
     apply Rmult_lt_r with (r3 := IQR (10 ^ 1)%nat) in H ; auto.
     apply Rmult_lt_r with (r3 := IQR (10 ^ 1)%nat) in H4 ; auto.
     rewrite Rmult_plus_distr_r in *.
-    assert (IQR 1 / IQR (10 ^ 1)%nat * IQR (10 ^ 1)%nat = IQR 1).
+    assert (IQR 1 / IQR (10 ^ 1)%nat * IQR (10 ^ 1)%nat == IQR 1).
     { field. apply Rgt_not_eq.  auto. }
     rewrite H13 in *. clear H13.
     assert (x < x0 + 1 + 1)%nat.
@@ -2354,7 +2443,7 @@ Module DEC_R (R : VIR_R).
       destruct H8 ,H9, H10 , H17.
       assert (x2 < 10)%nat. 
       { apply INQ_lt. apply lt_IQR. apply Rle_lt_trans with r ; auto.
-        destruct H16. assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
+        destruct H16. assert (IQR (10 ^ 0)%nat == 1). { auto with real. }
         rewrite H20 in H16. rewrite Rmult_1_r in H16. auto.
         apply a.
       }  
@@ -2371,7 +2460,7 @@ Module DEC_R (R : VIR_R).
       destruct H8 ,H9, H10 , H17.
       assert (x2 < 10)%nat. 
       { apply INQ_lt. apply lt_IQR. apply Rle_lt_trans with r ; auto.
-        destruct H16. assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
+        destruct H16. assert (IQR (10 ^ 0)%nat == 1). { auto with real. }
         rewrite H20 in H16. rewrite Rmult_1_r in H16. auto.
         apply a.
       }  
@@ -2403,7 +2492,7 @@ Module DEC_R (R : VIR_R).
     apply Rmult_lt_r with (r3 := IQR (10 ^ S n)%nat) in H ; auto.
     apply Rmult_lt_r with (r3 := IQR (10 ^ S n)%nat) in H3 ; auto.
     rewrite Rmult_plus_distr_r in *.
-    assert (IQR 1 / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat = IQR 1).
+    assert (IQR 1 / IQR (10 ^ S n)%nat * IQR (10 ^ S n)%nat == IQR 1).
     { field. apply Rgt_not_eq. auto. }
     rewrite H14 in *. clear H14.
     assert (x0 < x1 + 1 + 1)%nat.

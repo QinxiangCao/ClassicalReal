@@ -48,9 +48,21 @@ Module TMR_Set (R : VIR_R).
   
   Definition Un_cv : (nat -> R) -> R -> Prop.
     intros.
-    set (fun n r => r = X n).
+    set (fun n r => r == X n).
     apply (Un_cv P X0).
   Defined.
+  
+  Instance Un_cv_comp : Proper (eq ==> Req ==> iff) Un_cv.
+  Proof.
+    hnf ; red ; intros.
+    subst.
+    repeat split ; intros ; destruct H ;  hnf in * ; subst ; try (apply H);
+    try (rewrite <- H2 in * ; auto).
+    - specialize (H2 _ H1). destruct H2. exists x. intros. 
+      rewrite <- H0. apply (H2 m) ; auto.
+    - specialize (H2 _ H1). destruct H2. exists x. intros. 
+      rewrite  H0. apply (H2 m) ; auto.   
+  Qed.
   
   Definition TMR : nat -> R -> Prop.
     intros n r.
@@ -77,7 +89,7 @@ Module TMR_Set (R : VIR_R).
     simpl. reflexivity.
   Qed.
   
-  Theorem injective_TMR : injective TMR.
+  Theorem injective_TMR : injective eq TMR.
   Proof.
     hnf ; intros.
     destruct H,  H0.
@@ -88,7 +100,7 @@ Module TMR_Set (R : VIR_R).
     apply (partial_functional_Dec_R b j) ; auto.
   Qed.
   
-  Theorem partial_functional_TMR : partial_functional TMR.
+  Theorem partial_functional_TMR : partial_functional Req TMR.
   Proof.
     hnf ; intros.
     destruct H , H0.
@@ -101,6 +113,13 @@ Module TMR_Set (R : VIR_R).
       subst. auto.
   Qed.
   
+  Instance TMR_comp : Proper (eq ==> Req ==> iff) TMR.
+  Proof.
+    hnf ; red ; intros ; subst ; split ; intros.
+    - destruct H. split ; intros ; rewrite <- H0 ;auto.
+    - destruct H. split ; intros ; rewrite H0 ; auto.
+  Qed.
+  
   Definition Get_TMR : nat -> R.
     intros n.
     pose proof (image_Defined_TMR n).
@@ -109,7 +128,7 @@ Module TMR_Set (R : VIR_R).
     split ; intros. 
     - apply (partial_functional_TMR n) ; auto.
     - split ; auto. 
-      hnf. intros. hnf in H0. subst. reflexivity.
+      hnf. intros. hnf in H0. subst. rewrite H0. reflexivity.
   Defined.
   
   Theorem TMR_get : forall n : nat , TMR n (Get_TMR n).
@@ -122,6 +141,13 @@ Module TMR_Set (R : VIR_R).
     intros n r.
     apply ((forall m : nat , Dec_R r m (Nat.b2n(TM m n))) /\ In_Search r).
   Defined.
+  
+  Instance TMr_comp : Proper (eq ==> Req ==> iff) TMr.
+  Proof.
+    hnf ; red ; intros ; subst ; split ; intros.
+    - destruct H. split ; intros ; rewrite <- H0 ;auto.
+    - destruct H. split ; intros ; rewrite H0 ; auto.
+  Qed.
   
   Theorem image_Defined_TMr : image_defined TMr.
   Proof.
@@ -143,7 +169,7 @@ Module TMR_Set (R : VIR_R).
     simpl. reflexivity.
   Qed.
 
-  Theorem partial_functional_TMr : partial_functional TMr.
+  Theorem partial_functional_TMr : partial_functional Req TMr.
   Proof.
     hnf ; intros.
     destruct H , H0.
@@ -156,6 +182,7 @@ Module TMR_Set (R : VIR_R).
       subst. auto.
   Qed.
   
+  
   Definition TM'r : nat -> R.
     intros n.
     pose proof (image_Defined_TMr n).
@@ -164,7 +191,7 @@ Module TMR_Set (R : VIR_R).
     split ; intros. 
     - apply (partial_functional_TMr n) ; auto.
     - split ; auto. 
-      hnf. intros. hnf in H0. subst. reflexivity.
+      hnf. intros. hnf in H0. rewrite H0. reflexivity.
   Defined.
   
   Theorem TMr_get : forall n : nat , TMr n (TM'r n).
@@ -191,12 +218,13 @@ Module TMR_Set (R : VIR_R).
   Proof.
     apply mono_up_upper_bound_seq_has_limit.
     - split ; hnf ; intros.
-      + split ; hnf ; intros.
-        * exists (TM'r a). auto.
-        * subst. auto.
+      + repeat split ; hnf ; intros ; subst; try (rewrite H0 in * ; auto).
+        exists (TM'r a). auto with real.
       + pose proof In_Search_TM'r. subst.
-        apply Dec_R_ge ; auto.
-        intros.
+        apply Dec_R_ge .
+        rewrite H. auto.
+        rewrite H0 . auto. intros.
+        rewrite H , H0 in *.
         pose proof TM'r_pro n n0.
         pose proof TM'r_pro n1 n0.
         assert (m1 = Nat.b2n (TM n0 n)). { apply (partial_functional_Dec_R (TM'r n) n0); auto. }
@@ -209,6 +237,7 @@ Module TMR_Set (R : VIR_R).
     - exists (IQR (10%nat)).
       hnf. intros.
       subst. destruct (In_Search_TM'r n).
+      rewrite H.
       auto with real. 
   Qed.
   
@@ -217,10 +246,10 @@ Module TMR_Set (R : VIR_R).
     exists (Un_cv TM'r).
     split ; intros.
     - unfold Un_cv in *.
-      apply (Un_cv_inject (fun (n : nat) (r : R) => r = TM'r n)) ; auto.
+      apply (Un_cv_inject (fun (n : nat) (r : R) => r == TM'r n)) ; auto.
     - split .
       + apply Ex_limit_of_TM'r.
-      + hnf. intros. destruct H. reflexivity.
+      + hnf. intros. rewrite H. reflexivity.
   Defined.
    
   Theorem limit_of_TM'r : Un_cv TM'r limitTM'r.
@@ -231,16 +260,19 @@ Module TMR_Set (R : VIR_R).
   Theorem Sup_of_TM'r : forall n : nat , limitTM'r >= TM'r n.
   Proof.
     intro.
-    set (fun (n : nat)(r : R) => r = TM'r n).
+    set (fun (n : nat)(r : R) => r == TM'r n).
     assert (mono_up P).
     { subst P. 
       split ; hnf ; intros.
-      + split ; hnf ; intros.
-        * exists (TM'r a). auto.
-        * subst. auto.
+      + repeat split ; hnf ; intros ; subst.
+        * exists (TM'r a). auto with real.
+        * rewrite H , H0. auto with real.
+        * rewrite H0 in *. auto .
+        * rewrite H0 in *. auto.
       + pose proof In_Search_TM'r. subst.
-        apply Dec_R_ge ; auto.
+        apply Dec_R_ge ; try (rewrite H ; auto); try (rewrite H0 ; auto).
         intros.
+        rewrite H , H0 in *.
         pose proof TM'r_pro n0 n2.
         pose proof TM'r_pro n1 n2.
         assert (m1 = Nat.b2n (TM n2 n0)). { apply (partial_functional_Dec_R (TM'r n0) n2); auto. }
@@ -254,14 +286,14 @@ Module TMR_Set (R : VIR_R).
     assert (exists r : R , upper_bound P r).
     { subst P. exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n0). auto with real.
+      subst. destruct (In_Search_TM'r n0). rewrite H0. auto with real.
     }
     pose proof limit_of_TM'r.
     pose proof mono_up_limit_sup P H H0 limitTM'r H1.
     destruct H2.
     hnf in H3.
     subst P. simpl in H3.
-    apply Rle_ge. apply (H3 n). auto.
+    apply Rle_ge. apply (H3 n). auto with real.
   Qed.
   
   Theorem TMR_proper0 : forall (n:nat) (r:R) , TMR n r -> forall (j : nat), (Dec_R r j 1 -> TM n j = true) /\ (Dec_R r j 0 -> TM n j = false).
@@ -300,7 +332,7 @@ Module TMR_Set (R : VIR_R).
     rewrite H'' in H4. apply H4.
   Qed.
 
-  Theorem diffR_diffTMR : forall (n1 n2 : nat) (r1 r2 : R) , TMR n1 r1 -> TMR n2 r2 -> (r1 <> r2 <-> n1 <> n2).
+  Theorem diffR_diffTMR : forall (n1 n2 : nat) (r1 r2 : R) , TMR n1 r1 -> TMR n2 r2 -> (~ r1 == r2 <-> n1 <> n2).
   Proof.
     intros.
     pose proof injective_TMR.
@@ -311,8 +343,8 @@ Module TMR_Set (R : VIR_R).
     - intros.
       subst. apply H3.
       apply (H2 n2 r1 r2) ; auto.
-    - intros.
-      subst. apply H3. apply (H1 n1 n2) in H0; auto.
+    - intros. apply H3. apply (H1 n1 n2) in H0; auto with real.
+      rewrite <- H4. apply H.
   Qed.
   
   Theorem TM'r_pro0 : forall (n m : nat), Dec_R (TM'r n) m 1 <-> TM m n = true.
@@ -365,16 +397,19 @@ Module TMR_Set (R : VIR_R).
 
   Theorem InSearch_limitTM'r : In_Search limitTM'r.
   Proof.
-    set (fun (n : nat)(r : R) => r = TM'r n).
+    set (fun (n : nat)(r : R) => r == TM'r n).
     assert (mono_up P).
     { subst P. 
       split ; hnf ; intros.
-      + split ; hnf ; intros.
-        * exists (TM'r a). auto.
-        * subst. auto.
+      + repeat split ; hnf ; intros ; subst.
+        * exists (TM'r a). auto with real.
+        * rewrite H , H0. auto with real.
+        * rewrite H0 in *. auto .
+        * rewrite H0 in *. auto.
       + pose proof In_Search_TM'r. subst.
-        apply Dec_R_ge ; auto.
+        apply Dec_R_ge ; try (rewrite H ; auto); try (rewrite H0 ; auto).
         intros.
+        rewrite H , H0 in *.
         pose proof TM'r_pro n n0.
         pose proof TM'r_pro n1 n0.
         assert (m1 = Nat.b2n (TM n0 n)). { apply (partial_functional_Dec_R (TM'r n) n0); auto. }
@@ -388,7 +423,8 @@ Module TMR_Set (R : VIR_R).
     assert (exists r : R , upper_bound P r).
     { subst P. exists (IQR (10%nat)).
       hnf. intros.
-      subst. destruct (In_Search_TM'r n). auto with real.
+      subst. destruct (In_Search_TM'r n).
+      rewrite H0. auto with real.
     }
     pose proof limit_of_TM'r.
     pose proof mono_up_limit_sup P H H0 limitTM'r H1.
@@ -399,13 +435,13 @@ Module TMR_Set (R : VIR_R).
       apply Rle_trans with (TM'r O).
       + destruct (In_Search_TM'r O) ; auto.
         auto with real.
-      + apply (H3 O). auto.
+      + apply (H3 O). auto with real.
     - apply Rle_lt_trans with 2.
       + apply Rge_le. apply H2.
         hnf. intros.
         subst P. simpl in *.
         subst. left.
-        apply Dec_R_lt.
+        apply Dec_R_lt. rewrite H.
         apply In_Search_TM'r. 
         * split. left. apply Rlt_gt. auto with real.
           apply R2_Rlt_R10.
@@ -415,9 +451,9 @@ Module TMR_Set (R : VIR_R).
           assert (m2 = 2)%nat. { apply (partial_functional_Dec_R 2 0) ; auto. }
           pose proof TM'r_InDecR n O.
           assert (m1 = 0 \/ m1 = 1)%nat.
-          { destruct H5.
-            - left. apply (partial_functional_Dec_R (TM'r n) O) ; auto.
-            - right. apply (partial_functional_Dec_R (TM'r n) O) ; auto.
+          { destruct H6.
+            - left. apply (partial_functional_Dec_R (TM'r n) O) ; rewrite H in * ; auto.
+            - right. apply (partial_functional_Dec_R (TM'r n) O) ; rewrite H in * ; auto.
           }
           omega.
       + apply R2_Rlt_R10.
@@ -451,7 +487,7 @@ Module TMR_Set (R : VIR_R).
     }
     specialize (H2 _ H5). destruct H2.
     assert (max (S x) x1 >= x1)%nat. { apply Nat.le_max_r. }
-    assert (TM'r (max (S x) x1) = TM'r (max (S x) x1)). { auto. }
+    assert (TM'r (max (S x) x1) == TM'r (max (S x) x1)). { auto with real. }
     specialize (H2 _ _ H6 H7).
     clear H7.
     specialize  (H0 (max (S x) x1) x).
@@ -469,13 +505,13 @@ Module TMR_Set (R : VIR_R).
     rewrite Rmult_comm in H2.
     rewrite Rmult_minus_distr_l in H2.
     apply Rlt_Rminus_Rplus in H2.
-    assert (IQR 1 / IQR (10 ^ S x)%nat * IQR (10 ^ x)%nat = IQR 1 / IQR (10)%nat ).
+    assert (IQR 1 / IQR (10 ^ S x)%nat * IQR (10 ^ x)%nat == IQR 1 / IQR (10)%nat ).
     {
       unfold Rdiv. 
       rewrite IQR_R1. rewrite !Rmult_1_l.
-      assert (IQR (10 ^ S x)%nat = IQR (10 ^ x)%nat * IQR (10)%nat).
+      assert (IQR (10 ^ S x)%nat == IQR (10 ^ x)%nat * IQR (10)%nat).
       { rewrite !INQ_IQR_INR. rewrite <- mult_INR.
-        rewrite Nat.pow_succ_r'. rewrite mult_comm. auto.
+        rewrite Nat.pow_succ_r'. rewrite mult_comm. auto with real.
       }
       rewrite H9. 
       rewrite Rinv_mult_distr. rewrite Rmult_comm.
@@ -539,7 +575,7 @@ Module TMR_Set (R : VIR_R).
       { rewrite <- H9. rewrite <- Rmult_plus_distr_r.
         rewrite IQR_R1. rewrite <- INR_R1. rewrite <- INQ_IQR_INR.
         pose proof Same_Ipart_pow10n.
-        assert (IQR 1%nat / IQR (10 ^ S x)%nat = IQR (1%nat / (10 ^ S x)%nat)).
+        assert (IQR 1%nat / IQR (10 ^ S x)%nat == IQR (1%nat / (10 ^ S x)%nat)).
         { unfold Rdiv. rewrite IQR_inv ; auto. rewrite <- mult_IQR.
           apply IQR_eq. reflexivity.
         }
@@ -580,13 +616,13 @@ Module TMR_Set (R : VIR_R).
       }
       specialize (H0 _ H3). destruct H0.
       assert (x >= x)%nat. { omega. }
-      assert (TM'r x = TM'r x). { auto. }
+      assert (TM'r x == TM'r x). { auto with real. }
       specialize (H0 _ _ H4 H5).
       exists x.
       apply TM'r_pro0. clear H4 H5.
       assert (Same_Ipart_n (TM'r x) (S n - 1)). 
-      { hnf. rewrite <- !INQ_IQR_INR.
-        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat = IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
+      { 
+        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat == IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
         { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
           rewrite IQR_inv.
           apply IQR_eq.
@@ -595,11 +631,17 @@ Module TMR_Set (R : VIR_R).
           apply Qeq_INQ_eq in H4. apply lt_irrefl with O.
           rewrite <- H4 at 2. apply Max_powan_0. omega.
         }
-        rewrite H4.
-        apply Same_Ipart_pow10n. apply In_Search_TM'r. apply InDecR_all_n. apply TM'r_InDecR. }
+        pose proof Same_Ipart_pow10n (TM'r x) (S n - 1).
+        assert (In_Search (TM'r x)). { apply In_Search_TM'r. }
+        assert (InDecR_n (TM'r x) (S (S n - 1))). { apply InDecR_all_n. apply TM'r_InDecR. }
+        specialize (H5 H6 H7). clear H6 H7. 
+        hnf in *.
+        destruct H5. exists x0. rewrite <- H4 in *.
+        rewrite <- !INQ_IQR_INR in *. auto with real. 
+      }
       assert (Same_Ipart_n limitTM'r (S n - 1)). 
-      { hnf. rewrite <- !INQ_IQR_INR.
-        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat = IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
+      { 
+        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat == IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
         { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
           rewrite IQR_inv.
           apply IQR_eq.
@@ -608,9 +650,14 @@ Module TMR_Set (R : VIR_R).
           apply Qeq_INQ_eq in H5. apply lt_irrefl with O.
           rewrite <- H5 at 2. apply Max_powan_0. omega.
         }
-        rewrite H5.
-        apply Same_Ipart_pow10n. apply InSearch_limitTM'r. apply InDecR_all_n. apply limitTM'r_pro0. }
-      
+        pose proof Same_Ipart_pow10n limitTM'r (S n - 1).
+        assert (In_Search limitTM'r). { apply InSearch_limitTM'r. }
+        assert (InDecR_n limitTM'r (S (S n - 1))). { apply InDecR_all_n. apply limitTM'r_pro0. }
+        specialize (H6 H7 H8). clear H7 H8. 
+        hnf in *.
+        destruct H6. exists x0. rewrite <- H5 in *.
+        rewrite <- !INQ_IQR_INR in *. auto with real.
+      }
       pose proof (Dec_R_eps_same (TM'r x) limitTM'r _ H0 H4 H5).
       apply H6 ; auto.
     - destruct H1.
@@ -627,12 +674,12 @@ Module TMR_Set (R : VIR_R).
       }
       specialize (H0 _ H3). destruct H0.
       assert (max x0 x >= x0)%nat. { apply Nat.le_max_l. }
-      assert (TM'r (max x0 x) = TM'r (max x0 x)). { auto. }
+      assert (TM'r (max x0 x) == TM'r (max x0 x)). { auto with real. }
       specialize (H0 _ _ H4 H5). clear H4 H5 H2.
       assert (max x0 x >= x)%nat. { apply Nat.le_max_r. }
       assert (Same_Ipart_n (TM'r (max x0 x)) (S (max x n) - 1)). 
-      { hnf. rewrite <- !INQ_IQR_INR.
-        assert (IQR 1%nat / IQR (10 ^ S (S (max x n) - 1))%nat = IQR (1%nat / (10 ^ S (S (max x n) - 1))%nat)).
+      { 
+        assert (IQR 1%nat / IQR (10 ^ S (S (max x n) - 1))%nat == IQR (1%nat / (10 ^ S (S (max x n) - 1))%nat)).
         { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
           rewrite IQR_inv.
           apply IQR_eq.
@@ -641,11 +688,17 @@ Module TMR_Set (R : VIR_R).
           apply Qeq_INQ_eq in H4. apply lt_irrefl with O.
           rewrite <- H4 at 2. apply Max_powan_0. omega.
         }
-        rewrite H4.
-        apply Same_Ipart_pow10n. apply In_Search_TM'r. apply InDecR_all_n. apply TM'r_InDecR. }
+        pose proof Same_Ipart_pow10n (TM'r (max x0 x)) (S (max x n) - 1).
+        assert (In_Search (TM'r (max x0 x))). { apply In_Search_TM'r. }
+        assert (InDecR_n (TM'r (max x0 x)) (S (S (max x n) - 1))). { apply InDecR_all_n. apply TM'r_InDecR. }
+        specialize (H5 H6 H7). clear H6 H7. 
+        hnf in *.
+        destruct H5. exists x1. rewrite <- H4 in *.
+        rewrite <- !INQ_IQR_INR in *. auto with real. 
+      }
       assert (Same_Ipart_n (limitTM'r) (S (max x n) - 1)). 
-      { hnf. rewrite <- !INQ_IQR_INR.
-        assert (IQR 1%nat / IQR (10 ^ S (S (max x n) - 1))%nat = IQR (1%nat / (10 ^ S (S (max x n) - 1))%nat)).
+      { 
+        assert (IQR 1%nat / IQR (10 ^ S (S (max x n) - 1))%nat == IQR (1%nat / (10 ^ S (S (max x n) - 1))%nat)).
         { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
           rewrite IQR_inv.
           apply IQR_eq.
@@ -654,8 +707,14 @@ Module TMR_Set (R : VIR_R).
           apply Qeq_INQ_eq in H5. apply lt_irrefl with O.
           rewrite <- H5 at 2. apply Max_powan_0. omega.
         }
-        rewrite H5.
-        apply Same_Ipart_pow10n. apply InSearch_limitTM'r. apply InDecR_all_n. apply limitTM'r_pro0. }
+        pose proof Same_Ipart_pow10n limitTM'r (S (max x n) - 1).
+        assert (In_Search limitTM'r). { apply InSearch_limitTM'r. }
+        assert (InDecR_n limitTM'r (S (S (max x n) - 1))). { apply InDecR_all_n. apply limitTM'r_pro0. }
+        specialize (H6 H7 H8). clear H7 H8. 
+        hnf in *.
+        destruct H6. exists x1. rewrite <- H5 in *.
+        rewrite <- !INQ_IQR_INR in *. auto with real.
+      }
       pose proof (Dec_R_eps_same (TM'r (max x0 x)) limitTM'r _ H0 H4 H5).
       apply H6 ; auto.
       unfold lt. apply le_n_S. apply Nat.le_max_r.

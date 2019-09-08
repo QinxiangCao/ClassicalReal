@@ -34,12 +34,13 @@ Module Type Vir_R.
   Local Open Scope R_scope.
   Parameter R0 : R.
   Parameter R1 : R.
+  Parameter Req : R -> R -> Prop.
+  Infix "==" := Req : R_scope.
   Parameter Rplus : R -> R -> R.
   Parameter Rmult : R -> R -> R.
   Parameter Ropp : R -> R.
-  Parameter Rinv : {a0 : R | a0 <> R0} -> R.
+  Parameter Rinv : {a0 : R | ~ a0 == R0} -> R.
   Parameter Rlt : R -> R -> Prop.
-  Parameter Rabs : R -> R.
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.
@@ -53,74 +54,88 @@ Module Type Vir_R.
   Infix "<=" := Rle : R_scope.
   Infix ">=" := Rge : R_scope.
   Infix ">"  := Rgt : R_scope.
-  Parameter Rpow : {a0 : R | a0 <> R0} -> nat -> R. 
-  Definition Reqb (x y : R) : Prop := x = y.
-  Parameter Rsinglefun : {X: R -> Prop | (forall x1 x2, X x1 -> X x2 -> x1 = x2)
-         /\ (exists x, X x) /\ Proper (Reqb ==> iff) X} -> R.
+  Parameter Rpow : {a0 : R | ~ a0 == R0} -> nat -> R. 
+  
+  Parameter Req_refl : forall x : R ,  x == x.
+  
+  Parameter Req_sym : forall x y : R , x == y -> y == x.
+
+  Parameter Req_trans : forall x y z : R , x == y -> y == z -> x == z.
+  
+  Instance R_Setoid : Equivalence Req.
+  Proof. 
+    split; red.
+    - apply Req_refl.
+    - apply Req_sym.
+    - apply Req_trans.
+  Qed.
+  
+  Parameter Rsinglefun : {X: R -> Prop | (forall x1 x2, X x1 -> X x2 -> x1 == x2)
+         /\ (exists x, X x) /\ Proper (Req ==> iff) X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
 
-  Definition rinv (a : R) (H : a <> R0) : R.
+  Definition rinv (a : R) (H : ~ (a == R0)) : R.
     apply Rinv.
     exists a. apply H.
   Defined.
 
   Definition Rinv' (a : R): R.
     apply Rsinglefun.
-    exists (fun b => (exists H: a <> R0, (rinv a H) = b) \/
-                     (a = R0 /\ b = R0)).
+    exists (fun b => (exists H: ~ (a == R0), (rinv a H) == b) \/
+                     (a == R0 /\ b == R0)).
     split; [| split].
     - intros.
       destruct H. 
       + destruct H. rewrite <- H. symmetry. destruct H0.  
         * destruct H0. rewrite <- H0.
           assert (x = x0). { apply proof_irrelevance. }
-          subst x ; auto.
+          subst x ; auto. reflexivity.
         * exfalso. apply x. apply H0.
       + destruct H0.
         * destruct H0. exfalso. apply x. apply H.
-        * destruct H. destruct H0. rewrite H1. auto. 
-    - pose proof (classic (a = R0)).
+        * destruct H. destruct H0. rewrite H1. rewrite H2. reflexivity. 
+    - pose proof (classic (a == R0)).
       destruct H.
-      + exists R0. right. split ; auto.
-      + exists (rinv a H). left. exists H. auto.
+      + exists R0. right. split ; auto. reflexivity.
+      + exists (rinv a H). left. exists H. auto. reflexivity.
     - split ; intros ; destruct H0.
       + destruct H0. left. exists x0. rewrite H0. auto.
       + right. split; try ( apply H0 ).
         rewrite <- H. apply H0.
-      + destruct H0. left. exists x0. rewrite H0. auto.
+      + destruct H0. left. exists x0. rewrite H0. auto. symmetry. auto.
       + right. split ; try ( apply H0).
         rewrite H. apply H0.
   Defined.
 
-  Definition rpow (a : R) (H : a <> R0) : nat -> R.
+  Definition rpow (a : R) (H : ~ a == R0) : nat -> R.
     apply Rpow.
     exists a. apply H.
   Defined.
 
   Definition Rpow' (a : R) (z : nat) : R.
     apply Rsinglefun.
-    exists (fun b => (exists H: a <> R0, (rpow a H z) = b) \/
-                    (a = R0 /\ b = R0)).
+    exists (fun b => (exists H: ~ a == R0, (rpow a H z) == b) \/
+                    (a == R0 /\ b == R0)).
     split; [| split].
     - intros.
       destruct H. 
       + destruct H. rewrite <- H. symmetry. destruct H0.  
         * destruct H0. rewrite <- H0.
           assert (x = x0). { apply proof_irrelevance. }
-          subst; auto.
+          subst; auto. reflexivity.
         * exfalso. apply x. apply H0.
       + destruct H0.
         * destruct H0. exfalso. apply x. apply H.
-        * destruct H. destruct H0. rewrite H1. auto. 
-    - pose proof (classic (a = R0)).
+        * destruct H. destruct H0. rewrite H1. symmetry. auto. 
+    - pose proof (classic (a == R0)).
       destruct H.
-      + exists R0. right. split ; auto.
-      + exists (rpow a H z). left. exists H. auto.
+      + exists R0. right. split ; auto. reflexivity.
+      + exists (rpow a H z). left. exists H. auto. reflexivity.
     - split ; intros ; destruct H0.
       + destruct H0. left. exists x0. rewrite H0. auto.
       + right. split; try ( apply H0 ).
         rewrite <- H. apply H0.
-      + destruct H0. left. exists x0. rewrite H0. auto.
+      + destruct H0. left. exists x0. rewrite H0. auto. symmetry. auto.
       + right. split ; try ( apply H0).
         rewrite H. apply H0.
   Defined.

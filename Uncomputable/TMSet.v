@@ -57,88 +57,13 @@ Module TM_u_u.
   Qed.
 End TM_u_u.
 
-Module TM_1_1.
-  Parameter TM11 : Type.
-  Parameter eval_1_1 : TM11 -> nat -> nat -> option(nat).
-  Parameter Countable_TM11 : Countable TM11.
-  Definition Combine (f : nat -> nat) (i : TM11) : Prop := forall (x : nat) , exists (j : nat) , eval_1_1 i x j = Some (f x).
-  Axiom Chruch_TM11_thesis : forall (f : nat -> nat) , exists (i : TM11), Combine f i.
-  Definition TM11_eqb (i1 i2 : TM11) : Prop :=
-    (forall (x j : nat) , eval_1_1 i1 x j = None /\ eval_1_1 i1 x j = eval_1_1 i2 x j) 
-  \/(forall (x : nat) , exists j : nat , eval_1_1 i1 x j <> None /\ eval_1_1 i1 x j = eval_1_1 i2 x j).
-  Axiom TM11_mono : forall (i : TM11) (x j1 j2 z: nat), (j1 >= j2)%nat -> eval_1_1 i x j2 = Some z -> eval_1_1 i x j1 = Some z.
-  Theorem TM11_mono' : forall (i : TM11) (x j1 j2 z: nat) , (j1 <= j2)%nat -> eval_1_1 i x j2 = None -> eval_1_1 i x j1 = None.
-  Proof.
-    intros.
-    destruct (eval_1_1 i x j1) eqn:H1 ; auto.
-    pose proof TM11_mono i x j2 j1 _ H H1.
-    rewrite H0 in H2.
-    discriminate H2.
-  Qed.
-  Theorem Combine_unique : forall (f : nat -> nat) (i1 i2 : TM11) , Combine f i1 -> Combine f i2 -> TM11_eqb i1 i2.
-  Proof.
-    intros.
-    unfold Combine , TM11_eqb in *.
-    right.
-    intros.
-    pose proof H x.
-    pose proof H0 x.
-    clear H H0.
-    destruct H1 ,H2.
-    exists (max x0 x1).
-    destruct (Nat.max_dec x0 x1).
-    - rewrite e. split ; rewrite H.
-      + unfold not. intros. inversion H1.
-      + symmetry. apply (TM11_mono i2 x x0 x1 (f x)) ; auto.
-        rewrite <- e. apply Nat.le_max_r.
-    - rewrite e.
-      assert (eval_1_1 i1 x x1 = Some (f x)).
-        { apply (TM11_mono i1 x x1 x0 (f x)) ; auto. 
-          rewrite <- e. apply Nat.le_max_l. } 
-      split ; rewrite H1.
-      + unfold not. intros. inversion H2.
-      + auto. 
-  Qed.
-  
-  Definition Halting : Type := 
-          forall (i : TM11)(x : nat), 
-            {exists (j z: nat) ,eval_1_1 i x j = Some z}
-          + {forall (j : nat) , eval_1_1 i x j = None}.
-  Definition Halting_easy : Type := exists f : Halting , True.
-  Definition Halting_easy' : Type := forall (i:TM11)(x:nat) ,exists f : 
-        ({exists (j z:nat), eval_1_1 i x j = Some z} + 
-        {forall (j:nat) , eval_1_1 i x j = None}), True.
-  (** forall n,exists b : {P n} +{~ P n} , True *)
-
-  Theorem Halting_arrow : Halting -> Halting_easy.
-  Proof.
-    unfold Halting_easy.
-    unfold Halting.
-    intros.
-    exists X ; auto.
-  Qed.
-
-  Theorem Halting_arrow' : Halting_easy -> Halting_easy'.
-  Proof.
-    unfold Halting_easy.
-    unfold Halting_easy'.
-    unfold Halting.
-    intros.
-    destruct H.
-    exists (x0 i x) ; auto.
-  Qed.
-  
-End TM_1_1.
 
 Module TM_N_Q.
   Parameter TMNQ : Type.
   Parameter eval_N_Q : TMNQ -> nat -> nat -> option(Q).
-  Parameter Countable_TMNQ : Countable TMNQ.
+  
   Definition Combine (f : nat -> Q) (i : TMNQ) : Prop := forall (x : nat) , exists (j : nat) , eval_N_Q i x j = Some (f x).
   Axiom Chruch_TMNQ_thesis : forall (f : nat -> Q) , exists (i : TMNQ), Combine f i.
-  Axiom TMNQ_eqb : forall (i1 i2 : TMNQ) , i1 = i2 <-> (
-    (forall (x j : nat) , eval_N_Q i1 x j = None /\ eval_N_Q i1 x j = eval_N_Q i2 x j) 
-  \/(forall (x : nat) , exists j : nat , eval_N_Q i1 x j <> None /\ eval_N_Q i1 x j = eval_N_Q i2 x j)).
   Axiom TMNQ_mono : forall (i : TMNQ) (x j1 j2: nat)(z : Q), (j1 >= j2)%nat -> eval_N_Q i x j2 = Some z -> eval_N_Q i x j1 = Some z.
   Theorem TMNQ_mono' : forall (i : TMNQ) (x j1 j2 : nat) , (j1 <= j2)%nat -> eval_N_Q i x j2 = None -> eval_N_Q i x j1 = None.
   Proof.
@@ -149,17 +74,138 @@ Module TM_N_Q.
     discriminate H2.
   Qed.
   
+  
+  Definition TMNQ_eq (i1 i2 : TMNQ) := (forall x : nat , (forall (j : nat) , eval_N_Q i1 x j = None /\ eval_N_Q i1 x j = eval_N_Q i2 x j) 
+  \/(exists j : nat , eval_N_Q i1 x j <> None /\ eval_N_Q i1 x j = eval_N_Q i2 x j)).
+
+  Theorem TMNQeq_refl x : TMNQ_eq x x.
+  Proof.
+    hnf. intros.
+    destruct (classic (forall j : nat , eval_N_Q x x0 j = None)).
+    - left. intros. auto.
+    - right. apply not_all_ex_not in H.
+      destruct H. exists x1. auto.
+  Qed.
+  
+  Theorem TMNQeq_sym x y : TMNQ_eq x y -> TMNQ_eq y x.
+  Proof.
+    intros.
+    hnf in *. intros.
+    specialize (H x0).
+    destruct H.
+    - left. intros. specialize (H j).
+      destruct H. rewrite H0 in *. auto.
+    - destruct H. right. exists x1.
+      destruct H. rewrite H0 in *. auto.
+  Qed.
+  
+  Theorem TMNQeq_trans x y z : TMNQ_eq x y -> TMNQ_eq y z -> TMNQ_eq x z.
+  Proof.
+    intros.
+    hnf in *. intros.
+    specialize (H x0). specialize (H0 x0).
+    destruct H , H0.
+    - left. intros. specialize (H j). specialize (H0 j).
+      destruct H, H0. rewrite H1 in *. auto.
+    - exfalso. destruct H0. destruct H0.
+      specialize (H x1). destruct H.
+      rewrite H in *. auto.
+    - exfalso. destruct H , H.
+      specialize (H0 x1). destruct H0. 
+      rewrite H0 in *. auto. 
+    - destruct H. destruct H0.
+      destruct H , H0.
+      right. exists (max x1 x2).
+      split.
+      + destruct (eval_N_Q x x0 x1) eqn : En ; auto.
+        assert (eval_N_Q x x0 (max x1 x2) = Some q).
+        { apply (TMNQ_mono _ _ _ x1) ; auto.
+          apply Nat.le_max_l.
+        }
+        rewrite H3. auto.
+      + destruct (classic (x1 >= x2)%nat).
+        * destruct (eval_N_Q y x0 x2) eqn : En .
+          ** assert ( eval_N_Q y x0 x1 = Some q).
+             { apply (TMNQ_mono _ _ _ x2) ; auto. }
+             rewrite H4 in *.
+             assert (eval_N_Q x x0 (max x1 x2) = Some q).
+             { apply (TMNQ_mono _ _ _ x1) ; auto.
+               apply Nat.le_max_l.
+             }
+             rewrite H5. symmetry.
+             apply (TMNQ_mono _ _ _ x2) ; auto.
+             apply Nat.le_max_r.
+          ** exfalso . auto.
+        * apply not_ge in H3.
+          destruct (eval_N_Q x x0 x1) eqn :En.
+          ** assert ( eval_N_Q y x0 x2 = Some q).
+             { apply (TMNQ_mono _ _ _ x1) ; auto. omega. }
+             rewrite H4 in *.
+             assert (eval_N_Q x x0 (max x1 x2) = Some q).
+             { apply (TMNQ_mono _ _ _ x1) ; auto.
+               apply Nat.le_max_l.
+             }
+             rewrite H5. symmetry.
+             apply (TMNQ_mono _ _ _ x2) ; auto.
+             apply Nat.le_max_r.
+          ** exfalso. auto. 
+  Qed.
+  
+  Instance TMNQ_Setoid : Equivalence TMNQ_eq.
+  Proof.
+    split ; hnf.
+    - apply TMNQeq_refl.
+    - apply TMNQeq_sym.
+    - apply TMNQeq_trans.
+  Qed.
+  
+  Parameter Countable_TMNQ : Countable TMNQ TMNQ_eq.
+  
+  Instance Combine_comp : Proper (eq ==> TMNQ_eq ==> iff) Combine.
+  Proof.
+    hnf ; red ; intros ; subst.
+    split ; intros.
+    - hnf. intros. destruct (H x). 
+      specialize (H0 x). destruct H0.
+      + specialize (H0 x1). destruct H0. rewrite H0 in *. inversion H1.
+      + destruct H0. destruct H0. exists x2. 
+        destruct (classic (x1 <= x2)%nat).
+        * assert ( eval_N_Q x0 x x2 = Some (y x)).
+          { apply (TMNQ_mono _ _ _ x1) ; auto. }
+          rewrite H2 in *. auto.
+        * apply not_ge in H3.
+          destruct (eval_N_Q x0 x x2) eqn :En.
+          ** assert ( eval_N_Q x0 x x1 = Some q).
+             { apply (TMNQ_mono _ _ _ x2) ; auto. omega. }
+             rewrite H4 in *.
+             rewrite <- H2. auto.
+          ** exfalso. auto. 
+   - hnf. intros. destruct (H x). 
+      specialize (H0 x). destruct H0.
+      + specialize (H0 x1). destruct H0. rewrite H0 in *. rewrite H1 in *. inversion H2.
+      + destruct H0. destruct H0. exists x2. 
+        destruct (classic (x1 <= x2)%nat).
+        * assert ( eval_N_Q y0 x x2 = Some (y x)).
+          { apply (TMNQ_mono _ _ _ x1) ; auto. }
+          rewrite H4 in *. auto.
+        * apply not_ge in H3.
+          destruct (eval_N_Q x0 x x2) eqn :En.
+          ** assert ( eval_N_Q y0 x x1 = Some q).
+             { apply (TMNQ_mono _ _ _ x2) ; auto. omega. }
+             rewrite H4 in *. auto.
+          ** exfalso. auto. 
+  Qed.
+  
   Theorem image_defined_Combine : image_defined Combine.
   Proof.
     unfold image_defined.
     apply Chruch_TMNQ_thesis.
   Qed.
   
-  Theorem partial_functional_Combine: partial_functional Combine.
+  Theorem partial_functional_Combine: partial_functional TMNQ_eq Combine .
   Proof.
     unfold partial_functional , Combine .
     intros.
-    apply TMNQ_eqb.
     right.
     intros.
     pose proof H x.
@@ -181,7 +227,7 @@ Module TM_N_Q.
       + auto. 
   Qed.
   
-  Theorem injective_Combine : injective Combine.
+  Theorem injective_Combine : injective eq Combine.
   Proof.
     unfold injective , Combine .
     intros.
@@ -201,7 +247,6 @@ Module TM_N_Q.
       rewrite H in H3.
       inversion H3 ; auto.
   Qed.
-  
   Definition Halting : Type := 
           forall (i : TMNQ)(x : nat), 
             {exists (j : nat) (z : Q),eval_N_Q i x j = Some z}

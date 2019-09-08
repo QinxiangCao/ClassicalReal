@@ -45,9 +45,12 @@ Module Wrong_Up (R : VIR_R).
   
   Parameter up : R -> Z.
   Parameter Up_R0 : (up R0 = 0)%Z.
-  Theorem Up_same : forall (r1 r2 : R) , r1 = r2 -> (up r1 = up r2)%Z.
+  Axiom up_comp : Proper (Req ==> eq) up.
+  Existing Instance up_comp .
+  
+  Theorem Up_same : forall (r1 r2 : R) , r1 == r2 -> (up r1 = up r2)%Z.
   Proof.
-    intros. subst.
+    intros. rewrite H. 
     auto.
   Qed.
   
@@ -66,7 +69,7 @@ Module Wrong_Up (R : VIR_R).
       rewrite IZR_R0 in H5.
       apply Rge_le in H2.
       pose proof conj H5 H2.
-      assert (X0 = 0). { auto with real. }
+      assert (X0 == 0). { auto with real. }
       clear H6.
       pose proof H7 as H6. clear H7.
       right.
@@ -243,8 +246,8 @@ Module CR_uu (R : VIR_R).
     generalize dependent m.
     induction n.
     - intros.
-      hnf. rewrite <- mult_IQR.
-      exists ((f 0) * (10 ^ m))%nat.
+      hnf. 
+      exists ((f 0) * (10 ^ m))%nat. rewrite <- mult_IQR.
       repeat split .
       + apply IQR_le.
         simpl. rewrite INQ_mult. lra.
@@ -261,7 +264,7 @@ Module CR_uu (R : VIR_R).
       destruct IHn , H2 , H2.
       rewrite <- mult_IQR in *.
       apply le_IQR in H2. apply lt_IQR in H4.
-      exists (x + (f (S n)) * (10 ^ (m - S n)))%nat.
+      exists (x + (f (S n)) * (10 ^ (m - S n)))%nat. rewrite <- mult_IQR in *.
       repeat split .
       + apply IQR_le. rewrite sum_f_expand.
         rewrite Qmult_plus_distr_l. rewrite <- INQ_plus.
@@ -363,8 +366,8 @@ Module CR_uu (R : VIR_R).
           pose proof (sum_f_Dec_R_up f n (S n)). 
           assert (S n > n)%nat. { omega. }
           specialize (H4 H H5). clear H5.
-          hnf in H4. rewrite <- mult_IQR in *.
-          destruct H4,H4,H4.
+          hnf in H4. 
+          destruct H4,H4,H4. rewrite <- mult_IQR in *.
           apply le_IQR in H4. apply lt_IQR in H6.
           symmetry in H5.
           apply mod_exists in H5 ; try (omega) .
@@ -420,8 +423,9 @@ Module CR_uu (R : VIR_R).
         pose proof sum_f_Dec_R_up f n (S n) H H1.
         clear H0 H1 IHn. 
         destruct H2 , H0 , H0.
-        hnf. rewrite <- mult_IQR in *. apply le_IQR in H0. apply lt_IQR in H2.
+        hnf. 
         exists (x + f (S n))%nat.
+        rewrite <- mult_IQR in *. apply le_IQR in H0. apply lt_IQR in H2.
         repeat split.
         + apply IQR_le. rewrite sum_f_expand.
           rewrite Qmult_plus_distr_l.
@@ -541,7 +545,7 @@ Module CR_uu (R : VIR_R).
         destruct H8 , H8 , H9 , H10.
         assert (x = x1)%nat. {apply (Ipart_unique (IQR ((sum_f f n) * (10 ^ m)%nat))) ; split ; auto. }
         subst.
-        split ; auto.
+        split; rewrite <- mult_IQR ; auto.
   Qed.
   
   Theorem sum_f_In_Search : forall (f : nat -> nat)(n : nat) , Indec f -> (sum_f f n < INQ 10)%Q.
@@ -625,7 +629,7 @@ Module CR_uu (R : VIR_R).
     induction n.
     - repeat split; intros ; hnf in * .
       + destruct H1 , H1 , H1. inversion H0. subst.
-        assert (IQR (10 ^ 0)%nat = 1). { auto with real. }
+        assert (IQR (10 ^ 0)%nat == 1). { auto with real. }
         rewrite H2 in *. clear H2.
         rewrite Rmult_1_r in *.
         apply lt_IQR in H3. apply INQ_lt in H3.
@@ -636,7 +640,7 @@ Module CR_uu (R : VIR_R).
       + inversion H0. subst.
         exists (f 0%nat).
         split.
-        * assert (IQR (10 ^ 0)%nat = 1). { auto with real.  }
+        * assert (IQR (10 ^ 0)%nat == 1). { auto with real.  }
           rewrite H1. clear H1.
           split ; rewrite Rmult_1_r.
           ** apply Rle_refl.
@@ -688,7 +692,8 @@ Module CR_uu (R : VIR_R).
     destruct H0. specialize (H0 H). clear H1.
     split ; intros ; hnf ; simpl in *.
     - split ; intros.
-      + split ; hnf ; intros.
+      + repeat split ; hnf ; intros ; subst ; try (rewrite H3 in *; apply H4 ; auto) ;
+        try (rewrite <- H3 in *; apply H4 ; auto).
         * exists (sum_f f a). apply sum_f_NQ_eqb. auto.
         * apply (partial_functional_NNP_T_NQP (NN_T_NNP f) H0 a) ; auto.
       + destruct H1. 
@@ -702,16 +707,14 @@ Module CR_uu (R : VIR_R).
         }
         apply (H3 _ _ H4 H6). 
    - split ; intros.
-     + split ; hnf ; intros.
-       * exists (sum_f f a). reflexivity.
-       * lra.
+     + repeat split ; hnf ; intros ; subst ; try (lra).
+       exists (sum_f f a). reflexivity.
      + destruct H1.
        specialize (H3 eps H2).
        destruct H3.
        exists x. intros.
        apply (H3 m) ; auto.
-       pose proof sum_f_NQ_eqb _ H m.
-       hnf. apply IQR_eq in H5. rewrite H5. auto.  
+       pose proof sum_f_NQ_eqb _ H m. rewrite H5. auto. 
   Qed.
   
   Theorem sum_f_limit_r : forall (f : nat -> nat) (r : R) , Indec f -> 
@@ -727,65 +730,67 @@ Module CR_uu (R : VIR_R).
       * assert (Sup_Q (NNP_T_NQP (NN_T_NNP f)) r).
         { apply mono_up_limit_sup_Q ; auto.
           - hnf. split ; hnf; intros.
-            + split ; hnf ; intros.
-              * exists (IQR(sum_f f a)).
-                exists (sum_f f a).
+            + repeat split ; hnf ; intros ; subst ; try (rewrite <- H2 in * ; apply H3 ; auto).
+              * exists (sum_f f a).
                 split ; auto.
-                apply sum_f_NQ_eqb. auto.
-              * destruct H1 , H1. destruct H2 , H2.
-                subst. apply IQR_eq.
-                apply InDec_eqb in H.
+                apply sum_f_NQ_eqb. auto. apply In_search_sum_f ; auto.
+              * apply InDec_eqb in H.
                 apply (partial_functional_NNP_T_NQP (NN_T_NNP f) H a) ; auto.
-            + destruct H1 , H1. destruct H2 , H2.
+            + split. apply is_function_NQP_T_NRP. apply is_function_NNP_T_NQP. apply InDec_eqb. auto. 
+              intros.
+              destruct H1 , H1. destruct H2 , H2.
               subst. 
               inversion H3.
-              * right. apply IQR_eq. subst. apply InDec_eqb in H.
+              * right. rewrite <- H1 , <- H2. apply IQR_eq. subst. apply InDec_eqb in H.
                 apply (partial_functional_NNP_T_NQP (NN_T_NNP f) H n) ; auto.
               * subst.
                 destruct H4, H5.
                 destruct (classic (forall n , (n > n1)/\(n <= S m) -> f n = 0)%nat).
-                ** right. apply Dec_R_eq ; auto. 
-                   intros. specialize (H2 j). specialize (H5 j).
-                   destruct H2 , H5.
+                ** right. apply Dec_R_eq ; intros. 
+                   rewrite <- H1 ; auto. rewrite <- H2 ; auto.
+                   rewrite <- H1 , <- H2 . clear H1 H2.
+                   specialize (H4 j). specialize (H5 j).
+                   destruct H4 , H5.
                    destruct (classic (j <= n1)%nat).
                    ++ assert (j <= S m)%nat. { omega. } 
-                      specialize (H2 H11). specialize (H5 H10).
-                      rewrite H2. rewrite H5. reflexivity.
+                      specialize (H1 H11). specialize (H4 H10).
+                      rewrite H1. rewrite H4. reflexivity.
                    ++ apply Nat.nle_gt in H10.
-                      specialize (H9 H10). 
+                      specialize (H5 H10). 
                       destruct (classic (j <= S m)%nat).
-                      -- specialize (H2 H11). 
-                         rewrite H2.
+                      -- specialize (H1 H11). 
+                         rewrite H1.
                          split ; intros.
                          *** assert (m0 = 0)%nat. { destruct H12. auto. }
                              subst. auto.
                          *** assert (m0 = 0)%nat. { apply (partial_functional_Dec_R (IQR x0) j) ; auto. }
-                             subst. hnf. apply H7. omega.
+                             subst. hnf. apply H9. omega.
                       -- apply Nat.nle_gt in H11.
-                         specialize (H8 H11).
+                         specialize (H2 H11).
                          split ; intros.
                          *** assert (m0 = 0)%nat. { apply (partial_functional_Dec_R (IQR x) j) ; auto. }
                              subst. auto.
                          *** assert (m0 = 0)%nat. { apply (partial_functional_Dec_R (IQR x0) j) ; auto. }
                              subst. auto.
-                ** apply not_all_ex_not in H7. destruct H7.
-                   pose proof H7.
-                   apply not_imply_elim in H7.
-                   apply not_imply_elim2 in H8.
-                   left. pose proof (H2 x1). pose proof (H5 x1).
-                   destruct H9 , H10 , H7.
-                   specialize (H9 H13). specialize (H12 H7).
+                ** apply not_all_ex_not in H9. destruct H9.
+                   pose proof H9.
+                   apply not_imply_elim in H9.
+                   apply not_imply_elim2 in H10.
+                   rewrite <- H1 , <- H2. clear H1 H2.
+                   left. pose proof (H4 x1). pose proof (H5 x1).
+                   destruct H9 , H1 , H2.
+                   specialize (H13 H9). specialize (H1 H11).
                    assert (f x1 = 1)%nat. {destruct (H x1) ; auto. exfalso. auto. }
                    apply Dec_R_lt ; auto.
                    exists x1. split ; intros.
                    ++ assert (m1 = 0)%nat. {apply (partial_functional_Dec_R (IQR x0) x1) ; auto. }
-                      assert (Dec_R (IQR x) x1 1). { apply H2 ; hnf ;  auto. }
+                      assert (Dec_R (IQR x) x1 1). { apply H1 ; hnf ;  auto. }
                       assert (m2 = 1)%nat. {apply (partial_functional_Dec_R (IQR x) x1) ; auto. }
                       subst. auto.
                    ++ clear H10 H8. 
                       assert (k <= S m)%nat. { omega. } 
-                      specialize (H2 k). specialize (H5 k). 
-                      destruct H2 , H5. specialize (H2 H8). rewrite H2 in H17.
+                      specialize (H4 k). specialize (H5 k). 
+                      destruct H4 , H5. specialize (H4 H8). rewrite H4 in H17.
                       hnf in H17.
                       destruct (classic (k <= n1)%nat).
                       --  specialize (H5 H19). rewrite H5 in H16. hnf in H16.
@@ -805,7 +810,7 @@ Module CR_uu (R : VIR_R).
              rewrite <- INQ_Qeq_0. apply INQ_le. destruct (H O) ; omega.
           ** apply (H3 O).
              hnf. exists (INQ (f 0%nat)).
-             split; auto.
+             split; auto with real.
              hnf. split ; intros.
              ++ split ; intros.
                 -- inversion H4. subst.
@@ -821,9 +826,8 @@ Module CR_uu (R : VIR_R).
           ** apply Rge_le. apply H1. auto.
           ** apply R2_Rlt_R10.
     - hnf. split ; intros.
-      + split ; hnf ; intros.
+      + repeat split ; hnf ; intros ; subst ; try (rewrite H2 in * ; auto).
         * exists (sum_f f a). reflexivity.
-        * lra.
       + apply eps_gt_10n in H1.
         destruct H1.
         exists x.
@@ -860,7 +864,7 @@ Module CR_uu (R : VIR_R).
     }
     apply Rabs_tri in H1.
     destruct H1.
-    assert (IQR 1 / IQR (10 ^ n)%nat = IQR (1 / (10^n)%nat)).
+    assert (IQR 1 / IQR (10 ^ n)%nat == IQR (1 / (10^n)%nat)).
     {
       unfold Rdiv.
       rewrite IQR_inv.
@@ -877,8 +881,8 @@ Module CR_uu (R : VIR_R).
    - apply Rle_lt_trans with (IQR (sum_f f m) - IQR 1 / IQR (10 ^ n)%nat) ; auto.
      apply Rle_Rminus.
      unfold Qminus. rewrite plus_IQR.
-     rewrite <- Rplus_0_r .
-     rewrite Rplus_assoc.
+     rewrite <- (Rplus_0_r (IQR (sum_f f m))) at 2.
+     rewrite Rplus_assoc. 
      apply Rplus_le_compat_l.
      rewrite H3.
      rewrite <- plus_IQR. rewrite <- IQR_R0.
@@ -898,7 +902,7 @@ Module CR_uu (R : VIR_R).
     exfalso. apply n. exists j. auto.
   Qed.
 
-  Theorem Two_dimensions : (forall r1 r2 : R, {r1 = r2} + {r1 <> r2}) -> Halting.
+  Theorem Two_dimensions : (forall r1 r2 : R, {r1 == r2} + {~ r1 == r2}) -> Halting.
   Proof.
     unfold Halting.
     intros.
@@ -907,10 +911,10 @@ Module CR_uu (R : VIR_R).
     pose proof X X0 R0.
     clear HeqX0 X. destruct H.
     destruct H0. 
-    - rewrite Dec_R_eq in e ; auto.
+    - rewrite Dec_R_eq in r ; auto.
       + right. intros.
         pose proof Zero_Dec j.
-        rewrite <- e in H0. 
+        rewrite <- r in H0. 
         specialize (H j).
         assert (0 = Nat.b2n (TM i j))%nat. { apply (partial_functional_Dec_R X0 j) ; auto. }
         apply Nat.b2n_inj. auto.
@@ -928,7 +932,7 @@ Module CR_uu (R : VIR_R).
       + apply In_Search_R0.
   Qed.
 
-  Theorem Three_dimensions : (forall r1 r2 : R, {r1 = r2} + {r1 > r2} + {r1 < r2}) -> Halting.
+  Theorem Three_dimensions : (forall r1 r2 : R, {r1 == r2} + {r1 > r2} + {r1 < r2}) -> Halting.
   Proof. 
     intros.
     apply Two_dimensions.
@@ -951,7 +955,7 @@ Module CR_uu (R : VIR_R).
     left. left. auto with real.
   Qed.
   
-  Theorem Exam_dimensions2 : (forall r : R , {r = R0} + {r <> R0}) -> Halting.
+  Theorem Exam_dimensions2 : (forall r : R , {r == R0} + {~ r == R0}) -> Halting.
   Proof.
     unfold Halting.
     intros.
@@ -1215,7 +1219,7 @@ Module CR_uu (R : VIR_R).
         { rewrite INQ_plus. simpl. reflexivity. }
         rewrite H8. rewrite INQ_Qeq_1. reflexivity.
       }
-      assert (IQR q = IQR eps0 + IQR eps0).
+      assert (IQR q == IQR eps0 + IQR eps0).
       {
         apply NNPP. intro.
         apply Rdichotomy in H7.
@@ -1239,10 +1243,10 @@ Module CR_uu (R : VIR_R).
         apply Rplus_lt_compat_l ; auto. 
     }
     subst q.
-    assert (IQR (1%nat / (10 ^ (S (S n)))%nat) = IQR 1 / IQR (10 ^ (S (S n)))%nat).
+    assert (IQR (1%nat / (10 ^ (S (S n)))%nat) == IQR 1 / IQR (10 ^ (S (S n)))%nat).
     { unfold Rdiv. unfold Qdiv.
       rewrite mult_IQR. rewrite INQ_IQR_INR. rewrite IQR_R1. rewrite INR_R1. 
-      rewrite IQR_inv. auto.
+      rewrite IQR_inv. auto. reflexivity.
       intro.
       apply (Qlt_irrefl 0%Q).
       rewrite <- H3 at 2. rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega. 
@@ -1273,18 +1277,24 @@ Module CR_uu (R : VIR_R).
     }
     pose proof Dec_R_eps_same _ _ (S n) H5.
     assert (Same_Ipart_n limitTM'r (S n - 1)). 
-    { hnf. rewrite <- !INQ_IQR_INR.
-        assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat = IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
-        { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
-          rewrite IQR_inv.
-          apply IQR_eq.
-          unfold Qdiv. rewrite INQ_eq_1. rewrite Qmult_1_l. reflexivity.
-          intro. rewrite <- INQ_Qeq_0 in H7. 
-          apply Qeq_INQ_eq in H7. apply lt_irrefl with O.
-          rewrite <- H7 at 2. apply Max_powan_0. omega.
-        }
-        rewrite H7.
-        apply Same_Ipart_pow10n. apply InSearch_limitTM'r. apply InDecR_all_n. apply limitTM'r_pro0. }
+    { 
+      assert (IQR 1%nat / IQR (10 ^ (S (S n - 1)))%nat == IQR (1%nat / (10 ^ (S (S n - 1)))%nat)).
+      { unfold Rdiv. rewrite INQ_IQR_INR. rewrite INR_R1. rewrite Rmult_1_l.
+        rewrite IQR_inv.
+        apply IQR_eq.
+        unfold Qdiv. rewrite INQ_eq_1. rewrite Qmult_1_l. reflexivity.
+        intro. rewrite <- INQ_Qeq_0 in H7. 
+        apply Qeq_INQ_eq in H7. apply lt_irrefl with O.
+        rewrite <- H7 at 2. apply Max_powan_0. omega.
+      }
+      pose proof Same_Ipart_pow10n limitTM'r (S n - 1).
+      assert (In_Search limitTM'r). { apply InSearch_limitTM'r. }
+      assert (InDecR_n limitTM'r (S (S n - 1))). { apply InDecR_all_n. apply limitTM'r_pro0. }
+      specialize (H8 H9 H10). clear H9 H10. 
+      hnf in *.
+      destruct H8. exists x. rewrite <- H7 in *.
+      rewrite <- !INQ_IQR_INR in *. auto with real. 
+    }
     destruct (Dec_Q_nine (f n0) (S n)).
     - rewrite <- IQR_R0. apply IQR_le. auto.
     - apply (Dec_Q_Dec_R_same _ (f n0)) ; auto.

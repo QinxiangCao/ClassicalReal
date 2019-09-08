@@ -42,7 +42,9 @@ Module Type VIR_R.
   Parameter Ropp : R -> R.
   Parameter Rinv : R -> R.
   Parameter Rlt : R -> R -> Prop.
+  Parameter Req : R -> R -> Prop.
   
+  Infix "==" := Req : R_scope.
   Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
   Notation "- x" := (Ropp x) : R_scope.
@@ -51,9 +53,9 @@ Module Type VIR_R.
   
   Definition Rgt (r1 r2:R) : Prop := r2 < r1.
   
-  Definition Rle (r1 r2:R) : Prop := r1 < r2 \/ r1 = r2.
+  Definition Rle (r1 r2:R) : Prop := r1 < r2 \/ r1 == r2.
   
-  Definition Rge (r1 r2:R) : Prop := Rgt r1 r2 \/ r1 = r2.
+  Definition Rge (r1 r2:R) : Prop := Rgt r1 r2 \/ r1 == r2.
   
   Definition Rminus (r1 r2:R) : R := r1 + - r2.
   
@@ -68,17 +70,54 @@ Module Type VIR_R.
   Notation "x <= y < z"  := (x <= y /\ y <  z) : R_scope.
   Notation "x < y < z"   := (x <  y /\ y <  z) : R_scope.
   Notation "x < y <= z"  := (x <  y /\ y <= z) : R_scope.
+  Notation "0" := R0 : R_scope.
+  Notation "1" := R1 : R_scope.
+  Notation "2" := (1+1) : R_scope.
   
   (* Definitions copied from Rdefinitions.v *)
   (* Delete the definition of up *)
   
-  Definition Reqb (x y : R) : Prop := x = y.
+  Parameter Req_refl : forall x : R ,  x == x.
   
-  Infix "==" := Reqb : R_scope. 
-  Notation "0" := R0 : R_scope.
-  Notation "1" := R1 : R_scope.
-  Notation "2" := (1+1) : R_scope.
-  Notation "-1" := (- 1%R) : R_scope.
+  Parameter Req_sym : forall x y : R , x == y -> y == x.
+
+  Parameter Req_trans : forall x y z : R , x == y -> y == z -> x == z.
+
+  Hint Immediate Req_sym : real.
+  Hint Resolve Req_refl Req_trans : real.
+
+  Instance R_Setoid : Equivalence Req.
+  Proof. split; red; eauto with real. Qed.
+  
+  Axiom Rplus_comp : Proper (Req==>Req==>Req) Rplus.
+  Existing Instance Rplus_comp .
+  
+  Axiom Ropp_comp : Proper (Req==>Req) Ropp.
+  Existing Instance Ropp_comp .
+  
+  Axiom Rmult_comp : Proper (Req==>Req==>Req) Rmult.
+  Existing Instance Rmult_comp .
+  
+  Axiom Rinv_comp : Proper (Req==>Req) Rinv.
+  Existing Instance Rinv_comp .
+  
+  Axiom Rle_comp : Proper (Req==>Req==>iff) Rle.
+  Existing Instance Rle_comp .
+  
+  Axiom Rlt_comp : Proper (Req==>Req==>iff) Rlt.
+  Existing Instance Rlt_comp .
+  
+  Instance Rminus_comp : Proper (Req==>Req==>Req) Rminus.
+  Proof. hnf ; red ; intros. unfold Rminus. rewrite H , H0. reflexivity. Qed.
+  
+  Instance Rdiv_comp : Proper (Req==>Req==>Req) Rdiv.
+  Proof. hnf ; red ; intros. unfold Rdiv. rewrite H , H0. reflexivity. Qed.
+  
+  Instance Rgt_comp : Proper (Req==>Req==>iff) Rgt.
+  Proof. hnf ; red ; intros. unfold Rgt. rewrite H , H0. reflexivity. Qed.
+  
+  Instance Rge_comp : Proper (Req==>Req==>iff) Rge.
+  Proof. hnf ; red ; intros. unfold Rge. rewrite H , H0. reflexivity. Qed.
   
   (* Complementary definition of Real Equivalence. *)
   
@@ -87,6 +126,14 @@ Module Type VIR_R.
       | O => 1
       | S n => Rmult r (pow r n)
     end.
+  
+  Instance Rpow_comp : Proper (Req ==> eq ==> Req) pow.
+  Proof. 
+    hnf ; red; intros. rewrite H0. clear H0.
+    induction y0.
+    - simpl. reflexivity.
+    - simpl. rewrite IHy0. rewrite H. reflexivity.
+  Qed.
   
   (* Definition copied from Rpow_def.v *)
   
@@ -131,35 +178,35 @@ Module Type VIR_R.
     | p # q => IZR p / IPR q
     end.
   Arguments IQR q%Q.
-  
+ 
   (* Complementary definition of Injection from Q to R. *)
   
   (* Definition of Vir_R *)
   
-  Axiom Rplus_comm : forall r1 r2:R, r1 + r2 = r2 + r1.
+  Axiom Rplus_comm : forall r1 r2:R, r1 + r2 == r2 + r1.
   Hint Resolve Rplus_comm: real.
-  Axiom Rplus_assoc : forall r1 r2 r3:R, r1 + r2 + r3 = r1 + (r2 + r3).
+  Axiom Rplus_assoc : forall r1 r2 r3:R, r1 + r2 + r3 == r1 + (r2 + r3).
   Hint Resolve Rplus_assoc: real.
-  Axiom Rplus_opp_r : forall r:R, r + - r = 0.
+  Axiom Rplus_opp_r : forall r:R, r + - r == 0.
   Hint Resolve Rplus_opp_r: real.
-  Axiom Rplus_0_l : forall r:R, 0 + r = r.
+  Axiom Rplus_0_l : forall r:R, 0 + r == r.
   Hint Resolve Rplus_0_l: real.
-  Axiom Rmult_comm : forall r1 r2:R, r1 * r2 = r2 * r1.
+  Axiom Rmult_comm : forall r1 r2:R, r1 * r2 == r2 * r1.
   Hint Resolve Rmult_comm: real.
-  Axiom Rmult_assoc : forall r1 r2 r3:R, r1 * r2 * r3 = r1 * (r2 * r3).
+  Axiom Rmult_assoc : forall r1 r2 r3:R, r1 * r2 * r3 == r1 * (r2 * r3).
   Hint Resolve Rmult_assoc: real.
-  Axiom Rinv_l : forall r:R, r <> 0 -> / r * r = 1.
+  Axiom Rinv_l : forall r:R, ~ r == 0 -> / r * r == 1.
   Hint Resolve Rinv_l: real.
-  Axiom Rmult_1_l : forall r:R, 1 * r = r.
+  Axiom Rmult_1_l : forall r:R, 1 * r == r.
   Hint Resolve Rmult_1_l: real.
-  Axiom R1_neq_R0 : 1 <> 0.
+  Axiom R1_neq_R0 : ~ 1 == 0.
   Hint Resolve R1_neq_R0: real.
 
   Axiom
-    Rmult_plus_distr_l : forall r1 r2 r3:R, r1 * (r2 + r3) = r1 * r2 + r1 * r3.
+    Rmult_plus_distr_l : forall r1 r2 r3:R, r1 * (r2 + r3) == r1 * r2 + r1 * r3.
   Hint Resolve Rmult_plus_distr_l: real.
 
-  Axiom total_order_T : forall r1 r2:R, r1 < r2 \/ r1 = r2 \/ r1 > r2.
+  Axiom total_order_T : forall r1 r2:R, r1 < r2 \/ r1 == r2 \/ r1 > r2.
   Axiom Rlt_asym : forall r1 r2:R, r1 < r2 -> ~ r2 < r1.
   Axiom Rlt_trans : forall r1 r2 r3:R, r1 < r2 -> r2 < r3 -> r1 < r3.
   Axiom Rplus_lt_compat_l : forall r r1 r2:R, r1 < r2 -> r + r1 < r + r2.
@@ -172,11 +219,12 @@ Module Type VIR_R.
   Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
   Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
 
-  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function X -> (exists r : R , upper_bound X r) ->
+  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function eq Req X -> (exists r : R , upper_bound X r) ->
                                           (exists sup : R , Sup X sup).
  
   (* Axioms copied from Raxioms.v *)
   (* Change { | } -> exists , sumbool to or *)
+  (* Change eq -> Req *)
   
   (* Axioms of Vir_R *)
 
@@ -184,9 +232,9 @@ End VIR_R.
 
 Module Type VIR_R_EXTRA (VirR: VIR_R).
   Import VirR.
- 
-  Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 = x2)
-         /\ (exists x, X x) /\ Proper (Reqb ==> iff) X.
+  Local Open Scope R_scope.
+  Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
+         /\ (exists x, X x) /\ Proper (Req ==> iff) X.
   Parameter Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
   
