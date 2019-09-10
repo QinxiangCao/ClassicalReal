@@ -283,6 +283,7 @@ Proof.
       rewrite Qplus_comm. rewrite Qplus_0_r. apply Qplus_opp_r.
       rewrite H6. apply Qplus_0_r.
 Qed.
+
 Theorem C2D_properity2:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
 Proof.
@@ -297,12 +298,41 @@ Proof.
     destruct H2. destruct H2. destruct H2. destruct H6.
     destruct H7. destruct H8.
     destruct H7. destruct H8. destruct H7. destruct H8.
-    destruct H10. destruct H11. admit.
+    destruct H10. destruct H11.
+    exists (x6*x7)%Q. split.
+    apply QArith_base_ext.Qlt_mult0. 
+    lra. auto. auto.
+    assert(    exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q, CSeq m1 q1 -> CSeq m2 q2 -> Qabs (q1 - q2) < (1#2)*x6).
+    apply Cauchy_def. auto. lra.
+    assert(    exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q, CSeq0 m1 q1 -> CSeq0 m2 q2 -> Qabs (q1 - q2) < (1#2)*x7).
+    apply Cauchy_def. auto. lra. destruct H12,H13.
+    exists (x8+x9+x10+x11)%nat. intros.
+    assert(exists q:Q,CSeq n q). apply Cauchy_exists. auto. destruct H16.
+    assert(exists q:Q,CSeq0 n q). apply Cauchy_exists. auto. destruct H17.
+    assert(p==x12*x13)%Q. apply H15. auto. auto. rewrite H18.
+    apply Qle_lt_trans with (x4*x5 +x6 * x7)%Q. lra.
+    assert(x4+x6<x12). apply H10 with n. lia. auto.
+    assert(x5+x7<x13). apply H11 with n. lia. auto.
+    apply Qlt_trans with ((x4 + x6)*(x5 + x7))%Q. rewrite Qmult_plus_distr_l.
+    rewrite Qmult_plus_distr_r. rewrite Qmult_plus_distr_r.
+    rewrite Qplus_assoc. assert(0<x4*x7). apply QArith_base_ext.Qlt_mult0.
+    auto. auto. assert(0<x6*x5). apply QArith_base_ext.Qlt_mult0.
+    auto. auto. lra. Search Qmult Qlt. apply QArith_base_ext.Qmult_lt_compat_nonneg. 
+    lra. lra. auto. auto.
   + destruct H1.
     * destruct H1. destruct H1. 
     unfold D3.Cut_opp in H1. destruct H1. destruct H1.
     destruct H3. destruct H3. destruct H5. unfold D3.Cut_opp in H2.
     destruct H2. destruct H2. admit.
+    
     * unfold D3.Cut_opp in H1. unfold D3.Cut_mult0 in H1.
     destruct H1. destruct H1. destruct H1. destruct H1. destruct H1.
     destruct H4. destruct H3. destruct H3. destruct H2. destruct H2.
@@ -536,7 +566,157 @@ Proof.
   rewrite Rmult_inv. reflexivity. rewrite H2. rewrite<- D3.Rmult_assoc. rewrite H1.
   rewrite D3.Rmult_assoc. reflexivity.
 Qed.
-Locate Rabs.
-Locate Rlimit.
-(* Theorem C2D_property10:forall (x:C1.Real),C2D (Rabs x)=D3.Rabs (C2D x). *)
-(* Theorem C2D_property11:forall (x:C1.Real), (*One CReal_Seq has a limit ->(C2D CReal_Seq) has a limit*). *)
+
+(* the definition of D.Rabs *)
+Definition cut_positive(A:Q->Prop):Prop:=
+A 0.
+Definition Cut_abs :(Q->Prop)->(Q->Prop):=
+fun A x=>(cut_positive A/\A x)\/(~cut_positive A/\Cut_opp A x).
+Theorem Dedekind_Rabs_pre(A:Q->Prop):Dedekind A->Dedekind (Cut_abs A).
+Proof.
+  intros. split.
+  - split. unfold Cut_abs. unfold cut_positive. unfold Cut_opp.
+    assert(A 0\/~A 0) by apply classic. destruct H0.
+    exists 0. left. auto. exists (-1#1)%Q. right. split. auto. exists 1.
+    split. lra. unfold not. intros. apply H0. apply Dedekind_properties4 with ((- (-1 # 1) + - (1)))%Q.
+    auto. lra. auto. unfold Cut_abs. unfold cut_positive. unfold Cut_opp.
+    assert(A 0\/~A 0) by apply classic. destruct H0.
+    assert(exists q:Q,~A q). apply Dedekind_properties1. auto. destruct H1.
+    exists x.
+    apply and_not_or. split.
+    apply or_not_and. right. auto. apply or_not_and. left. auto.
+     assert(exists q:Q,A q) as P. apply Dedekind_properties1. auto.
+    destruct P as [q P].
+    exists (-q)%Q. apply and_not_or. split. apply or_not_and. left. auto.
+    apply or_not_and. right. unfold not. intros. destruct H1. destruct H1.
+    apply H2. apply Dedekind_properties2  with q. auto. split.
+    auto. lra.
+  - unfold Cut_abs. unfold cut_positive. unfold Cut_opp. intros.
+    destruct H0. destruct H0.
+    + left. split. apply H0. apply Dedekind_properties2 with p. auto.
+      split. apply H0. auto.
+    + right. split. apply H0. destruct H0. destruct H2. exists x.
+      split. destruct H2. auto. destruct H2. unfold not. intros.
+      apply H3. apply Dedekind_properties2 with (- q + - x)%Q.
+      auto. split. auto. lra.
+  - unfold Cut_abs. unfold cut_positive. unfold Cut_opp.
+    intros. destruct H0.
+    + destruct H0. assert(exists r : Q, A r /\ (p < r))%Q. apply Dedekind_properties3. auto. auto.
+      destruct H2. exists x. split. left. split. auto. apply H2. apply H2.
+    + destruct H0. destruct H1. destruct H1. exists (p+(1#2)*x)%Q.
+      split. right. split. auto. exists ((1#2)*x)%Q. split.
+      lra. unfold not. intros. apply H2. apply Dedekind_properties4 with (- (p + (1 # 2) * x) + - ((1 # 2) * x))%Q.
+      auto. lra. auto. lra.
+  - unfold Cut_abs. unfold cut_positive. unfold Cut_opp. intros.
+    destruct H1. destruct H1. left. split. auto. apply Dedekind_properties4 with p.
+    auto. auto. auto. destruct H1. right. split. auto.
+    destruct H2. exists x. split. apply H2. destruct H2. unfold not. intros.
+    apply H3. apply Dedekind_properties4 with (- q + - x)%Q. auto.
+    lra. auto.
+Qed.
+Definition Dedekind_Rabs(A:D1.Real):D1.Real:=
+match A with
+| Real_cons A HA =>Real_cons (Cut_abs A) (Dedekind_Rabs_pre A HA) end.
+Lemma DCut_lt :forall(Dcut:Q->Prop),Dedekind Dcut->forall (p q:Q),
+Dcut p->~Dcut q->(p<q)%Q.
+Proof. 
+  intros. pose proof Dedekind_properties2 _ H p q.
+assert(~q<=p)%Q;[tauto|]. apply Qnot_le_lt. apply H3.
+Qed.
+Lemma DRabs_positive:forall (A:D1.Real),(RBase.Rzero<A)%D->(A==Dedekind_Rabs A)%D.
+Proof.
+intros. unfold D2.Rlt in H. simpl in H. destruct A.
+destruct H. destruct H1. destruct H1. hnf. split.
+- hnf. intros. hnf. unfold cut_positive. unfold Cut_opp.
+  assert(A 0\/~A 0). apply classic. destruct H4. left. split. auto. auto.
+  right. split. auto. exists (-x0)%Q. split.
+  assert(x0<0)%Q. apply DCut_lt with A. auto. auto. auto. lra.
+  unfold not. intros. apply H4. apply Dedekind_properties2 with (- x0 + - - x0)%Q.
+  auto. split. auto. lra.
+- hnf. intros. hnf in H3. unfold cut_positive,Cut_opp in H3. destruct H3.
+  apply H3. destruct H3. destruct H4. destruct H4. apply H.
+  assert(0<=- x0 + - x1)%Q. assert(0 <= - x0 + - x1\/~0 <= - x0 + - x1)%Q by apply classic.
+  destruct H6. auto. assert(- x0 + - x1<0)%Q by lra.
+  assert False. apply H5. apply H. auto. destruct H8. lra.
+Qed.
+Lemma DRabs_notpositive:forall (A:D1.Real),(~RBase.Rzero<A)%D->(-A==Dedekind_Rabs A)%D.
+Proof.
+  intros. unfold D2.Rlt in H. simpl in H. destruct A.
+  hnf. split.
+  - hnf. unfold Cut_opp,Cut_abs. intros. unfold cut_positive,Cut_opp.
+    apply not_and_or in H. destruct H. right. split. assert(A 0\/~A 0) by apply classic.
+    destruct H2.
+    assert False. apply H. intros. apply Dedekind_properties2 with 0. auto. split. auto. lra.
+    destruct H3. auto. auto. assert(A 0\/~A 0)by apply classic. destruct H2.
+    assert False. apply H. exists 0. split. auto. lra. destruct H3.
+    right. split. auto. auto.
+  - hnf. unfold Cut_opp,Cut_abs. intros. unfold cut_positive,Cut_opp.
+    unfold cut_positive,Cut_opp in H1. 
+    apply not_and_or in H. destruct H.
+    + destruct H1. destruct H1. assert False.
+      apply H. intros. apply Dedekind_properties2 with 0. auto. split. auto. lra. destruct H3.
+      destruct H1. auto.
+    + destruct H1. assert False. apply H. exists 0. split. apply H1. lra. destruct H2.
+      destruct H1. auto.
+Qed.
+(* the definition of D.Rabs *)
+
+Theorem C2D_property10:forall (x:C1.Real),C2D (Rabs x)==Dedekind_Rabs (C2D x).
+Proof.
+  intros. assert(0%R<x\/~0%R<x)%C by apply classic.
+  destruct H.
+  - assert(Rabs x==x)%C. apply Rabs_positive. apply C2.Rpositive_gt_0. apply H.
+    assert (C2D (Rabs x)==C2D x)%D. apply C2D_properity3. auto.
+    rewrite H1. apply DRabs_positive. rewrite<- C2D_properity6. apply C2D_properity4. auto.
+  - assert(Rabs x==-x)%C. apply C2.Rnot_lt in H. destruct H.
+    + rewrite<-H. rewrite Rabs_zero. apply C2.Rzero_opp_zero.
+    + apply Rabs_negative. apply C2.Rnegative_lt_0. auto.
+    +  assert (C2D (Rabs x)==C2D (-x))%D. apply C2D_properity3. auto.
+       rewrite H1. rewrite C2D_properity7. apply DRabs_notpositive.
+       rewrite <-C2D_properity6. apply  Rnot_lt_le in H.
+       apply Rle_not_lt. apply C2D_properity5. auto.
+Qed.
+
+(* Definition of D.Rlimit *)
+Class DR_seq (RS: nat -> D1.Real -> Prop) : Prop := { 
+  DRseq_exists : forall (n:nat), exists A1, RS n A1;
+  DRseq_unique : forall (n:nat)  A1 A2,
+      RS n A1 -> RS n A2 -> (A1 == A2)%D;
+  DRseq_proper: forall n, Proper (Req ==> iff) (RS n);
+}.
+Inductive DReal_seq : Type :=
+| DRseq_intro (RS : nat -> D1.Real -> Prop) (H: DR_seq RS).
+Definition DRlimit (Rseq:DReal_seq) (Lim:D1.Real):Prop:=
+forall Eps:D1.Real, (RBase.Rzero < Eps)%D -> exists N, forall n,
+(n>=N)%nat -> forall A, 
+(match Rseq with DRseq_intro RS _ => RS end) n A -> (Dedekind_Rabs (A - Lim) < Eps)%D.
+(* Definition of D.Rlimit *)
+
+Definition C2D_seq_pre (RS:nat->C1.Real->Prop):nat->D1.Real->Prop:=
+fun n x=>exists (y:C1.Real),RS n y/\C2D y==x.
+
+Theorem C2D_seq_limit:forall (A:nat->C1.Real->Prop),R_seq A->DR_seq (C2D_seq_pre A).
+Proof.
+  intros. destruct H. split.
+- intros. assert(exists A1 : Real, A n A1). apply Rseq_exists.
+  destruct H. exists (C2D x). hnf. exists x. split. auto. reflexivity.
+- intros. hnf in H,H0. destruct H,H0. destruct H,H0.
+  assert(x==x0)%C. apply Rseq_unique with n. auto. auto.
+  rewrite<-H1. rewrite<-H2. apply C2D_properity3. auto.
+- intros. hnf. intros. split.
+  + unfold C2D_seq_pre. intros. destruct H0. destruct H0.
+     exists x0. split. auto. rewrite<-H. auto.
+  + unfold C2D_seq_pre. intros. destruct H0. destruct H0.
+    exists x0. split. auto. rewrite H. auto.
+Qed.
+
+Definition C2D_seq (A:Real_seq):DReal_seq:=
+match A with
+|Rseq_intro RS H =>DRseq_intro (C2D_seq_pre RS) (C2D_seq_limit RS H) end.
+
+Theorem C2D_property11:forall (Climit:C1.Real)(Seq:Real_seq),
+Rlimit Seq Climit->DRlimit (C2D_seq Seq) (C2D Climit).
+Proof.
+  intros. hnf. intros.
+  hnf in H. destruct Seq. unfold C2D_seq. 
+  
