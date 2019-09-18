@@ -873,7 +873,7 @@ Module CR_uu (R : VIR_R).
         rewrite <- H3 at 2.
         rewrite <- INQ_Qeq_0. apply INQ_lt. apply Max_powan_0. omega.
     }
-    split ; apply lt_IQR.
+    split; apply lt_IQR.
     - apply Rlt_le_trans with (IQR (sum_f f m) + IQR 1 / IQR (10 ^ n)%nat) ; auto.
       rewrite plus_IQR.
       apply Rplus_le_compat_l.
