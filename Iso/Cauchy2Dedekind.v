@@ -59,9 +59,10 @@ Proof.
   assert(0=Qnum a*0)%Z. rewrite Zmult_comm. reflexivity. rewrite H1.
   apply Zmult_lt_compat_l . auto. auto.
 Qed.
-
+Definition C2D_Seqpre(CSeq:nat->Q->Prop):Q->Prop:=
+fun q=>(exists (t:Q),(t>0)%Q/\(exists(N:nat),forall (n:nat)(p:Q),(n>N)%nat->CSeq n p->(q+t<p)%Q)).
 Theorem Dedekind_CSeq :forall (CSeq:nat->Q->Prop),
-Cauchy CSeq->Dedekind (fun q=>exists (t:Q),(t>0)%Q/\(exists(N:nat),forall (n:nat)(p:Q),(n>N)%nat->CSeq n p->(q+t<p)%Q)).
+Cauchy CSeq->Dedekind (C2D_Seqpre CSeq).
 Proof.
   intros. split.
 - split.
@@ -121,7 +122,7 @@ Qed.
 Definition C2D (A:C1.Real):D1.Real :=
 match A with
 |Real_intro CSeq H =>
-Real_cons (fun q=>exists (t:Q),(t>0)%Q/\(exists(N:nat),forall (n:nat)(p:Q),(n>N)%nat->CSeq n p->(q+t<p)%Q))(Dedekind_CSeq CSeq H) end.
+Real_cons (C2D_Seqpre CSeq)(Dedekind_CSeq CSeq H) end.
 
 Theorem C2D_property1:forall (x y:C1.Real),
   ( (C2D x)+(C2D y)==C2D (x+y))%D.
@@ -283,8 +284,107 @@ Proof.
       rewrite Qplus_comm. rewrite Qplus_0_r. apply Qplus_opp_r.
       rewrite H6. apply Qplus_0_r.
 Qed.
-
+Definition C2D_preop(x:C1.Real):=match x with Real_intro Seq H=>C2D_Seqpre Seq end.
+Lemma C2D_Rmultlemma1:forall(x y:C1.Real),PP (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
+Proof.
+  intros. split.
+  - destruct x,y. hnf. simpl. simpl in H.
+  unfold Cut_mult. intros. destruct H2.
+  + unfold CauchySeqMult. destruct H. destruct H2. 
+  hnf in*. destruct H. destruct H. destruct H5. destruct H3.
+  destruct H3. destruct H6. destruct H2. hnf in H2,H7.
+  destruct H2. destruct H2. destruct H8. destruct H7.
+  destruct H7. destruct H9. destruct H4. destruct H4.
+  destruct H4.  destruct H10. destruct H11.
+  destruct H12. hnf in H12,H11. destruct H11. destruct H11.
+  destruct H12. destruct H12. destruct H14. destruct H15. 
+  exists (x10*x11)%Q. split.
+    apply QArith_base_ext.Qlt_mult0. 
+    lra. auto. auto.
+    assert(    exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q, CSeq m1 q1 -> CSeq m2 q2 -> Qabs (q1 - q2) < (1#2)*x10).
+    apply Cauchy_def. auto. lra.
+    assert(    exists n : nat,
+               forall m1 m2 : nat,
+               (m1 > n)%nat ->
+               (m2 > n)%nat ->
+               forall q1 q2 : Q, CSeq0 m1 q1 -> CSeq0 m2 q2 -> Qabs (q1 - q2) < (1#2)*x11).
+    apply Cauchy_def. auto. lra. destruct H17,H16.
+    exists (x12+x13+x14+x15)%nat. intros.
+    assert(exists q:Q,CSeq n q). apply Cauchy_exists. auto. destruct H20.
+    assert(exists q:Q,CSeq0 n q). apply Cauchy_exists. auto. destruct H21.
+    assert(p==x16*x17)%Q. apply H19. auto. auto. rewrite H22.
+    apply Qle_lt_trans with (x8*x9 +x10 * x11)%Q. lra.
+    assert(x8+x10<x16). apply H14 with n. lia. auto.
+    assert(x9+x11<x17). apply H15 with n. lia. auto.
+    apply Qlt_trans with ((x8 + x10)*(x9 + x11))%Q. rewrite Qmult_plus_distr_l.
+    rewrite Qmult_plus_distr_r. rewrite Qmult_plus_distr_r.
+    rewrite Qplus_assoc. assert(0<x8*x11). apply QArith_base_ext.Qlt_mult0.
+    auto. auto. assert(0<x10*x9). apply QArith_base_ext.Qlt_mult0.
+    auto. auto. lra. apply QArith_base_ext.Qmult_lt_compat_nonneg. 
+    lra. lra. auto. auto.
+  + destruct H2.
+    ++ destruct H2. hnf in H2. hnf in H.
+    destruct H2. assert False. hnf in H2. destruct H2.
+    destruct H2. apply H5. destruct H. 
+    assert(Dedekind (C2D_Seqpre CSeq)).
+    { apply Dedekind_CSeq. auto. }
+    apply Dedekind_properties2 with 0. auto. split.
+    auto. lra. destruct H5.
+    ++ destruct H2.
+    +++ destruct H2. hnf in H2. hnf in H.
+    destruct H2. assert False. hnf in H4. destruct H4.
+    destruct H4. apply H5. destruct H. 
+    assert(Dedekind (C2D_Seqpre CSeq0)).
+    { apply Dedekind_CSeq. auto. }
+    apply Dedekind_properties2 with 0. auto. split.
+    auto. lra. destruct H5.
+    +++ destruct H2.
+    ++++ destruct H2. hnf in H2. hnf in H.
+    destruct H2. assert False. hnf in H2. destruct H2.
+    destruct H2. apply H5. destruct H. 
+    assert(Dedekind (C2D_Seqpre CSeq)).
+    { apply Dedekind_CSeq. auto. }
+    apply Dedekind_properties2 with 0. auto. split.
+    auto. lra. destruct H5.
+    ++++ destruct H2. hnf in H2. hnf in H.
+    destruct H2.
+    +++++ assert False. destruct H2. apply H2. apply H.
+    destruct H4.
+    +++++ assert False. destruct H2. apply H2. apply H.
+    destruct H4.
+  - admit.
+Admitted.
+    
+  
+Lemma C2D_Rmultlemma2:forall(x y:C1.Real),NP (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
+Proof.
+Admitted.
+Lemma C2D_Rmultlemma3:forall(x y:C1.Real),PN (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
+Proof.
+Admitted.
+Lemma C2D_Rmultlemma4:forall(x y:C1.Real),NN (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
+Proof.
+Admitted.
+Lemma C2D_Rmultlemma5:forall(x y:C1.Real),O (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
+Proof.
+Admitted.
 Theorem C2D_property2:forall (x y:C1.Real),
+  ((C2D x)*(C2D y)==C2D ( x *y))%D.
+Proof.
+  intros.
+  assert(PP (C2D_preop x)(C2D_preop y)\/NP (C2D_preop x)(C2D_preop y)\/PN (C2D_preop x)(C2D_preop y)\/NN (C2D_preop x)(C2D_preop y)\/O (C2D_preop x)(C2D_preop y)).
+  apply Rmult_situation. destruct x. apply Dedekind_CSeq. auto. destruct y.
+  apply Dedekind_CSeq. auto.
+  destruct H. apply C2D_Rmultlemma1. auto. destruct H.
+  apply C2D_Rmultlemma2. auto. destruct H. 
+  apply C2D_Rmultlemma3. auto. destruct H.
+  apply C2D_Rmultlemma4. auto. apply C2D_Rmultlemma5. auto.
+Qed.
+Theorem C2D_property:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
 Proof.
   intros.
