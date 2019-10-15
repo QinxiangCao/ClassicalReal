@@ -200,45 +200,6 @@ Module Type Vir_R.
     apply Lemma_Rinv.
   Defined.
 
-  Definition rpow' (a : R) (H : ~ a == R0) : nat -> R.
-    apply Rpow'.
-    exists a. apply H.
-  Defined.
-
-  Theorem Lemma_Rpow : forall (a:R) (z : nat), P_singlefun (fun b : R => (exists H : ~ a == R0, rpow' a H z == b) \/ a == R0 /\ b == R0).
-  Proof.
-    intros.
-    split; [| split].
-    - intros.
-      destruct H. 
-      + destruct H. rewrite <- H. symmetry. destruct H0.  
-        * destruct H0. rewrite <- H0.
-          assert (x = x0). { apply proof_irrelevance. }
-          subst; auto. reflexivity.
-        * exfalso. apply x. apply H0.
-      + destruct H0.
-        * destruct H0. exfalso. apply x. apply H.
-        * destruct H. destruct H0. rewrite H1. symmetry. auto. 
-    - pose proof (classic (a == R0)).
-      destruct H.
-      + exists R0. right. split ; auto. reflexivity.
-      + exists (rpow' a H z). left. exists H. auto. reflexivity.
-    - split ; intros ; destruct H0.
-      + destruct H0. left. exists x0. rewrite H0. auto.
-      + right. split; try ( apply H0 ).
-        rewrite <- H. apply H0.
-      + destruct H0. left. exists x0. rewrite H0. auto. symmetry. auto.
-      + right. split ; try ( apply H0).
-        rewrite H. apply H0.
-  Qed.
-  
-  Definition Rpow (a : R) (z : nat) : R.
-    apply Rsinglefun.
-    exists (fun b => (exists H: ~ a == R0, (rpow' a H z) == b) \/
-                    (a == R0 /\ b == R0)).
-    apply Lemma_Rpow.
-  Defined.
-  
   Theorem Rinv_1 : forall r : R , r == R0 -> Rinv r == R0.
   Proof.
     intros.
@@ -295,4 +256,95 @@ Module Type Vir_R.
     rewrite H.
     apply Rinv'_pro2.
   Qed.
+  
+  Definition rpow' (a : R) (H : ~ a == R0) : nat -> R.
+    apply Rpow'.
+    exists a. apply H.
+  Defined.
+
+  Parameter Rpow'_pro : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0)(z1 z2 : nat), 
+    r1 == r2 -> z1 = z2 -> rpow' r1 H1 z1 == rpow' r2 H2 z2.
+
+  Theorem Lemma_Rpow : forall (a:R) (z : nat), P_singlefun (fun b : R => (exists H : ~ a == R0, rpow' a H z == b) \/ a == R0 /\ b == R0).
+  Proof.
+    intros.
+    split; [| split].
+    - intros.
+      destruct H. 
+      + destruct H. rewrite <- H. symmetry. destruct H0.  
+        * destruct H0. rewrite <- H0.
+          assert (x = x0). { apply proof_irrelevance. }
+          subst; auto. reflexivity.
+        * exfalso. apply x. apply H0.
+      + destruct H0.
+        * destruct H0. exfalso. apply x. apply H.
+        * destruct H. destruct H0. rewrite H1. symmetry. auto. 
+    - pose proof (classic (a == R0)).
+      destruct H.
+      + exists R0. right. split ; auto. reflexivity.
+      + exists (rpow' a H z). left. exists H. auto. reflexivity.
+    - split ; intros ; destruct H0.
+      + destruct H0. left. exists x0. rewrite H0. auto.
+      + right. split; try ( apply H0 ).
+        rewrite <- H. apply H0.
+      + destruct H0. left. exists x0. rewrite H0. auto. symmetry. auto.
+      + right. split ; try ( apply H0).
+        rewrite H. apply H0.
+  Qed.
+  
+  Definition Rpow (a : R) (z : nat) : R.
+    apply Rsinglefun.
+    exists (fun b => (exists H: ~ a == R0, (rpow' a H z) == b) \/
+                    (a == R0 /\ b == R0)).
+    apply Lemma_Rpow.
+  Defined.
+  
+  Theorem Rpow_1 : forall (r : R)(z:nat) , r == R0 -> Rpow r z == R0.
+  Proof.
+    intros.
+    unfold Rpow.
+    pose proof (Lemma_Rpow r z).
+    pose proof (Rsinglefun_correct (fun b : R => 
+      (exists H1 : ~ r == R0, rpow' r H1 z == b) \/ r == R0 /\ b == R0) H0).
+    assert (H0 = (Lemma_Rpow r z)).
+    { apply proof_irrelevance. }
+    subst.
+    destruct H1,H0.
+    - exfalso. auto.
+    - rewrite H1. reflexivity. 
+  Qed.
+  
+  Theorem Rpow_Rpow' : forall (r : R)(z:nat) , ~ r == R0 -> exists H: ~ r == R0, Rpow r z == (rpow' r H z).
+  Proof.
+    intros.
+    unfold Rpow.
+    pose proof (Lemma_Rpow r z).
+    pose proof (Rsinglefun_correct (fun b : R => 
+      (exists H1 : ~ r == R0, rpow' r H1 z == b) \/ r == R0 /\ b == R0) H0).
+    assert (H0 = (Lemma_Rpow r z)).
+    { apply proof_irrelevance. }
+    subst.
+    destruct H1,H0.
+    - exists x. rewrite H0. reflexivity.
+    - exfalso. auto.
+  Qed.
+  
+  Theorem Rpow_correct : forall (r1 r2 : R)(z1 z2 : nat) , r1 == r2 -> z1 = z2 -> Rpow r1 z1 == Rpow r2 z2.
+  Proof.
+    intros. subst.
+    destruct (classic (r1 == R0)).
+    - rewrite H0 in H.
+      symmetry in H.
+      apply (Rpow_1 _ z2) in H.
+      apply (Rpow_1 _ z2) in H0.
+      rewrite H , H0. reflexivity.
+    - destruct (classic (r2 == R0)).
+      + exfalso. apply H0. rewrite H. auto.
+      + apply (Rpow_Rpow' _ z2) in H0.
+        apply (Rpow_Rpow' _ z2) in H1.
+        destruct H0,H1.
+        rewrite H0 , H1.
+        apply Rpow'_pro;  auto.
+  Qed.
+
 End Vir_R.
