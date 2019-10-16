@@ -3835,7 +3835,7 @@ Proof.
     hnf. split;hnf;intros;rewrite H0 in *;auto. auto.
 Qed.
 
-Theorem R_complete : forall A : Real -> Prop, Rdedekind A -> 
+Theorem R_complete' : forall A : Real -> Prop, Rdedekind A -> 
 exists a : Real, forall b : Real, A b <-> (b < a)%R.
 Proof.
   intros. pose proof Dedekind_complete A H.
@@ -3855,6 +3855,16 @@ Proof.
     hnf. intros. apply (Dedekind_le A0);auto.
 Qed.
 
-
+Theorem R_complete : forall A : Real -> Prop, Rdedekind A -> 
+exists a : Real, ~ A a /\ (forall b : Real,~ A b <-> (a <= b)%R).
+Proof.
+  intros. pose proof R_complete' A H. destruct H0. exists x.
+  split.
+  - hnf. intros. apply H0 in H1. apply Rlt_not_refl in H1. auto.
+  - intros. split.
+    + intros. apply Rnot_lt_le. hnf. intros. apply H1.
+      apply H0. auto.
+    + intros. hnf. intros. apply H0 in H2. apply Rlt_not_le in H1;auto.
+Qed.
 
 
