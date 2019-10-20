@@ -6,7 +6,7 @@ COQC=$(COQBIN)coqc
 COQDEP=$(COQBIN)coqdep
 
 DIRS = \
-  QArith_ext Dedekind Cauchy Iso Uncomputable MetricSpace
+  QArith_ext Dedekind Cauchy Iso Uncomputable MetricSpace Correctness
 
 INCLUDE_DEMO = $(foreach d, $(DIRS), -Q $(CURRENT_DIR)/$(d) CReal.$(d))
 COQ_FLAG = $(INCLUDE_DEMO)
@@ -31,13 +31,17 @@ MetricSpace_FILES = \
 Uncomputable_FILES = \
   Countable.v TMSet.v ComRealBase.v ComRealField.v ComRealBaseLemma1.v ComRealLemmas.v ComRealBase_Dec.v ComRealBase_TMR.v ComRealBaseuu.v ComRealBaseN_Q.v Rinv_Rpow.v
 
+Correctness_FILES =  \
+  Cauchy_correct.v Dedekind_correct.v
+  
 FILES = \
   $(QArith_ext_FILES:%.v=QArith_ext/%.v) \
   $(Dedekind_FILES:%.v=Dedekind/%.v) \
   $(Cauchy_FILES:%.v=Cauchy/%.v) \
   $(Iso_FILES:%.v=Iso/%.v) \
   $(MetricSpace_FILES:%.v=MetricSpace/%.v) \
-  $(Uncomputable_FILES:%.v=Uncomputable/%.v)
+  $(Uncomputable_FILES:%.v=Uncomputable/%.v) \
+  $(Correctness_FILES:%.v=Correctness/%.v)
 
 $(FILES:%.v=%.vo): %.vo: %.v
 	@echo COQC $*.v

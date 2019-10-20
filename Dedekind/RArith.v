@@ -768,14 +768,14 @@ Definition PP (A B : Q -> Prop) : Prop := (A 0 /\ B 0).
 Definition NP (A B : Q -> Prop) : Prop := (Cut_opp A 0 /\ B 0).
 Definition PN (A B : Q -> Prop) : Prop := (A 0 /\Cut_opp B 0).
 Definition NN (A B : Q -> Prop) : Prop := (Cut_opp A 0 /\ Cut_opp B 0).
-Definition O (A B : Q -> Prop) : Prop := ((~ A 0 /\ ~ Cut_opp A 0) \/( ~ B 0 /\ ~ Cut_opp B 0)).
+Definition ZO (A B : Q -> Prop) : Prop := ((~ A 0 /\ ~ Cut_opp A 0) \/( ~ B 0 /\ ~ Cut_opp B 0)).
 
 Definition Cut_mult : (Q -> Prop) -> (Q -> Prop) -> (Q -> Prop):=
   (fun A B x => (PP A B /\ Cut_multPP A B x) \/
                 (NP A B /\ Cut_multNP A B x) \/
                 (PN A B /\ Cut_multPN A B x) \/
                 (NN A B /\ Cut_multNN A B x)\/
-                (O A B /\ Cut_mult0 A B x))
+                (ZO A B /\ Cut_mult0 A B x))
 .
 
 Definition Cuteq (A B : Q -> Prop) := forall x : Q, A x <-> B x.
@@ -928,7 +928,7 @@ Proof.
         exists x1, x0. destruct H0 as [?[?[?[?]]]]. repeat split; auto.
         rewrite Qmult_comm. auto.
     + right. right. right. right. split.
-      * unfold O in *. destruct H.
+      * unfold ZO in *. destruct H.
         right. apply H.
         left. apply H.
       * auto.
@@ -1646,7 +1646,7 @@ assert(forall x : Q, Cut_opp (Cut_mult A B) x <-> Cut_opp (Cut_mult B A) x).
 Qed.
 
 Lemma Cut_mult0_trans : forall B C : Q -> Prop, 
- Dedekind B -> Dedekind C -> O B C -> ~ Cut_mult B C 0 /\ ~ Cut_opp (Cut_mult B C) 0.
+ Dedekind B -> Dedekind C -> ZO B C -> ~ Cut_mult B C 0 /\ ~ Cut_opp (Cut_mult B C) 0.
 Proof.
   intros. rename H into DB. rename H0 into DC. unfold not. destruct H1, H. { split. { intros.
   destruct H1 as [?|[?|[?|[?|[]]]]].
