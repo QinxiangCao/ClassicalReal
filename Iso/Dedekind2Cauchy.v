@@ -1254,7 +1254,6 @@ Proof.
   apply Qlt_le_trans with (eps / (Qabs ((x1 # 2 ^ of_nat m) - 1))* Qabs ((x1 # 2 ^ of_nat m) - 1))%Q.
   apply Qmult_lt_compat_r.
   apply C1.Qnot_0_abs_pos. auto. auto. 
-  Search Qle Qeq.
   assert(eps / Qabs ((x1 # 2 ^ of_nat m) - 1) * Qabs ((x1 # 2 ^ of_nat m) - 1) ==eps)%Q.
   field. apply QArith_base_ext.Qnot_0_abs. auto. rewrite H24.
   apply Qle_refl.

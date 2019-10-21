@@ -1,5 +1,5 @@
 Require Import QArith.
-Search Qeq.
+
 Module Type R_Field.
   Parameter R : Type.
   Delimit Scope R_scope with R.
