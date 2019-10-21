@@ -115,6 +115,32 @@ Module VirRLemmas (VirR : VIR_R).
     exfalso. auto.
   Qed. 
   
+  Definition If_fun_rich (P : Prop) (x : P -> R) (y : ~ P -> R) := 
+    (fun z => (exists H : P , x H == z) \/ (exists H : ~ P , y H == z)).
+  
+  Theorem If_fun_single_rich : forall (P : Prop) x y , 
+    P_singlefun (If_fun_rich P x y).
+  Proof.
+    intros. 
+    repeat split ; intros.
+    - destruct H , H0 , H , H0.
+      + rewrite <- H. auto.
+      + exfalso. auto.
+      + exfalso. auto.
+      + rewrite <- H1. auto.
+    - destruct (classic P).
+      + exists x. hnf. auto with real.
+      + exists y. hnf. auto with real.
+    - hnf in *. rewrite H in H0. auto. 
+    - hnf in *. rewrite H . auto.
+  Qed. 
+ 
+  Definition Rif_rich (P : Prop)(x : P -> R)(y : ~ P -> R) : R.
+    apply Rsinglefun. 
+    exists (If_fun_rich P x y).
+    apply If_fun_single_rich.
+  Defined.
+
   Definition Rabs : R -> R.
     intros.
     apply (Rif (X >= 0) X (- X)).

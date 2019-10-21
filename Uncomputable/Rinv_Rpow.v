@@ -77,86 +77,70 @@ Module Type Vir_R.
   Parameter Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
 
-  Definition If_fun (P : Prop) (x y : R) := (fun z => (P /\ x == z) \/ (~ P /\ y == z)).
+  Definition If_fun_rich (P : Prop) (x : P -> R) (y : ~ P -> R) := 
+    (fun z => (exists H : P , x H == z) \/ (exists H : ~ P , y H == z)).
   
-  Theorem If_fun_single : forall (P : Prop)(x y : R), P_singlefun (If_fun P x y).
+  Theorem If_fun_single_rich : forall (P : Prop) x y , 
+    P_singlefun (If_fun_rich P x y).
   Proof.
     intros. 
     repeat split ; intros.
     - destruct H , H0 , H , H0.
-      + rewrite <- H1. auto.
+      + assert (x0 = x3). { apply proof_irrelevance. }
+        subst. rewrite <- H , <- H0. reflexivity.
       + exfalso. auto.
       + exfalso. auto.
-      + rewrite <- H1. auto.
+      + assert (x0 = x3). { apply proof_irrelevance. }
+        subst. rewrite <- H , <- H0. reflexivity.
     - destruct (classic P).
-      + exists x. hnf. left. split ; auto. reflexivity.
-      + exists y. hnf. right. split ; auto. reflexivity.
-    - hnf in *. rewrite H in H0. auto. 
-    - hnf in *. rewrite H . auto.
-  Qed.
-  
-  Instance If_fun_comp : Proper (eq(A:=Prop) ==> Req ==> Req ==> Req ==> iff) If_fun.
-  Proof.
-    hnf ; red ; intros ; hnf ; red ; intros.
-    split ; intros ; hnf in * ; rewrite H , H0 , H1 , H2 in *; auto.
-  Qed.
-  
-  Definition Rif (P : Prop)(x y  : R) : R.
-    apply Rsinglefun. 
-    exists (If_fun P x y).
-    apply If_fun_single.
-  Defined.
-  
-  Instance Rif_comp : Proper (eq(A:=Prop) ==> Req ==> Req ==> Req) Rif.
-  Proof.
-    hnf ; red ; intros ; hnf ; intros.
-    unfold Rif.
-    pose proof If_fun_single x x0 x1.
-    pose proof If_fun_single y y0 y1.
-    assert (If_fun x x0 x1 = If_fun y y0 y1).
-    { rewrite H. apply functional_extensionality_dep.
-      intros. apply propositional_extensionality.
-      rewrite H0 , H1. reflexivity.
-    }
-    subst.
-    pose proof Rsinglefun_correct (If_fun y x0 x1) H2.
-    pose proof Rsinglefun_correct (If_fun y y0 y1) H3.
-    assert (H3 = If_fun_single y y0 y1). { apply proof_irrelevance. }
-    assert (H2 = If_fun_single y x0 x1). { apply proof_irrelevance. }
-    rewrite H6 , H7 in *. clear H6 H7.
-    destruct H , H5 , H , H5.
-    - rewrite <- H7. rewrite <- H6. auto.
-    - exfalso. auto.
-    - exfalso. auto.
-    - rewrite <- H7. rewrite <- H6. auto.
-  Qed.
-  
-  Theorem Rif_left : forall (P:Prop) (x y:R), P -> Rif P x y == x.
-  Proof.
-    intros. unfold Rif. 
-    pose proof If_fun_single P x y.
-    pose proof Rsinglefun_correct (If_fun P x y) H0.
-    assert (H0 = If_fun_single P x y).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1 , H0.
-    - rewrite <- H1. reflexivity.
-    - exfalso. auto.
-  Qed.
-  
-  Theorem Rif_right : forall (P:Prop) (x y:R), ~ P -> Rif P x y == y.
-  Proof.
-    intros. unfold Rif. 
-    pose proof If_fun_single P x y.
-    pose proof Rsinglefun_correct (If_fun P x y) H0.
-    assert (H0 = If_fun_single P x y).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1 , H0.
-    - exfalso. auto.
-    - rewrite <- H1. reflexivity.
+      + exists (x H). hnf. left.
+        exists H. reflexivity.
+      + exists (y H). hnf. right.
+        exists H. reflexivity.
+    - hnf in *. destruct H0 , H0 ; rewrite H in H0.
+      + left. exists x1. auto.
+      + right. exists x1. auto. 
+    - hnf in *. destruct H0 , H0 ; rewrite <- H in H0.
+      + left. exists x1. auto.
+      + right. exists x1. auto.
   Qed. 
+ 
+  Definition Rif_rich (P : Prop)(x : P -> R)(y : ~ P -> R) : R.
+    apply Rsinglefun. 
+    exists (If_fun_rich P x y).
+    apply If_fun_single_rich.
+  Defined.
 
+  Theorem Rif_rich_left : forall (P:Prop) x y, P -> exists H : P,Rif_rich P x y == x H.
+  Proof.
+    intros. unfold Rif_rich. 
+    pose proof If_fun_single_rich P x y.
+    pose proof Rsinglefun_correct (If_fun_rich P x y) H0.
+    assert (H0 = If_fun_single_rich P x y).
+    { apply proof_irrelevance. }
+    subst. exists H.
+    destruct H1 , H0.
+    - symmetry. 
+      assert (x0 = H). { apply proof_irrelevance. }
+      subst. auto.
+    - exfalso. auto.
+  Qed.
+  
+  Theorem Rif_rich_right : forall (P:Prop) x y, ~ P -> exists H : ~ P,Rif_rich P x y == y H.
+  Proof.
+    intros. unfold Rif_rich. 
+    pose proof If_fun_single_rich P x y.
+    pose proof Rsinglefun_correct (If_fun_rich P x y) H0.
+    assert (H0 = If_fun_single_rich P x y).
+    { apply proof_irrelevance. }
+    subst. exists H.
+    destruct H1 , H0.
+    - exfalso. auto.
+    - symmetry. 
+      assert (x0 = H). { apply proof_irrelevance. }
+      subst. auto.
+  Qed. 
+  
   Definition rinv' (a : R) (H : ~ (a == R0)) : R.
     apply Rinv'.
     exists a. apply H.
@@ -165,81 +149,43 @@ Module Type Vir_R.
   Parameter Rinv'_pro1 : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> rinv' r1 H1 == rinv' r2 H2.
   
   Parameter Rinv'_pro2 : forall (r : R)(H : ~ r == R0), rinv' r H * r == R1.
-
-  Theorem Lemma_Rinv : forall a : R , P_singlefun (fun b : R => (exists H : ~ a == R0, rinv' a H == b) \/ a == R0 /\ b == R0).
-  Proof.
-    intros.
-    split; [| split].
-    - intros.
-      destruct H. 
-      + destruct H. rewrite <- H. symmetry. destruct H0.  
-        * destruct H0. rewrite <- H0.
-          assert (x = x0). { apply proof_irrelevance. }
-          subst x ; auto. reflexivity.
-        * exfalso. apply x. apply H0.
-      + destruct H0.
-        * destruct H0. exfalso. apply x. apply H.
-        * destruct H. destruct H0. rewrite H1. rewrite H2. reflexivity. 
-    - pose proof (classic (a == R0)).
-      destruct H.
-      + exists R0. right. split ; auto. reflexivity.
-      + exists (rinv' a H). left. exists H. auto. reflexivity.
-    - split ; intros ; destruct H0.
-      + destruct H0. left. exists x0. rewrite H0. auto.
-      + right. split; try ( apply H0 ).
-        rewrite <- H. apply H0.
-      + destruct H0. left. exists x0. rewrite H0. auto. symmetry. auto.
-      + right. split ; try ( apply H0).
-        rewrite H. apply H0.
-  Qed.
   
   Definition Rinv (a : R): R.
-    apply Rsinglefun.
-    exists (fun b => (exists H: ~ (a == R0), (rinv' a H) == b) \/
-                     (a == R0 /\ b == R0)).
-    apply Lemma_Rinv.
+    apply (Rif_rich (a == R0)).
+    - intros. apply R0.
+    - intros. apply (rinv' a H).
   Defined.
 
   Theorem Rinv_1 : forall r : R , r == R0 -> Rinv r == R0.
   Proof.
     intros.
     unfold Rinv.
-    pose proof (Lemma_Rinv r).
-    pose proof (Rsinglefun_correct (fun b : R => 
-      (exists H0 : ~ r == R0, rinv' r H0 == b) \/ r == R0 /\ b == R0) H0).
-    assert (H0 = (Lemma_Rinv r)).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1,H0.
-    - exfalso. auto.
-    - rewrite H1. reflexivity. 
+    pose proof (Rif_rich_left (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => rinv' r H0)) H.
+    destruct H0.
+    auto.
   Qed.
   
   Theorem Rinv_Rinv' : forall r : R , ~ r == R0 -> exists H: ~ r == R0, Rinv r == (rinv' r H).
   Proof.
     intros.
     unfold Rinv.
-    pose proof (Lemma_Rinv r).
-    pose proof (Rsinglefun_correct (fun b : R => 
-      (exists H0 : ~ r == R0, rinv' r H0 == b) \/ r == R0 /\ b == R0) H0).
-    assert (H0 = (Lemma_Rinv r)).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1,H0.
-    - exists x. rewrite H0. reflexivity.
-    - exfalso. auto.
+    pose proof (Rif_rich_right (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => rinv' r H0)) H.
+    destruct H0.
+    auto.
+    exists x. auto.
   Qed.
   
-  Theorem Rinv_correct1 : forall r1 r2 : R , r1 == r2 -> Rinv r1 == Rinv r2.
+  Theorem Rinv_comp : Proper (Req ==> Req) Rinv.
   Proof.
+    hnf. intros.
     intros.
-    destruct (classic (r1 == R0)).
+    destruct (classic (x == R0)).
     - rewrite H0 in H.
       symmetry in H.
       apply Rinv_1 in H.
       apply Rinv_1 in H0.
       rewrite H , H0. reflexivity.
-    - destruct (classic (r2 == R0)).
+    - destruct (classic (y == R0)).
       + exfalso. apply H0. rewrite H. auto.
       + apply Rinv_Rinv' in H0.
         apply Rinv_Rinv' in H1.
@@ -248,7 +194,7 @@ Module Type Vir_R.
         apply Rinv'_pro1;  auto.
   Qed.
   
-  Theorem Rinv_correct2 : forall r : R , ~ r == R0 -> Rinv r * r == R1.
+  Theorem Rinv_l : forall r : R , ~ r == R0 -> Rinv r * r == R1.
   Proof.
     intros.
     apply Rinv_Rinv' in H.
