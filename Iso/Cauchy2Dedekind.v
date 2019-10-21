@@ -289,10 +289,10 @@ Lemma Qminus_Qplus:forall(a b c:Q),a<=b+c<->a-b<=c.
 Proof.
   intros. split.
 - intros. unfold Qminus. assert(a + -b<= b + c +-b).
-  { Search Qle Qplus. apply Qplus_le_compat. auto. apply Qle_refl. }
+  { apply Qplus_le_compat. auto. apply Qle_refl. }
   assert(b+ c+ -b==c)%Q. rewrite Qplus_comm. rewrite Qplus_assoc.
   rewrite Qplus_comm. assert(-b+b==0)%Q. rewrite Qplus_comm. apply Qplus_opp_r.
-  rewrite H1. Search Qplus 0. apply Qplus_0_r. rewrite<-H1. auto.
+  rewrite H1. apply Qplus_0_r. rewrite<-H1. auto.
 - intros. unfold Qminus in H. assert(a + -b +b<= c+b).
   apply Qplus_le_compat. auto. apply Qle_refl.
   rewrite Qplus_comm. assert( a + - b + b==a)%Q.
@@ -313,7 +313,7 @@ unfold "==". split.
   apply Nat.le_lt_trans with (x1+x2)%nat. omega. apply H5. apply H0.
   assert(Qabs(x3-p)<(1 # 2) * x0). apply H4 with n. apply Nat.le_lt_trans with (x1+x2)%nat. omega.
   apply H5. auto. auto. assert(x3 -(1#2)*x0<=p). 
-  assert(x3-p<=(1 # 2) * x0). Search Qle "trans". 
+  assert(x3-p<=(1 # 2) * x0).
   apply QOrderedType.QOrder.le_trans with (Qabs (x3 - p)).
   apply Qle_Qabs. apply Qlt_le_weak. auto. rewrite<-Qminus_Qplus.
   rewrite<-Qminus_Qplus in H9. rewrite Qplus_comm. auto.
@@ -536,7 +536,7 @@ forall q1 q2 : Q, CSeq0 m1 q1 -> CSeq0 m2 q2 -> Qabs (q1 - q2) <(1#2)* x9)%Q as 
     rewrite Qmult_plus_distr_l. rewrite Qplus_assoc.
     assert(x10*x9==x9*x10)%Q by apply Qmult_comm.  rewrite H14. rewrite QArith_base_ext.Qmult_opp_assoc_l.
     assert(x8*x11==x11*x8)%Q by apply Qmult_comm.  rewrite H15. rewrite QArith_base_ext.Qmult_opp_assoc_l.
-    assert(0<(- x8 * - x9))%Q. Search Qmult 0%Q Qlt. rewrite<- QArith_base_ext.Qmult_opp_assoc_l.
+    assert(0<(- x8 * - x9))%Q. rewrite<- QArith_base_ext.Qmult_opp_assoc_l.
     rewrite Qmult_comm. rewrite <-QArith_base_ext.Qmult_opp_assoc_l. rewrite Qopp_opp. 
     apply mult_lt_0. lra. lra. lra. 
 Qed.
@@ -719,7 +719,7 @@ Proof.
   apply Qmult_lt_compat_r. auto.
   auto.
 Qed. 
-Lemma C2D_Rmultlemma5:forall(x y:C1.Real),O (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
+Lemma C2D_Rmultlemma5:forall(x y:C1.Real), ZO (C2D_preop x)(C2D_preop y)->((C2D x)*(C2D y)==C2D ( x *y))%D.
 Proof.
   intros. destruct H.
   + destruct H. split.
@@ -860,7 +860,7 @@ Theorem C2D_property2:forall (x y:C1.Real),
   ((C2D x)*(C2D y)==C2D ( x *y))%D.
 Proof.
   intros.
-  assert(PP (C2D_preop x)(C2D_preop y)\/NP (C2D_preop x)(C2D_preop y)\/PN (C2D_preop x)(C2D_preop y)\/NN (C2D_preop x)(C2D_preop y)\/O (C2D_preop x)(C2D_preop y)).
+  assert(PP (C2D_preop x)(C2D_preop y)\/NP (C2D_preop x)(C2D_preop y)\/PN (C2D_preop x)(C2D_preop y)\/NN (C2D_preop x)(C2D_preop y)\/ ZO (C2D_preop x)(C2D_preop y)).
   apply Rmult_situation. destruct x. apply Dedekind_CSeq. auto. destruct y.
   apply Dedekind_CSeq. auto.
   destruct H. apply C2D_Rmultlemma1. auto. destruct H.
@@ -994,7 +994,6 @@ Proof.
   rewrite C3.Rmult_comm. apply Rmult_inv_r'.
   assert(C2D ((/ exist (fun a0 : Real => ~ (a0 == 0)%C) x H)%R * x)==C2D 1%R).
   apply C2D_property3. auto. rewrite H2. apply C2D_property8.
-  Search D3.Rmult RBase.Rone.
   rewrite <-D3.Rmult_1_r. symmetry. rewrite<-D3.Rmult_1_r. symmetry.
   assert(RBase.Rone==(C2D x)*(Dedekind.RArith.Rinv (C2D x) (notC2Dzero x H) )).
   rewrite Rmult_inv. reflexivity. rewrite H2. rewrite<- D3.Rmult_assoc. rewrite H1.

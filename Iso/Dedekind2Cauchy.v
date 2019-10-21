@@ -288,7 +288,6 @@ Proof.
   exists(Z.pos (2 ^ of_nat (S n))*x0)%Z.
   rewrite Z.mul_assoc. symmetry. rewrite Z.mul_comm.
   rewrite Pos2Z.inj_pow_pos. rewrite Pos2Z.inj_pow_pos.
-  Search Z.pow_pos.
   assert(2=Z.pow_pos 2 1)%Z. reflexivity. rewrite H11.
   rewrite<-Zpower_pos_is_exp.
   assert(of_nat (S (S n))=1 + of_nat (S n))%positive.
@@ -1132,7 +1131,7 @@ Proof.
   rewrite C3.Ropp_involutive. rewrite H2. rewrite<- C3.Ropp_involutive. reflexivity.
 Qed.
 Lemma D2Cmult_lemma5:forall(A A0:Q->Prop)(H:D1.Dedekind A)(H0:D1.Dedekind A0),
-D3.O A A0-> D2C (D1.Real_cons A H) * D2C (D1.Real_cons A0 H0) ==
+D3.ZO A A0-> D2C (D1.Real_cons A H) * D2C (D1.Real_cons A0 H0) ==
 D2C (D1.Real_cons A H * D1.Real_cons A0 H0) .
 Proof.
   intros. hnf. hnf in*. intros.
@@ -1236,7 +1235,6 @@ Proof.
   rewrite H24. auto. 
   assert(Qabs ((x1 # 2 ^ of_nat m) - 1)<t1+t2+1)%Q.
   apply Qle_lt_trans with (Qabs (x1 # 2 ^ of_nat m) + Qabs 1)%Q.
-  Search Qabs Qminus Qplus.
   assert(x1 # 2 ^ of_nat m==(x1 # 2 ^ of_nat m)-0)%Q as P7 by lra.
   assert(Qabs 1==Qabs (0-1))%Q as P8. simpl. reflexivity.
   assert(Qabs ((x1 # 2 ^ of_nat m)) ==Qabs ((x1 # 2 ^ of_nat m) - 0) )%Q as P9.
@@ -1321,7 +1319,6 @@ Proof.
   rewrite H24. auto. 
   assert(Qabs ((x0 # 2 ^ of_nat m) - 1)<t1+t2+1)%Q.
   apply Qle_lt_trans with (Qabs (x0 # 2 ^ of_nat m) + Qabs 1)%Q.
-  Search Qabs Qminus Qplus.
   assert(x0 # 2 ^ of_nat m==(x0 # 2 ^ of_nat m)-0)%Q as P7 by lra.
   assert(Qabs 1==Qabs (0-1))%Q as P8. simpl. reflexivity.
   assert(Qabs ((x0 # 2 ^ of_nat m)) ==Qabs ((x0 # 2 ^ of_nat m) - 0) )%Q as P9.
@@ -1341,7 +1338,6 @@ Proof.
   apply Qlt_le_trans with (eps / (Qabs ((x0 # 2 ^ of_nat m) - 1))* Qabs ((x0 # 2 ^ of_nat m) - 1))%Q.
   apply Qmult_lt_compat_r.
   apply C1.Qnot_0_abs_pos. auto. auto. 
-  Search Qle Qeq.
   assert(eps / Qabs ((x0 # 2 ^ of_nat m) - 1) * Qabs ((x0 # 2 ^ of_nat m) - 1) ==eps)%Q.
   field. apply QArith_base_ext.Qnot_0_abs. auto. rewrite H24.
   apply Qle_refl.
@@ -1351,7 +1347,7 @@ Theorem D2C_property2:forall (x y:D1.Real),
 Proof.
   intros.
   destruct x,y. 
-  assert(D3.PP A A0\/D3.NP A A0\/D3.PN A A0\/D3.NN A A0\/D3.O A A0).
+  assert(D3.PP A A0\/D3.NP A A0\/D3.PN A A0\/D3.NN A A0\/D3.ZO A A0).
   apply Rmult_situation. auto. auto.
   destruct H1. apply D2Cmult_lemma1;auto.
   destruct H1. apply D2Cmult_lemma3;auto.
@@ -1549,7 +1545,6 @@ Proof.
   apply D2C_property3 in H0. rewrite H0. apply D2C_property8.
   apply C3.Rmult_inj_r with (D2C x). apply notD2Czero. auto. auto.
 Qed.
-
 
 
 
