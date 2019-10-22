@@ -197,9 +197,9 @@ Module RSignleLemmas (RSingle : R_SINGLE).
   
 End RSignleLemmas.
 
-Module Type RINV_PARTIAL_TO_TOTAL (RS : R_SINGLE).
+Module Type RINV_PARTIAL .
+  Declare Module RS : R_SINGLE.
   Module RL := RSignleLemmas (RS).
-  
   Import RL RS.
   Local Open Scope R_scope.
   Parameter R0 : R.
@@ -207,19 +207,22 @@ Module Type RINV_PARTIAL_TO_TOTAL (RS : R_SINGLE).
   Parameter Rmult : R -> R -> R.
   Parameter Rinv' : {a0 : R | ~ a0 == R0} -> R.
   Infix "*" := Rmult : R_scope.
-  
   Axiom Rmult_comp : Proper (Req==>Req==>Req) Rmult.
   Existing Instance Rmult_comp .
-  
   Definition rinv' (a : R) (H : ~ (a == R0)) : R.
     apply Rinv'.
     exists a. apply H.
   Defined.
-  
   Parameter Rinv'_comp : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> rinv' r1 H1 == rinv' r2 H2.
-  
   Parameter Rinv'_l : forall (r : R)(H : ~ r == R0), rinv' r H * r == R1.
+End RINV_PARTIAL.
 
+
+Module Rinv_Partial_To_Total (RP : RINV_PARTIAL).
+  Module RS := RP.RS.
+  Module RSL := RSignleLemmas (RS).
+  Import RP RS RSL.
+  Local Open Scope R_scope.
   Definition Rinv (a : R): R.
     apply (Rif_rich (a == R0)).
     - intros. apply R0.
@@ -272,4 +275,4 @@ Module Type RINV_PARTIAL_TO_TOTAL (RS : R_SINGLE).
     rewrite H.
     apply Rinv'_l.
   Qed.
-End RINV_PARTIAL_TO_TOTAL.
+End Rinv_Partial_To_Total.

@@ -25,6 +25,7 @@ From CReal Require Import Cauchy.ROrder.
 From CReal Require Import Cauchy.RFunc.
 From CReal Require Import Uncomputable.Countable.
 From CReal Require Import Uncomputable.ComRealBase.
+From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
   
 Module CauchyR : VIR_R.
@@ -37,8 +38,65 @@ Module CauchyR : VIR_R.
   Definition Rplus := Rplus.
   Definition Rmult := Rmult.
   Definition Ropp := Ropp.
+  Module Vex <: R_SINGLE.
+    Definition R := Real.
+    Delimit Scope R_scope with R.
+    Bind Scope R_scope with R.
+    Local Open Scope R_scope.
+    Definition Req := Real_equiv.
+    Definition R_Setoid := Real_equiv_holds.
+    Infix "==" := Req : R_scope.
+    Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
+         /\ (exists x, X x) /\ Proper (Req ==> iff) X.
+    Definition Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
+      intros.
+      apply RSingleFun.
+      destruct X. exists x.
+      destruct p. destruct H0.
+      auto.
+    Defined.
+    Theorem Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
+    Proof.
+      intros.
+      unfold Rsinglefun.
+      apply Rsinglefun_correct.
+    Qed.
+  End Vex.
+  Module Vex_Lemmas := RSignleLemmas (Vex).
+  Module Rinv_partial <: RINV_PARTIAL.
+    Module RS := Vex. 
+    Module RL := Vex_Lemmas.
+    Import RS RL.
+    Local Open Scope R_scope.
+    Definition R0 := Rzero.
+    Definition R1 := Rone.
+    Definition Rmult := Rmult.
+    Definition Rinv' := Rinv.
+    Infix "*" := Rmult : R_scope.
+    Definition Rmult_comp := Rmult_comp.
+    Definition rinv' (a : R) (H : ~ (a == R0)) : R.
+      apply Rinv'.
+      exists a. apply H.
+    Defined.
+    Theorem Rinv'_comp : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> rinv' r1 H1 == rinv' r2 H2.
+    Proof.
+      intros.
+      pose proof Rinv_equiv (exist _ r1 H1) (exist _ r2 H2).
+      specialize (H0 H).
+      apply H0.
+    Qed.
+    Theorem Rinv'_l : forall (r : R)(H : ~ r == R0), rinv' r H * r == R1.
+    Proof.
+      intros.
+      rewrite Rmult_comm.
+      apply Rmult_inv_r'.
+    Qed.
+  End Rinv_partial.
   
-  Parameter Rinv : R -> R.
+  Module RPTT := Rinv_Partial_To_Total (Rinv_partial).
+  
+  Export RPTT Rinv_partial Vex_Lemmas Vex.
+  Definition Rinv := Rinv.
   Definition Rlt := Rlt.
   Definition Req := Real_equiv.
   Infix "==" := Req : R_scope.
@@ -81,8 +139,10 @@ Module CauchyR : VIR_R.
   
   Definition Rmult_comp := Rmult_comp.
   
-  Axiom Rinv_comp : Proper (Req==>Req) Rinv.
-  Existing Instance Rinv_comp .
+  Instance Rinv_comp : Proper (Req==>Req) Rinv.
+  Proof.
+    apply Rinv_comp.
+  Qed.
   
   Instance Rle_comp : Proper (Req==>Req==>iff) Rle.
   Proof.
@@ -185,7 +245,8 @@ Module CauchyR : VIR_R.
   
   Theorem Rinv_l : forall r:R, ~ r == 0 -> Rinv r * r == 1.
   Proof.
-  Admitted.
+    apply Rinv_l.
+  Qed.
   
   Definition Rmult_1_l := Rmult_1_l.
   
@@ -248,8 +309,8 @@ Module CauchyR : VIR_R.
   Qed.
   
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
-
   (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
+
   Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
   Definition bound (E:R -> Prop) := exists m : R, is_upper_bound E m.
@@ -261,6 +322,5 @@ Module CauchyR : VIR_R.
   completeness :
     forall E:R -> Prop,
       bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
- 
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
 End CauchyR.
