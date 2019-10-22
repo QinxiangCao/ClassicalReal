@@ -1,0 +1,9 @@
+Organization:
+
+Dedekind: our definition of Dedekind real (section 4.1)
+Cauchy: our definition of Cantor real (section 4.2)
+Uncomputable: our proofs of potential conflicts caused by strong computability axioms (computable trichonomy and computable ceiling function) (section 3)
+              our proofs of potential conflicts caused by using computable reals (section 4.3)
+correctness: putting our definitions together with our interface.
+
+Important theorems and assumptions:
