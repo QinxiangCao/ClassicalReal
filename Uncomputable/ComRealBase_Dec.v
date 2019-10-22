@@ -31,11 +31,11 @@ From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 
-Module DEC_R (R : VIR_R).
-  Module RLemmas := VirRLemmas (R).
-  Include VIR_R_EXTRA R.
+Module DEC_R (VirR_ex : VIR_R_EXTRA).
+  Module R := VirR_ex.VirR.
+  Import R VirR_ex.
+  Module RLemmas := VirRLemmas (VirR_ex).
   Export RLemmas.
-  Import R.
   Local Open Scope R_scope. 
 
   Definition In_Search : R -> Prop.

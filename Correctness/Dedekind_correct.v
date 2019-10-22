@@ -249,10 +249,126 @@ Module DedekindR : VIR_R.
   Qed.
   
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
+  
+  (** We have proved a similar version in Dedekind.RArith named Zarchimedean*)
 
-  Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
-  Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
+  Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
-  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function eq Req X -> (exists r : R , upper_bound X r) ->
-                                          (exists sup : R , Sup X sup).
+  Definition bound (E:R -> Prop) := exists m : R, is_upper_bound E m.
+
+  Definition is_lub (E:R -> Prop) (m:R) :=
+  is_upper_bound E m /\ (forall b:R, is_upper_bound E b -> m <= b).
+
+  Lemma Rle_equiv : forall r1 r2 : R , r1 <= r2 <-> ROrder.Rle r1 r2.
+  Proof.
+    intros.
+    split ; intros.
+    - destruct H.
+      + apply Rlt_le_weak. auto.
+      + rewrite H. apply Rle_refl.
+    - apply Rle_lt_eq in H.
+      hnf. destruct H.
+      + right. rewrite H. reflexivity.
+      + auto.
+  Qed.
+  
+  Theorem completeness :
+    forall E:R -> Prop,
+      bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
+  Proof.
+    intros.
+    pose proof R_complete.
+    set (fun x => exists r , E r /\ x < r).
+    assert (Rdedekind P).
+    { subst P.
+      split.
+      - split .
+        + destruct H0. exists (x - 1). exists x.
+          split ; auto.
+          unfold Rminus.
+          rewrite <- (Rplus_0_r x) at 2.
+          apply Rplus_lt_compat_l.
+          rewrite Rzero_opp.
+          apply Ropp_lt_compat.
+          split ; intros.
+          * lra.
+          * exists 0%Q. lra.
+        + destruct H. exists (x + 1).
+          intro. 
+          destruct H2 , H2.
+          specialize (H _ H2).
+          rewrite Rle_equiv in H.
+          pose proof (Rlt_le_trans (x+1) x0 x H3 H).
+          assert (x < x + 1).
+          { rewrite <- Rplus_0_r at 1.
+            apply Rplus_lt_compat_l.
+            split.
+            - intros. lra.
+            - exists 0%Q. lra.
+          }
+          apply (Rlt_not_refl x).
+          apply Rlt_trans with (x + 1) ; auto.
+      - intros.
+        repeat destruct H2. exists x.
+        split ; auto.
+        apply Rle_lt_trans with p ; auto.
+      - intros.
+        repeat destruct H2.
+        exists ((p + x) / 2).
+        assert (2 > 0).
+        { split.
+          - intros. exists x0 , 0%Q. lra.
+          - exists 0%Q. split ; try (lra).
+            exists 0%Q , 0%Q. lra.
+        }
+        assert (~ 2 == 0).
+        { intro. apply (Rlt_not_refl 0). rewrite <- H5 at 2. auto. }
+        split.
+        + exists x.
+          split ; auto.
+          apply (Rmult_lt_compat_r _ _ 2) ; auto.
+          unfold Rdiv.
+          rewrite Rmult_assoc.
+          rewrite Rinv_l ; auto.
+          rewrite Rmult_plus_distr_l.
+          rewrite !Rmult_1_r. 
+          rewrite Rplus_lt_l. auto.
+        + apply (Rmult_lt_compat_r _ _ 2) ; auto.
+          unfold Rdiv.
+          rewrite Rmult_assoc.
+          rewrite Rinv_l ; auto.
+          rewrite Rmult_plus_distr_l.
+          rewrite !Rmult_1_r. 
+          apply Rplus_lt_compat_l. auto.
+      - intros. repeat destruct H3. exists x.
+        rewrite H2 in *.
+        split ; auto. 
+    }
+    specialize (H1 P H2).
+    destruct H1.
+    exists x.
+    split.
+    - hnf. intros. destruct H1.
+      subst P.
+      simpl in *.
+      pose proof (not_ex_all_not _ _ H1 x0).
+      simpl in *.
+      apply not_and_or in H5.
+      destruct H5.
+      + exfalso. auto.
+      + destruct (total_order_T x x0).
+        * exfalso. auto. 
+        * destruct H6.
+          ** right. rewrite H6. reflexivity.
+          ** left. auto.
+    - subst P. simpl in *. intros.
+      rewrite Rle_equiv. apply H1.
+      intro.
+      repeat destruct H4.
+      specialize (H3 _ H4).
+      apply (Rlt_not_refl b).
+      apply Rlt_le_trans with x0 ; auto.
+      rewrite <- Rle_equiv. auto.
+  Qed.
+  
 End DedekindR.

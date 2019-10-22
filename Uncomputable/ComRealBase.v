@@ -216,11 +216,17 @@ Module Type VIR_R.
   
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
 
-  Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
-  Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
+  Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
-  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function eq Req X -> (exists r : R , upper_bound X r) ->
-                                          (exists sup : R , Sup X sup).
+  Definition bound (E:R -> Prop) := exists m : R, is_upper_bound E m.
+
+  Definition is_lub (E:R -> Prop) (m:R) :=
+  is_upper_bound E m /\ (forall b:R, is_upper_bound E b -> m <= b).
+
+  Axiom
+  completeness :
+    forall E:R -> Prop,
+      bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
  
   (* Axioms copied from Raxioms.v *)
   (* Change { | } -> exists , sumbool to or *)
@@ -230,7 +236,8 @@ Module Type VIR_R.
 
 End VIR_R.
 
-Module Type VIR_R_EXTRA (VirR: VIR_R).
+Module Type VIR_R_EXTRA.
+  Declare Module VirR : VIR_R.
   Import VirR.
   Local Open Scope R_scope.
   Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
@@ -238,4 +245,149 @@ Module Type VIR_R_EXTRA (VirR: VIR_R).
   Parameter Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
   
+  Definition If_fun (P : Prop) (x y : R) := (fun z => (P /\ x == z) \/ (~ P /\ y == z)).
+  
+  Theorem If_fun_single : forall (P : Prop)(x y : R), P_singlefun (If_fun P x y).
+  Proof.
+    intros. 
+    repeat split ; intros.
+    - destruct H , H0 , H , H0.
+      + rewrite <- H1. auto.
+      + exfalso. auto.
+      + exfalso. auto.
+      + rewrite <- H1. auto.
+    - destruct (classic P).
+      + exists x. hnf. left. split ; auto. reflexivity.
+      + exists y. hnf. right. split ; auto. reflexivity.
+    - hnf in *. rewrite H in H0. auto. 
+    - hnf in *. rewrite H . auto.
+  Qed.
+  
+  Instance If_fun_comp : Proper (eq(A:=Prop) ==> Req ==> Req ==> Req ==> iff) If_fun.
+  Proof.
+    hnf ; red ; intros ; hnf ; red ; intros.
+    split ; intros ; hnf in * ; rewrite H , H0 , H1 , H2 in *; auto.
+  Qed.
+  
+  Definition Rif (P : Prop)(x y  : R) : R.
+    apply Rsinglefun. 
+    exists (If_fun P x y).
+    apply If_fun_single.
+  Defined.
+  
+  Instance Rif_comp : Proper (eq(A:=Prop) ==> Req ==> Req ==> Req) Rif.
+  Proof.
+    hnf ; red ; intros ; hnf ; intros.
+    unfold Rif.
+    pose proof If_fun_single x x0 x1.
+    pose proof If_fun_single y y0 y1.
+    assert (If_fun x x0 x1 = If_fun y y0 y1).
+    { rewrite H. apply functional_extensionality_dep.
+      intros. apply propositional_extensionality.
+      rewrite H0 , H1. reflexivity.
+    }
+    subst.
+    pose proof Rsinglefun_correct (If_fun y x0 x1) H2.
+    pose proof Rsinglefun_correct (If_fun y y0 y1) H3.
+    assert (H3 = If_fun_single y y0 y1). { apply proof_irrelevance. }
+    assert (H2 = If_fun_single y x0 x1). { apply proof_irrelevance. }
+    rewrite H6 , H7 in *. clear H6 H7.
+    destruct H , H5 , H , H5.
+    - rewrite <- H7. rewrite <- H6. auto.
+    - exfalso. auto.
+    - exfalso. auto.
+    - rewrite <- H7. rewrite <- H6. auto.
+  Qed.
+  
+  Theorem Rif_left : forall (P:Prop) (x y:R), P -> Rif P x y == x.
+  Proof.
+    intros. unfold Rif. 
+    pose proof If_fun_single P x y.
+    pose proof Rsinglefun_correct (If_fun P x y) H0.
+    assert (H0 = If_fun_single P x y).
+    { apply proof_irrelevance. }
+    subst.
+    destruct H1 , H0.
+    - symmetry. auto.
+    - exfalso. auto.
+  Qed.
+  
+  Theorem Rif_right : forall (P:Prop) (x y:R), ~ P -> Rif P x y == y.
+  Proof.
+    intros. unfold Rif. 
+    pose proof If_fun_single P x y.
+    pose proof Rsinglefun_correct (If_fun P x y) H0.
+    assert (H0 = If_fun_single P x y).
+    { apply proof_irrelevance. }
+    subst.
+    destruct H1 , H0.
+    - exfalso. auto.
+    - symmetry. auto.
+  Qed. 
+  
+  Definition If_fun_rich (P : Prop) (x : P -> R) (y : ~ P -> R) := 
+    (fun z => (exists H : P , x H == z) \/ (exists H : ~ P , y H == z)).
+  
+  Theorem If_fun_single_rich : forall (P : Prop) x y , 
+    P_singlefun (If_fun_rich P x y).
+  Proof.
+    intros. 
+    repeat split ; intros.
+    - destruct H , H0 , H , H0.
+      + assert (x0 = x3). { apply proof_irrelevance. }
+        subst. rewrite <- H , <- H0. reflexivity.
+      + exfalso. auto.
+      + exfalso. auto.
+      + assert (x0 = x3). { apply proof_irrelevance. }
+        subst. rewrite <- H , <- H0. reflexivity.
+    - destruct (classic P).
+      + exists (x H). hnf. left.
+        exists H. reflexivity.
+      + exists (y H). hnf. right.
+        exists H. reflexivity.
+    - hnf in *. destruct H0 , H0 ; rewrite H in H0.
+      + left. exists x1. auto.
+      + right. exists x1. auto. 
+    - hnf in *. destruct H0 , H0 ; rewrite <- H in H0.
+      + left. exists x1. auto.
+      + right. exists x1. auto.
+  Qed. 
+ 
+  Definition Rif_rich (P : Prop)(x : P -> R)(y : ~ P -> R) : R.
+    apply Rsinglefun. 
+    exists (If_fun_rich P x y).
+    apply If_fun_single_rich.
+  Defined.
+
+  Theorem Rif_rich_left : forall (P:Prop) x y, P -> exists H : P,Rif_rich P x y == x H.
+  Proof.
+    intros. unfold Rif_rich. 
+    pose proof If_fun_single_rich P x y.
+    pose proof Rsinglefun_correct (If_fun_rich P x y) H0.
+    assert (H0 = If_fun_single_rich P x y).
+    { apply proof_irrelevance. }
+    subst. exists H.
+    destruct H1 , H0.
+    - symmetry. 
+      assert (x0 = H). { apply proof_irrelevance. }
+      subst. auto.
+    - exfalso. auto.
+  Qed.
+  
+  Theorem Rif_rich_right : forall (P:Prop) x y, ~ P -> exists H : ~ P,Rif_rich P x y == y H.
+  Proof.
+    intros. unfold Rif_rich. 
+    pose proof If_fun_single_rich P x y.
+    pose proof Rsinglefun_correct (If_fun_rich P x y) H0.
+    assert (H0 = If_fun_single_rich P x y).
+    { apply proof_irrelevance. }
+    subst. exists H.
+    destruct H1 , H0.
+    - exfalso. auto.
+    - symmetry. 
+      assert (x0 = H). { apply proof_irrelevance. }
+      subst. auto.
+  Qed. 
 End VIR_R_EXTRA.
+
+

@@ -11,6 +11,9 @@ From Coq Require Import QArith.QArith_base.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
 From Coq Require Import Logic.Classical.
+From Coq Require Import Logic.FunctionalExtensionality.
+From Coq Require Import Logic.PropExtensionality.
+Require Import Coq.Logic.ProofIrrelevance.
 From Coq Require Import Classes.Equivalence.
 From Coq Require Import Classes.Morphisms.
 From Coq Require Import Field.
@@ -19,10 +22,11 @@ From Coq Require Import Psatz.
 From CReal Require Import Cauchy.RBase.
 From CReal Require Import Cauchy.RArith.
 From CReal Require Import Cauchy.ROrder.
+From CReal Require Import Cauchy.RFunc.
 From CReal Require Import Uncomputable.Countable.
 From CReal Require Import Uncomputable.ComRealBase.
 From Coq Require Import PArith.BinPosDef.
-
+  
 Module CauchyR : VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
@@ -33,6 +37,7 @@ Module CauchyR : VIR_R.
   Definition Rplus := Rplus.
   Definition Rmult := Rmult.
   Definition Ropp := Ropp.
+  
   Parameter Rinv : R -> R.
   Definition Rlt := Rlt.
   Definition Req := Real_equiv.
@@ -244,9 +249,18 @@ Module CauchyR : VIR_R.
   
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
 
-  Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
-  Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
+  (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
+  Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
-  Axiom upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function eq Req X -> (exists r : R , upper_bound X r) ->
-                                          (exists sup : R , Sup X sup).
+  Definition bound (E:R -> Prop) := exists m : R, is_upper_bound E m.
+
+  Definition is_lub (E:R -> Prop) (m:R) :=
+  is_upper_bound E m /\ (forall b:R, is_upper_bound E b -> m <= b).
+
+  Axiom
+  completeness :
+    forall E:R -> Prop,
+      bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
+ 
+  (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
 End CauchyR.

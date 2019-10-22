@@ -36,10 +36,10 @@ Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_u_u.
 
-Module Wrong_Up (R : VIR_R).
-  Module TMR := TMR_Set (R).
-  Include VIR_R_EXTRA R. 
-  Import R.
+Module Wrong_Up (VirR_ex : VIR_R_EXTRA).
+  Module TR := VirR_ex.VirR.
+  Module TMR := TMR_Set (VirR_ex).
+  Import TR VirR_ex.
   Export TMR.
   Local Open Scope R_scope.
   
@@ -96,10 +96,10 @@ Module Wrong_Up (R : VIR_R).
 
 End Wrong_Up.
 
-Module CR_uu (R : VIR_R).
-  Module TMR := TMR_Set (R).
-  Include VIR_R_EXTRA R.
-  Import R.
+Module CR_uu (VirR_ex : VIR_R_EXTRA).
+  Module TR := VirR_ex.VirR.
+  Module TMR := TMR_Set (VirR_ex).
+  Import TR VirR_ex.
   Export TMR.
   Local Open Scope R_scope.
 

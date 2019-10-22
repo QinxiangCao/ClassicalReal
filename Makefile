@@ -23,7 +23,7 @@ Cauchy_FILES = \
   RBase.v RArith.v RSign.v ROrder.v RAbs.v RFloor.v RFunc.v RComplete.v
 
 Iso_FILES = \
-  Bijection.v Dedekind2Cauchy.v Cauchy2Dedekind.v
+  Dedekind2Cauchy.v Cauchy2Dedekind.v Bijection.v
 
 MetricSpace_FILES = \
   M_pack.v M_pre.v M_def.v M_prop.v M_new.v M_base.v M_complete.v

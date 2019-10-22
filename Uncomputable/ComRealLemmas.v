@@ -30,122 +30,28 @@ From CReal Require Import ComRealBase.
 From CReal Require Import ComRealField.
 From CReal Require Import ComRealBaseLemma1.
 
-Module VirRLemmas (VirR : VIR_R).
+Module VirRLemmas (VirR_ex : VIR_R_EXTRA).
+  Module VirR := VirR_ex.VirR.
+  Import VirR VirR_ex.
   Module Lemma1 := VirRLemma1 (VirR).
   Export Lemma1.
-  Import VirR.
-  Include VIR_R_EXTRA VirR.
+  
   Local Open Scope R_scope.
   
-  Definition If_fun (P : Prop) (x y : R) := (fun z => (P /\ x == z) \/ (~ P /\ y == z)).
-  
-  Theorem If_fun_single : forall (P : Prop)(x y : R), P_singlefun (If_fun P x y).
-  Proof.
-    intros. 
-    repeat split ; intros.
-    - destruct H , H0 , H , H0.
-      + rewrite <- H1. auto.
-      + exfalso. auto.
-      + exfalso. auto.
-      + rewrite <- H1. auto.
-    - destruct (classic P).
-      + exists x. hnf. auto with real.
-      + exists y. hnf. auto with real.
-    - hnf in *. rewrite H in H0. auto. 
-    - hnf in *. rewrite H . auto.
-  Qed.
-  
-  Instance If_fun_comp : Proper (eq(A:=Prop) ==> Req ==> Req ==> Req ==> iff) If_fun.
-  Proof.
-    hnf ; red ; intros ; hnf ; red ; intros.
-    split ; intros ; hnf in * ; rewrite H , H0 , H1 , H2 in *; auto.
-  Qed.
-  
-  Definition Rif (P : Prop)(x y  : R) : R.
-    apply Rsinglefun. 
-    exists (If_fun P x y).
-    apply If_fun_single.
-  Defined.
-  
-  Instance Rif_comp : Proper (eq(A:=Prop) ==> Req ==> Req ==> Req) Rif.
-  Proof.
-    hnf ; red ; intros ; hnf ; intros.
-    unfold Rif.
-    pose proof If_fun_single x x0 x1.
-    pose proof If_fun_single y y0 y1.
-    assert (If_fun x x0 x1 = If_fun y y0 y1).
-    { rewrite H. apply functional_extensionality_dep.
-      intros. apply propositional_extensionality.
-      rewrite H0 , H1. reflexivity.
-    }
-    subst.
-    pose proof Rsinglefun_correct (If_fun y x0 x1) H2.
-    pose proof Rsinglefun_correct (If_fun y y0 y1) H3.
-    assert (H3 = If_fun_single y y0 y1). { apply proof_irrelevance. }
-    assert (H2 = If_fun_single y x0 x1). { apply proof_irrelevance. }
-    rewrite H6 , H7 in *. clear H6 H7.
-    destruct H , H5 , H , H5.
-    - rewrite <- H7. rewrite <- H6. auto.
-    - exfalso. auto.
-    - exfalso. auto.
-    - rewrite <- H7. rewrite <- H6. auto.
-  Qed.
-  
-  Theorem Rif_left : forall (P:Prop) (x y:R), P -> Rif P x y == x.
-  Proof.
-    intros. unfold Rif. 
-    pose proof If_fun_single P x y.
-    pose proof Rsinglefun_correct (If_fun P x y) H0.
-    assert (H0 = If_fun_single P x y).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1 , H0 ; auto with real.
-    exfalso. auto.
-  Qed.
-  
-  Theorem Rif_right : forall (P:Prop) (x y:R), ~ P -> Rif P x y == y.
-  Proof.
-    intros. unfold Rif. 
-    pose proof If_fun_single P x y.
-    pose proof Rsinglefun_correct (If_fun P x y) H0.
-    assert (H0 = If_fun_single P x y).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1 , H0 ; auto with real.
-    exfalso. auto.
-  Qed. 
-  
-  Definition If_fun_rich (P : Prop) (x : P -> R) (y : ~ P -> R) := 
-    (fun z => (exists H : P , x H == z) \/ (exists H : ~ P , y H == z)).
-  
-  Theorem If_fun_single_rich : forall (P : Prop) x y , 
-    P_singlefun (If_fun_rich P x y).
-  Proof.
-    intros. 
-    repeat split ; intros.
-    - destruct H , H0 , H , H0.
-      + rewrite <- H. auto.
-      + exfalso. auto.
-      + exfalso. auto.
-      + rewrite <- H1. auto.
-    - destruct (classic P).
-      + exists x. hnf. auto with real.
-      + exists y. hnf. auto with real.
-    - hnf in *. rewrite H in H0. auto. 
-    - hnf in *. rewrite H . auto.
-  Qed. 
- 
-  Definition Rif_rich (P : Prop)(x : P -> R)(y : ~ P -> R) : R.
-    apply Rsinglefun. 
-    exists (If_fun_rich P x y).
-    apply If_fun_single_rich.
-  Defined.
-
   Definition Rabs : R -> R.
     intros.
-    apply (Rif (X >= 0) X (- X)).
+    apply (Rif (X >= R0) X (- X)).
   Defined.
 
+  Instance Rabs_comp : Proper (Req ==> Req) Rabs.
+  Proof.
+    hnf ; intros.
+    unfold Rabs.
+    assert ((x >= R0) = (y >= R0)).
+    { apply propositional_extensionality. rewrite H. reflexivity. }
+    rewrite H0. rewrite H. reflexivity.
+  Qed.
+  
   Theorem Rabs_pos : forall r1 : R , (r1 >= 0) -> Rabs r1 == r1.
   Proof.
     intros.
@@ -165,15 +71,6 @@ Module VirRLemmas (VirR : VIR_R).
   Qed.
   
   Hint Resolve Rabs_pos Rabs_neg: real.
-
-  Instance Rabs_comp : Proper (Req ==> Req) Rabs.
-  Proof.
-    hnf ; intros.
-    unfold Rabs.
-    assert ((x >= 0) = (y >= 0)).
-    { apply propositional_extensionality. rewrite H. reflexivity. }
-    rewrite H0. rewrite H. reflexivity.
-  Qed.
   
   Theorem Rabs_le_0 : forall r : R , Rabs r >= 0.
   Proof.
@@ -632,10 +529,45 @@ Module VirRLemmas (VirR : VIR_R).
   Definition mono_down (X : nat -> R -> Prop) : Prop := is_function eq Req X /\ (forall (n n1: nat)(q q1: R) ,
                                                       X n q -> X n1 q1 -> (n >= n1)%nat -> q <= q1).
   Definition mono (X : nat -> R -> Prop) : Prop := mono_up X \/ mono_down X.
+  Definition upper_bound (X : nat -> R -> Prop) (U : R) : Prop := forall (n : nat)(q : R) , X n q -> q <= U.
+  Definition Sup (X : nat -> R -> Prop) (sup : R) : Prop := (forall r : R , upper_bound X r -> r >= sup) /\ upper_bound X sup.
+
+  Theorem upper_bound_exists_Sup : forall (X : nat -> R -> Prop) , is_function eq Req X -> (exists r : R , upper_bound X r) ->
+                                          (exists sup : R , Sup X sup).
+  Proof.
+    intros.
+    pose proof completeness.
+    set (fun r => exists n : nat , X n r).
+    assert (bound P).
+    { hnf.
+      destruct H0.
+      exists x.
+      hnf. intros.
+      subst P. destruct H2.
+      apply (H0 _ _ H2).
+    }
+    assert (exists x : R , P x).
+    { destruct H. destruct (H O).
+      exists x. exists O. auto.
+    }
+    specialize (H1 P H2 H3).
+    subst P. simpl in *.
+    destruct H1. destruct H1.
+    exists x.
+    split.
+    - intros.
+      apply Rle_ge.
+      apply H4.
+      hnf. intros.
+      destruct H6.
+      hnf in H5. apply (H5 _ _ H6).
+    - hnf. intros.
+      apply H1. exists n. auto.
+  Qed.
+  
   Definition lower_bound (X : nat -> R -> Prop) (L : R) : Prop := forall (n : nat)(q : R) , X n q -> L <= q.
   Definition Inf (X : nat -> R -> Prop) (inf : R) : Prop := (forall r : R , lower_bound X r -> r <= inf) /\ lower_bound X inf.
   Definition bound (X : nat -> R -> Prop) : Prop := (exists n1 : R , upper_bound X n1) /\ (exists n2 : R ,lower_bound X n2).
-
   Instance lower_bound_comp : Proper (eq ==> Req ==> iff) lower_bound.
   Proof. 
     hnf ; red ; intros.

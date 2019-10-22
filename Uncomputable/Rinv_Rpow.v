@@ -36,23 +36,9 @@ Module Type Vir_R.
   Parameter R1 : R.
   Parameter Req : R -> R -> Prop.
   Infix "==" := Req : R_scope.
-  Parameter Rplus : R -> R -> R.
   Parameter Rmult : R -> R -> R.
-  Parameter Ropp : R -> R.
   Parameter Rinv' : {a0 : R | ~ a0 == R0} -> R.
-  Parameter Rlt : R -> R -> Prop.
-  Infix "+" := Rplus : R_scope.
   Infix "*" := Rmult : R_scope.
-  Notation "- x" := (Ropp x) : R_scope.
-  Infix "<" := Rlt : R_scope.
-  Definition Rgt (r1 r2:R) : Prop := r2 < r1.
-  Definition Rle (r1 r2:R) : Prop := r1 < r2 \/ r1 = r2.
-  Definition Rge (r1 r2:R) : Prop := Rgt r1 r2 \/ r1 = r2.
-  Definition Rminus (r1 r2:R) : R := r1 + - r2.
-  Infix "-" := Rminus : R_scope.
-  Infix "<=" := Rle : R_scope.
-  Infix ">=" := Rge : R_scope.
-  Infix ">"  := Rgt : R_scope.
   Parameter Rpow' : {a0 : R | ~ a0 == R0} -> nat -> R. 
   
   Parameter Req_refl : forall x : R ,  x == x.
