@@ -38,7 +38,7 @@ Module CauchyR <: VIR_R.
   Definition Rplus := Rplus.
   Definition Rmult := Rmult.
   Definition Ropp := Ropp.
-  Module Vex <: R_SINGLE.
+  Module Vex <: R_SINGLE_SIMPLE.
     Definition R := Real.
     Delimit Scope R_scope with R.
     Bind Scope R_scope with R.

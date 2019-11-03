@@ -16,25 +16,23 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Logic.PropExtensionality.
 From Coq Require Import Classes.Equivalence.
-Require Import Coq.setoid_ring.Ring_theory.
-Require Import Coq.Classes.RelationClasses.
-Require Import Ring.
-From Coq Require Import Field.
-From Coq Require Import Omega.
-From Coq Require Import Psatz.
-Require Import Coq.Logic.ProofIrrelevance.
+From Coq Require Import setoid_ring.Ring_theory.
+From Coq Require Import Classes.RelationClasses.
+From Coq Require Import setoid_ring.Ring.
+From Coq Require Import setoid_ring.Field.
+From Coq Require Import omega.Omega.
+From Coq Require Import micromega.Psatz.
+From Coq Require Import Logic.ProofIrrelevance.
 Import ListNotations.
 From CReal Require Import Countable.
 From CReal Require Import QArith_base_ext.
-From CReal Require Import ComRealBase.
 
-
-Module Type R_SINGLE.
-  Parameter R : Type.
+Module Type R_SINGLE_SIMPLE.
+  Parameter Inline R : Type.
   Delimit Scope R_scope with R.
   Bind Scope R_scope with R.
   Local Open Scope R_scope.
-  Parameter Req : R -> R -> Prop.
+  Parameter Inline Req : R -> R -> Prop.
   
   Axiom R_Setoid : Equivalence Req.
   Existing Instance R_Setoid .
@@ -43,13 +41,13 @@ Module Type R_SINGLE.
   
   Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
          /\ (exists x, X x) /\ Proper (Req ==> iff) X.
-  Parameter Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
+  Parameter Inline Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
  
-End R_SINGLE.
+End R_SINGLE_SIMPLE.
 
-Module RSignleLemmas (RSingle : R_SINGLE).
-  Import RSingle.
+Module RSignleLemmas (RSS : R_SINGLE_SIMPLE).
+  Import RSS.
   Local Open Scope R_scope.
   Definition If_fun (P : Prop) (x y : R) := (fun z => (P /\ x == z) \/ (~ P /\ y == z)).
   
@@ -197,9 +195,9 @@ Module RSignleLemmas (RSingle : R_SINGLE).
   
 End RSignleLemmas.
 
-Module Type RINV_PARTIAL (RS : R_SINGLE).
-  Module RL := RSignleLemmas (RS).
-  Import RL RS.
+Module Type RINV_PARTIAL (RSS : R_SINGLE_SIMPLE).
+  Module RL := RSignleLemmas (RSS).
+  Import RL RSS.
   Local Open Scope R_scope.
   Parameter R0 : R.
   Parameter R1 : R.
@@ -213,9 +211,9 @@ Module Type RINV_PARTIAL (RS : R_SINGLE).
 End RINV_PARTIAL.
 
 
-Module Rinv_Partial_To_Total (RS : R_SINGLE) (RP : RINV_PARTIAL RS).
-  Module RSL := RSignleLemmas (RS).
-  Import RP RS RSL.
+Module Rinv_Partial_To_Total (RSS : R_SINGLE_SIMPLE) (RP : RINV_PARTIAL RSS).
+  Module RSL := RSignleLemmas (RSS).
+  Import RP RSS RSL.
   Local Open Scope R_scope.
   Definition Rinv (a : R): R.
     apply (Rif_rich (a == R0)).
