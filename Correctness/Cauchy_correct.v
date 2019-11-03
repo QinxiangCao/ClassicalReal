@@ -28,7 +28,7 @@ From CReal Require Import Uncomputable.ComRealBase.
 From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
   
-Module CauchyR : VIR_R.
+Module CauchyR <: VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
   Bind Scope R_scope with R.
@@ -324,3 +324,5 @@ Module CauchyR : VIR_R.
       bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
 End CauchyR.
+
+Module CauchyRSingle : VIR_R_SINGLETON CauchyR := CauchyR.Vex.

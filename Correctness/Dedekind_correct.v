@@ -24,7 +24,7 @@ From CReal Require Import Uncomputable.ComRealBase.
 From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
 
-Module DedekindR : VIR_R.
+Module DedekindR <: VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
   Bind Scope R_scope with R.
@@ -426,3 +426,5 @@ Module DedekindR : VIR_R.
   Qed.
   
 End DedekindR.
+
+Module DedekindRSingle : VIR_R_SINGLETON DedekindR := DedekindR.Vex.
