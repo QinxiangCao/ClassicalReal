@@ -279,4 +279,9 @@ Module VirRSingletonLemmas (VirR: VIR_R) (VirRSingleton: VIR_R_SINGLETON VirR).
   := RL.Rif_rich_right.
 End VirRSingletonLemmas.
 
+Module Type VIR_R_ALL.
 
+Include VIR_R.
+Include VIR_R_SINGLETON.
+
+End VIR_R_ALL.

@@ -432,4 +432,10 @@ Module CauchyR <: VIR_R.
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
 End CauchyR.
 
+Module CauchyAll: VIR_R_ALL.
+
+Include CauchyR.
 Module CauchyRSingle : VIR_R_SINGLETON CauchyR := CauchyR.Vex.
+Include CauchyRSingle.
+
+End CauchyAll.

@@ -427,4 +427,10 @@ Module DedekindR <: VIR_R.
   
 End DedekindR.
 
+Module DedekindAll: VIR_R_ALL.
+
+Include DedekindR.
 Module DedekindRSingle : VIR_R_SINGLETON DedekindR := DedekindR.Vex.
+Include DedekindRSingle.
+
+End DedekindAll.
