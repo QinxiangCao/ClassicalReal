@@ -30,9 +30,9 @@ From CReal Require Import ComRealBase.
 From CReal Require Import ComRealField.
 From CReal Require Import ComRealBaseLemma1.
 
-Module VirRLemmas (VirR_ex : VIR_R_EXTRA).
-  Module VirR := VirR_ex.VirR.
-  Import VirR VirR_ex.
+Module VirRSingletonLemmas2 (VirR: VIR_R) (VirRSingleton: VIR_R_SINGLETON VirR).
+  Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
+  Import VirR VirRSingleton VirRSL.
   Module Lemma1 := VirRLemma1 (VirR).
   Export Lemma1.
   
@@ -1003,4 +1003,4 @@ Module VirRLemmas (VirR_ex : VIR_R_EXTRA).
     apply Rdichotomy in H. destruct H ; apply lt_IZR in H ; omega.
   Qed.
 
-End VirRLemmas.
+End VirRSingletonLemmas2.

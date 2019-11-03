@@ -13,7 +13,7 @@ From Coq Require Import QArith.Qminmax.
 From Coq Require Import Logic.Classical.
 From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Logic.PropExtensionality.
-Require Import Coq.Logic.ProofIrrelevance.
+From Coq Require Import Logic.ProofIrrelevance.
 From Coq Require Import Classes.Equivalence.
 From Coq Require Import Classes.Morphisms.
 From Coq Require Import Field.
@@ -63,7 +63,7 @@ Module CauchyR : VIR_R.
     Qed.
   End Vex.
   Module Vex_Lemmas := RSignleLemmas (Vex).
-  Module Rinv_partial <: RINV_PARTIAL.
+  Module Rinv_partial <: RINV_PARTIAL Vex.
     Module RS := Vex. 
     Module RL := Vex_Lemmas.
     Import RS RL.
@@ -71,21 +71,21 @@ Module CauchyR : VIR_R.
     Definition R0 := Rzero.
     Definition R1 := Rone.
     Definition Rmult := Rmult.
-    Definition Rinv' := Rinv.
     Infix "*" := Rmult : R_scope.
     Definition Rmult_comp := Rmult_comp.
-    Definition rinv' (a : R) (H : ~ (a == R0)) : R.
-      apply Rinv'.
+    Definition rinv' := Rinv.
+    Definition Rinv' (a : R) (H : ~ (a == R0)) : R.
+      apply rinv'.
       exists a. apply H.
     Defined.
-    Theorem Rinv'_comp : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> rinv' r1 H1 == rinv' r2 H2.
+    Theorem Rinv'_comp : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> Rinv' r1 H1 == Rinv' r2 H2.
     Proof.
       intros.
       pose proof Rinv_equiv (exist _ r1 H1) (exist _ r2 H2).
       specialize (H0 H).
       apply H0.
     Qed.
-    Theorem Rinv'_l : forall (r : R)(H : ~ r == R0), rinv' r H * r == R1.
+    Theorem Rinv'_l : forall (r : R)(H : ~ r == R0), Rinv' r H * r == R1.
     Proof.
       intros.
       rewrite Rmult_comm.
@@ -93,7 +93,7 @@ Module CauchyR : VIR_R.
     Qed.
   End Rinv_partial.
   
-  Module RPTT := Rinv_Partial_To_Total (Rinv_partial).
+  Module RPTT := Rinv_Partial_To_Total Vex (Rinv_partial).
   
   Export RPTT Rinv_partial Vex_Lemmas Vex.
   Definition Rinv := Rinv.

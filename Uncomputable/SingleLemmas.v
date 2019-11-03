@@ -197,52 +197,46 @@ Module RSignleLemmas (RSingle : R_SINGLE).
   
 End RSignleLemmas.
 
-Module Type RINV_PARTIAL .
-  Declare Module RS : R_SINGLE.
+Module Type RINV_PARTIAL (RS : R_SINGLE).
   Module RL := RSignleLemmas (RS).
   Import RL RS.
   Local Open Scope R_scope.
   Parameter R0 : R.
   Parameter R1 : R.
   Parameter Rmult : R -> R -> R.
-  Parameter Rinv' : {a0 : R | ~ a0 == R0} -> R.
   Infix "*" := Rmult : R_scope.
   Axiom Rmult_comp : Proper (Req==>Req==>Req) Rmult.
   Existing Instance Rmult_comp .
-  Definition rinv' (a : R) (H : ~ (a == R0)) : R.
-    apply Rinv'.
-    exists a. apply H.
-  Defined.
-  Parameter Rinv'_comp : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> rinv' r1 H1 == rinv' r2 H2.
-  Parameter Rinv'_l : forall (r : R)(H : ~ r == R0), rinv' r H * r == R1.
+  Parameter Rinv': forall (a : R) (H : ~ (a == R0)), R.
+  Parameter Rinv'_comp : forall (r1 r2 : R)(H1 : ~ r1 == R0) (H2 : ~r2 == R0), r1 == r2 -> Rinv' r1 H1 == Rinv' r2 H2.
+  Parameter Rinv'_l : forall (r : R)(H : ~ r == R0), Rinv' r H * r == R1.
 End RINV_PARTIAL.
 
 
-Module Rinv_Partial_To_Total (RP : RINV_PARTIAL).
-  Module RS := RP.RS.
+Module Rinv_Partial_To_Total (RS : R_SINGLE) (RP : RINV_PARTIAL RS).
   Module RSL := RSignleLemmas (RS).
   Import RP RS RSL.
   Local Open Scope R_scope.
   Definition Rinv (a : R): R.
     apply (Rif_rich (a == R0)).
     - intros. apply R0.
-    - intros. apply (rinv' a H).
+    - intros. apply (Rinv' a H).
   Defined.
 
   Theorem Rinv_1 : forall r : R , r == R0 -> Rinv r == R0.
   Proof.
     intros.
     unfold Rinv.
-    pose proof (Rif_rich_left (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => rinv' r H0)) H.
+    pose proof (Rif_rich_left (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => Rinv' r H0)) H.
     destruct H0.
     auto.
   Qed.
   
-  Theorem Rinv_Rinv' : forall r : R , ~ r == R0 -> exists H: ~ r == R0, Rinv r == (rinv' r H).
+  Theorem Rinv_Rinv' : forall r : R , ~ r == R0 -> exists H: ~ r == R0, Rinv r == (Rinv' r H).
   Proof.
     intros.
     unfold Rinv.
-    pose proof (Rif_rich_right (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => rinv' r H0)) H.
+    pose proof (Rif_rich_right (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => Rinv' r H0)) H.
     destruct H0.
     auto.
     exists x. auto.

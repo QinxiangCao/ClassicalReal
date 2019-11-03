@@ -10,7 +10,9 @@ From Coq Require Import Arith.EqNat.
 From Coq Require Import Lists.List.
 From Coq Require Import Strings.String.
 From Coq Require Import Classes.Morphisms.
-From Coq Require Export ZArith_base.
+From Coq Require Import Classes.RelationClasses.
+From Coq Require Import Classes.Equivalence.
+From Coq Require Export ZArith.ZArith_base.
 From Coq Require Import QArith.QArith_base.
 From Coq Require Import QArith.Qabs.
 From Coq Require Import QArith.Qminmax.
@@ -18,14 +20,12 @@ From Coq Require Import QArith.Qround.
 From Coq Require Import Logic.Classical.
 From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Logic.PropExtensionality.
-From Coq Require Import Classes.Equivalence.
-Require Import Coq.setoid_ring.Ring_theory.
-Require Import Coq.Classes.RelationClasses.
-Require Import Ring.
-From Coq Require Import Field.
-From Coq Require Import Omega.
-From Coq Require Import Psatz.
-Require Import Coq.Logic.ProofIrrelevance.
+From Coq Require Import Logic.ProofIrrelevance.
+From Coq Require Import setoid_ring.Ring_theory.
+From Coq Require Import setoid_ring.Ring.
+From Coq Require Import setoid_ring.Field.
+From Coq Require Import omega.Omega.
+From Coq Require Import micromega.Psatz.
 Import ListNotations.
 From CReal Require Import Countable.
 From CReal Require Import QArith_base_ext.
@@ -228,22 +228,21 @@ Module Type VIR_R.
     forall E:R -> Prop,
       bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
  
-  (* Axioms copied from Raxioms.v *)
-  (* Change { | } -> exists , sumbool to or *)
-  (* Change eq -> Req *)
-  
-  (* Axioms of Vir_R *)
-
 End VIR_R.
 
-Module Type VIR_R_EXTRA.
-  Declare Module VirR : VIR_R.
+Module Type VIR_R_SINGLETON (VirR : VIR_R).
   Import VirR.
   Local Open Scope R_scope.
   Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
          /\ (exists x, X x) /\ Proper (Req ==> iff) X.
   Parameter Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
   Axiom Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
+End VIR_R_SINGLETON.
+
+Module VirRSingletonLemmas (VirR: VIR_R) (VirRSingleton: VIR_R_SINGLETON VirR).
+  Import VirR.
+  Import VirRSingleton.
+  Local Open Scope R_scope.
   
   Definition If_fun (P : Prop) (x y : R) := (fun z => (P /\ x == z) \/ (~ P /\ y == z)).
   
@@ -388,6 +387,6 @@ Module Type VIR_R_EXTRA.
       assert (x0 = H). { apply proof_irrelevance. }
       subst. auto.
   Qed. 
-End VIR_R_EXTRA.
+End VirRSingletonLemmas.
 
 

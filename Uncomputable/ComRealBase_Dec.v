@@ -15,9 +15,9 @@ From Coq Require Import Logic.Classical.
 From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Logic.PropExtensionality.
 From Coq Require Import Classes.Equivalence.
-Require Import Coq.setoid_ring.Ring_theory.
-Require Import Coq.Classes.RelationClasses.
-Require Import Ring.
+From Coq Require Import setoid_ring.Ring_theory.
+From Coq Require Import Classes.RelationClasses.
+From Coq Require Import setoid_ring.Ring.
 From Coq Require Import Field.
 From Coq Require Import Omega.
 From CReal Require Import Uncomputable.Countable.
@@ -31,11 +31,12 @@ From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 
-Module DEC_R (VirR_ex : VIR_R_EXTRA).
-  Module R := VirR_ex.VirR.
-  Import R VirR_ex.
-  Module RLemmas := VirRLemmas (VirR_ex).
-  Export RLemmas.
+Module DEC_R (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR).
+  Import VirR VirRSingleton.
+  
+  Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton.
+  Export VirRSL VirRSL2.
   Local Open Scope R_scope. 
 
   Definition In_Search : R -> Prop.
