@@ -326,7 +326,7 @@ Module CauchyR : VIR_R.
     - set (Nested_interval E x y n0).
       set (fst p).
       set (snd p).
-      apply ((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )).
+      apply ((Rif (is_upper_bound E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound  E ((r + r0)/2)) r0 ((r + r0) / 2) )).
   Defined.
   
   Definition Left_Nested_interval (E : R -> Prop) (x y : R) (n : nat) : R :=
@@ -400,19 +400,19 @@ Module CauchyR : VIR_R.
     - remember (Nested_interval E x y n) as p.
       remember (fst p) as r.
       remember (snd p) as r0.
-      assert (((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S n)).
+      assert (((Rif (is_upper_bound  E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound  E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S n)).
       { simpl. subst. reflexivity. }
       rewrite <- H0.
-      destruct (classic (E ((r + r0) / 2))). 
-      * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
+      destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+      * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
         { apply Rif_left. auto. }
-        assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
+        assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
         { apply Rif_left. auto. }
         simpl. rewrite H2.
         rewrite H3. apply Rge_div2. auto.
-      * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == r).
+      * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == r).
         { apply Rif_right. auto. }
-        assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == (r + r0) / 2).
+        assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == (r + r0) / 2).
         { apply Rif_right. auto. }
         simpl. rewrite H2.
         rewrite H3. apply Rle_div2. auto. 
@@ -430,15 +430,15 @@ Module CauchyR : VIR_R.
       remember (Nested_interval E x y m) as p.
       remember (fst p) as r.
       remember (snd p) as r0.
-      assert (((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
+      assert (((Rif (is_upper_bound E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
       { simpl. subst. reflexivity. }
       rewrite <- H1.
-      destruct (classic (E ((r + r0) / 2))). 
-        * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
+      destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
           { apply Rif_left. auto. }
           simpl.
           rewrite H3. apply Rle_div2. subst. apply up_Nested_interval. auto.
-        * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == r).
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == r).
           { apply Rif_right. auto. }
           simpl.
           rewrite H3. apply Rle_refl.
@@ -456,15 +456,15 @@ Module CauchyR : VIR_R.
       remember (Nested_interval E x y m) as p.
       remember (fst p) as r.
       remember (snd p) as r0.
-      assert (((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
+      assert (((Rif (is_upper_bound E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
       { simpl. subst. reflexivity. }
       rewrite <- H1.
-      destruct (classic (E ((r + r0) / 2))). 
-        * assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
+      destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
           { apply Rif_left. auto. }
           simpl.
           rewrite H3. apply Rle_refl. 
-        * assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == ((r + r0) / 2)).
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == ((r + r0) / 2)).
           { apply Rif_right. auto. }
           simpl.
           rewrite H3. apply Rge_div2. subst. apply up_Nested_interval. auto.
