@@ -33,9 +33,10 @@ From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
 
 
-Module CauchyR : VIR_R.
+Module CauchyR <: VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
+  Bind Scope R_scope with R.
   Local Open Scope R_scope.
   Definition R0 := Rzero.
   Definition R1 := Rone.
@@ -45,6 +46,7 @@ Module CauchyR : VIR_R.
   Module Vex <: R_SINGLE.
     Definition R := Real.
     Delimit Scope R_scope with R.
+    Bind Scope R_scope with R.
     Local Open Scope R_scope.
     Definition Req := Real_equiv.
     Definition R_Setoid := Real_equiv_holds.
@@ -314,8 +316,9 @@ End CauchyR.
 
 Module CauchyR_complete : VIR_R_COMPLETE.
   Module VirR := CauchyR.
+  Module RF := VirR_Field(VirR).
   Module Lemma := VirRLemma1 (VirR).
-  Export VirR Lemma.
+  Export VirR RF Lemma.
   Local Open Scope R_scope.
   Module Vex <: R_SINGLE.
     Definition R := VirR.R.
@@ -327,23 +330,14 @@ Module CauchyR_complete : VIR_R_COMPLETE.
     Infix "==" := Req : R_scope.
     Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
          /\ (exists x, X x) /\ Proper (Req ==> iff) X.
-    Definition Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
-      intros.
-      unfold R. hnf. 
-      apply RSingleFun.
-      destruct X. exists x.
-      destruct p. destruct H0.
-      auto.
-    Defined.
+    Definition Rsinglefun := Rsinglefun.
     
-    Theorem Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
-    Proof.
-      intros.
-      unfold Rsinglefun.
-      apply Rsinglefun_correct.
-    Qed.
+    Definition Rsinglefun_correct := Rsinglefun_correct.
   End Vex.
+  
   Module Vex_Lemmas := RSignleLemmas (Vex).
+  
+  Export Vex Vex_Lemmas.
   
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
   (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
@@ -375,7 +369,7 @@ Module CauchyR_complete : VIR_R_COMPLETE.
     intros.
     unfold Rdiv.
     apply Rle_mult_compat_r with 2.
-    - rewrite Rpositive_gt_0. apply R2_lt_0.
+    - rewrite Rpositive_gt_0. apply Rlt_0_2.
     - rewrite Rmult_assoc. rewrite Rinv_l.
       + rewrite Rmult_plus_distr_l.
         rewrite !Rmult_1_r.
@@ -384,7 +378,7 @@ Module CauchyR_complete : VIR_R_COMPLETE.
       + intro.
         apply (Rlt_irrefl 0).
         rewrite <- H0 at 2.
-        apply R2_lt_0.
+        apply Rlt_0_2.
   Qed.
   
   Lemma Rge_div2 : forall x y : R , x <= y -> (x + y) / 2 <= y.
@@ -392,7 +386,7 @@ Module CauchyR_complete : VIR_R_COMPLETE.
     intros.
     unfold Rdiv.
     apply Rle_mult_compat_r with 2.
-    - rewrite Rpositive_gt_0. apply R2_lt_0.
+    - rewrite Rpositive_gt_0. apply Rlt_0_2.
     - rewrite Rmult_assoc. rewrite Rinv_l.
       + rewrite Rmult_plus_distr_l.
         rewrite !Rmult_1_r.
@@ -401,7 +395,7 @@ Module CauchyR_complete : VIR_R_COMPLETE.
       + intro.
         apply (Rlt_irrefl 0).
         rewrite <- H0 at 2.
-        apply R2_lt_0.
+        apply Rlt_0_2.
   Qed.
   
   Lemma up_Nested_interval : forall E x y n , x <= y -> fst (Nested_interval E x y n) <= snd (Nested_interval E x y n).
@@ -429,7 +423,7 @@ Module CauchyR_complete : VIR_R_COMPLETE.
         simpl. rewrite H2.
         rewrite H3. apply Rle_div2. auto. 
   Qed.
-  
+
   Lemma sub_Nested_interval : forall E x y n , x <= y -> snd (Nested_interval E x y n) - fst(Nested_interval E x y n) <= (y - x) / (2 ^ n).
   Proof.
     intros.
@@ -438,7 +432,29 @@ Module CauchyR_complete : VIR_R_COMPLETE.
       rewrite Rmult_assoc. rewrite (Rmult_comm 1). rewrite Rinv_l.
       + rewrite Rmult_1_r. reflexivity.
       + apply R1_neq_R0.
-    - admit.
+    - rewrite <- Nat.add_1_r.
+      rewrite Rdef_pow_add.
+      unfold Rdiv.
+      assert (forall n : nat , ~ 2 ^ n == 0).
+      { intros.
+        intro.
+        apply (Rlt_irrefl 0).
+        rewrite <- H0 at 2.
+        induction n0.
+        - simpl. auto with real.
+        - rewrite <- Nat.add_1_r in *.
+          rewrite Rdef_pow_add in *.
+          apply Rmult_lt_0_compat.
+          + apply IHn0.
+            apply Rmult_integral in H0.
+            destruct H0 ; auto.
+            exfalso. apply (Rlt_irrefl 0).
+            rewrite <- H0 at 2. 
+            admit.
+          + admit.
+      }
+      rewrite Rinv_mult_distr ; auto.
+      
   Admitted.
   
   Lemma Left_upper_Nested_interval : forall E x y n1 n2 , x <= y -> 
@@ -534,3 +550,5 @@ Module CauchyR_complete : VIR_R_COMPLETE.
     + intros. admit.
   Admitted.
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
+
+End CauchyR_complete.
