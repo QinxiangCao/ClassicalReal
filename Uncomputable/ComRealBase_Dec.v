@@ -32,8 +32,9 @@ Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 
 Module DEC_R (VirR_ex : VIR_R_EXTRA).
-  Module R := VirR_ex.VirR.
-  Import R VirR_ex.
+  Module VirR_comp := VirR_ex.VirR_Comp.
+  Module VirR := VirR_comp.VirR.
+  Import VirR VirR_comp VirR_ex.
   Module RLemmas := VirRLemmas (VirR_ex).
   Export RLemmas.
   Local Open Scope R_scope. 

@@ -27,13 +27,15 @@ From CReal Require Import Cauchy.RFunc.
 From CReal Require Import Cauchy.RComplete.
 From CReal Require Import Uncomputable.Countable.
 From CReal Require Import Uncomputable.ComRealBase.
+From CReal Require Import Uncomputable.ComRealField.
+From CReal Require Import Uncomputable.ComRealBaseLemma1.
 From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
-  
+
+
 Module CauchyR : VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
-  Bind Scope R_scope with R.
   Local Open Scope R_scope.
   Definition R0 := Rzero.
   Definition R1 := Rone.
@@ -43,7 +45,6 @@ Module CauchyR : VIR_R.
   Module Vex <: R_SINGLE.
     Definition R := Real.
     Delimit Scope R_scope with R.
-    Bind Scope R_scope with R.
     Local Open Scope R_scope.
     Definition Req := Real_equiv.
     Definition R_Setoid := Real_equiv_holds.
@@ -253,20 +254,18 @@ Module CauchyR : VIR_R.
   
   Definition Rmult_1_l := Rmult_1_l.
   
-  Lemma R1_neq_R0 : ~ 1 == 0.
+  Theorem R1_gt_R0 : 0 < 1.
   Proof.
-    intro. hnf in H.
-    specialize (H (1 # 2)).
-    assert (0 < 1 # 2)%Q. { lra. }
-    specialize (H H0).
-    destruct H. 
-    assert (S x > x)%nat. { omega. }
-    specialize (H (S x) H1 1%Q 0%Q).
-    simpl in H.
-    assert (~ (1 < 1 # 2))%Q. {lra. }
-    apply H2. apply H ; lra.
+    rewrite <- Rpositive_gt_0.
+      hnf.
+      exists 1%Q.
+      split ; try (lra).
+      exists O.
+      intros.
+      simpl in H0.
+      lra.
   Qed.
-  
+
   Theorem Rmult_plus_distr_l : 
     forall r1 r2 r3 : R, r1 * (r2 + r3) == (r1 * r2) + (r1 * r3).
   Proof.
@@ -311,6 +310,41 @@ Module CauchyR : VIR_R.
     apply Rpositive_gt_0. auto.
   Qed.
   
+End CauchyR.
+
+Module CauchyR_complete : VIR_R_COMPLETE.
+  Module VirR := CauchyR.
+  Module Lemma := VirRLemma1 (VirR).
+  Export VirR Lemma.
+  Local Open Scope R_scope.
+  Module Vex <: R_SINGLE.
+    Definition R := VirR.R.
+    Delimit Scope R_scope with R.
+    Bind Scope R_scope with R.
+    Local Open Scope R_scope.
+    Definition Req := Req.
+    Definition R_Setoid := R_Setoid.
+    Infix "==" := Req : R_scope.
+    Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
+         /\ (exists x, X x) /\ Proper (Req ==> iff) X.
+    Definition Rsinglefun : {X: R -> Prop | P_singlefun X} -> R.
+      intros.
+      unfold R. hnf. 
+      apply RSingleFun.
+      destruct X. exists x.
+      destruct p. destruct H0.
+      auto.
+    Defined.
+    
+    Theorem Rsinglefun_correct: forall X H, X (Rsinglefun (exist _ X H)).
+    Proof.
+      intros.
+      unfold Rsinglefun.
+      apply Rsinglefun_correct.
+    Qed.
+  End Vex.
+  Module Vex_Lemmas := RSignleLemmas (Vex).
+  
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
   (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
 
@@ -335,30 +369,7 @@ Module CauchyR : VIR_R.
   
   Definition Right_Nested_interval (E : R -> Prop) (x y : R)(n : nat) : R :=
      snd (Nested_interval E x y n).
-  
-  Lemma R2_lt_0 : 2 > 0.
-  Proof.
-    assert (2 == 1 + 1).
-    { reflexivity. }
-    rewrite H.
-    assert (0 == 0 + 0).
-    { rewrite Rplus_0_r. reflexivity. }
-    rewrite H0.
-    clear H H0.
-    assert (0 < 1).
-    { 
-      rewrite <- Rpositive_gt_0.
-      hnf.
-      exists 1%Q.
-      split ; try (lra).
-      exists O.
-      intros.
-      simpl in H0.
-      lra.
-    }
-    apply Rlt_plus_compat ; auto.
-  Qed.
-  
+     
   Lemma Rle_div2 : forall x y : R , x <= y -> x <= (x + y) / 2.
   Proof.
     intros.
@@ -523,4 +534,3 @@ Module CauchyR : VIR_R.
     + intros. admit.
   Admitted.
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
-End CauchyR.

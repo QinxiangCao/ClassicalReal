@@ -34,9 +34,10 @@ Import ListNotations.
 Import TM_u_u.
 
 Module TMR_Set (TR : VIR_R_EXTRA).
-  Module VirR := TR.VirR.
+  Module VirR_comp := TR.VirR_Comp.
+  Module VirR := VirR_comp.VirR.
+  Import VirR VirR_comp TR.
   Module Dec := DEC_R (TR).
-  Import TR VirR.
   Export Dec.
   Local Open Scope R_scope.
 

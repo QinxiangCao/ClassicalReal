@@ -35,10 +35,11 @@ Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_N_Q.
 
-Module CR_NQ (VR : VIR_R_EXTRA).
-  Module VirR := VR.VirR.
-  Module Dec := DEC_R (VR).
-  Import VR VirR.
+Module CR_NQ (TR : VIR_R_EXTRA).
+  Module VirR_comp := TR.VirR_Comp.
+  Module VirR := VirR_comp.VirR.
+  Import VirR VirR_comp TR.
+  Module Dec := DEC_R (TR).
   Export Dec.
   Local Open Scope R_scope.
 
