@@ -180,6 +180,7 @@ Module CauchyR : VIR_R.
       | S n => Rmult r (pow r n)
     end.
     
+  Notation "x ^ y" := (pow x y) : R_scope.
   
   Instance Rpow_comp : Proper (Req ==> eq ==> Req) pow.
   Proof. 
@@ -418,6 +419,17 @@ Module CauchyR : VIR_R.
         rewrite H3. apply Rle_div2. auto. 
   Qed.
   
+  Lemma sub_Nested_interval : forall E x y n , x <= y -> snd (Nested_interval E x y n) - fst(Nested_interval E x y n) <= (y - x) / (2 ^ n).
+  Proof.
+    intros.
+    induction n.
+    - simpl. right. unfold Rdiv. rewrite <- Rmult_1_r at 2.
+      rewrite Rmult_assoc. rewrite (Rmult_comm 1). rewrite Rinv_l.
+      + rewrite Rmult_1_r. reflexivity.
+      + apply R1_neq_R0.
+    - admit.
+  Admitted.
+  
   Lemma Left_upper_Nested_interval : forall E x y n1 n2 , x <= y -> 
       (n1 <= n2)%nat -> (Left_Nested_interval E x y n1) <= (Left_Nested_interval E x y n2).
   Proof.
@@ -496,7 +508,8 @@ Module CauchyR : VIR_R.
     }
     set (Rseq_intro _ H3).
     assert (Cauchy_of_R r1).
-    { admit. }
+    { hnf. intros.
+       admit. }
     assert (Cauchy_of_R r2).
     { admit. }
     apply H in H4.
@@ -505,6 +518,9 @@ Module CauchyR : VIR_R.
     assert (x1 == x2).
     { admit. }
     exists x1.
+    split.
+    + admit.
+    + intros. admit.
   Admitted.
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
 End CauchyR.
