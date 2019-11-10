@@ -339,7 +339,6 @@ Module CauchyR_complete : VIR_R_COMPLETE.
   Module Vex_Lemmas := RSignleLemmas (Vex).
   
   Export Vex Vex_Lemmas.
-
   Lemma not_conj_disj:forall P Q, ~(P /\ Q) -> ~P \/ ~Q.
 Proof.
   intros. pose proof classic P. destruct H0. 
@@ -472,8 +471,8 @@ Qed.
 Proof. intros. intros H1. assert(forall m, inject_Q (inject_Z m)* a>=b).
   { apply czlemma2_le;auto. } assert(0*a>=b). { 
     replace Rzero with (inject_Q (inject_Z 0)) by reflexivity. apply H2. }
-  rewrite Rmult_0_l in H3. apply Rpositive_gt_0 in H0. apply Rnot_le_lt in H3.
-  destruct H0. destruct H3. hnf. left. auto. hnf; right. symmetry. auto.
+  rewrite Rmult_0_l in H3. apply Rpositive_gt_0 in H0.
+  apply Rge_not_lt in H3. auto.
 Qed.
   Lemma IZR_change:forall x r, IZR x - r > 1 -> IZR (x-1) > r.
 Proof. intros. apply (Rplus_lt_compat_l (r-1)) in H. unfold Rminus in H.
@@ -543,10 +542,6 @@ Proof. pose proof czlemma3. intros r. pose proof (Real_sgn_case r).
 Qed.
 
   (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
-
-  Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
-  (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
-
   Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
   Definition bound (E:R -> Prop) := exists m : R, is_upper_bound E m.
