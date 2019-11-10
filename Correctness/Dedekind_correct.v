@@ -26,7 +26,7 @@ From CReal Require Import Uncomputable.ComRealBaseLemma1.
 From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
 
-Module DedekindR : VIR_R.
+Module DedekindR <: VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
   Bind Scope R_scope with R.
@@ -321,10 +321,35 @@ Qed.
     - repeat (rewrite Rmult_comm ; rewrite <- Rmult_assoc ; rewrite Rinv_l; auto;
       rewrite Rmult_1_l). auto.
   Qed.
+ 
+End DedekindR.
+
+Module Dedekind_complete : VIR_R_COMPLETE.
+  Module VirR := DedekindR.
+  Module RF := VirR_Field(VirR).
+  Module Lemma := VirRLemma1 (VirR).
+  Export VirR RF Lemma.
+  Local Open Scope R_scope.
+  Module Vex <: R_SINGLE.
+    Definition R := VirR.R.
+    Delimit Scope R_scope with R.
+    Bind Scope R_scope with R.
+    Local Open Scope R_scope.
+    Definition Req := Req.
+    Definition R_Setoid := R_Setoid.
+    Infix "==" := Req : R_scope.
+    Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
+         /\ (exists x, X x) /\ Proper (Req ==> iff) X.
+    Definition Rsinglefun := Rsinglefun.
+    
+    Definition Rsinglefun_correct := Rsinglefun_correct.
+  End Vex.
   
-    (** related lemmas for reasoning archimed:begin*)
+  Module Vex_Lemmas := RSignleLemmas (Vex).
+  
+  Export Vex Vex_Lemmas.
+   (** related lemmas for reasoning archimed:begin*)
 (** Proved at Uncomputable.ComRealBaseLemma1*)
-Axiom plus_IZR : forall n m:Z, IZR (n + m) == IZR n + IZR m.
   Lemma opp_opp_r:forall r:R, - - r == r.
 Proof. intros. destruct r. hnf.  split. hnf.  
   intros x0. apply Cut_opp_opp;auto. hnf. intros x0. apply Cut_opp_opp;auto.
@@ -370,10 +395,10 @@ Qed.
 Proof. split;generalize dependent z.
   - apply Zind.
     + (** Zero*)simpl. intros. unfold inject_Z;auto.
-    + (** positive*)intros. assert(IZR (Z.succ x)== IZR x + 1).
-      apply plus_IZR. rewrite H0. unfold Z.succ. rewrite inject_Z_plus.
+    + (** positive*)intros. unfold Z.succ. 
+      rewrite plus_IZR.  rewrite inject_Z_plus.
       rewrite Q_to_R_plus. assert(1==Q_to_R (inject_Z 1)). { reflexivity. }
-      rewrite<-H1. apply Rplus_le_l. auto. 
+      rewrite<-H0. apply Rplus_le_l. auto. 
     + (** negtive*)intros. unfold Z.pred. rewrite inject_Z_plus.
       rewrite Q_to_R_plus. rewrite plus_IZR. 
       rewrite IZR_QR1. apply Rplus_le_l. auto. 
@@ -479,7 +504,7 @@ Qed.
     split ; intros.
     - destruct H.
       + apply Rlt_le_weak. auto.
-      + rewrite H. apply Rle_refl.
+      + rewrite H. apply ROrder.Rle_refl. 
     - apply Rle_lt_eq in H.
       hnf. destruct H.
       + right. rewrite H. reflexivity.
@@ -512,7 +537,7 @@ Qed.
           destruct H2 , H2.
           specialize (H _ H2).
           rewrite Rle_equiv in H.
-          pose proof (Rlt_le_trans (x+1) x0 x H3 H).
+          pose proof (ROrder.Rlt_le_trans (x+1) x0 x H3 H).
           assert (x < x + 1).
           { rewrite <- Rplus_0_r at 1.
             apply Rplus_lt_compat_l.
@@ -526,6 +551,7 @@ Qed.
         repeat destruct H2. exists x.
         split ; auto.
         apply Rle_lt_trans with p ; auto.
+        apply Rle_equiv. auto.
       - intros.
         repeat destruct H2.
         exists ((p + x) / 2).
@@ -540,14 +566,14 @@ Qed.
         split.
         + exists x.
           split ; auto.
-          apply (Rmult_lt_compat_r _ _ 2) ; auto.
+          apply (Rmult_lt_r _ _ 2) ; auto.
           unfold Rdiv.
           rewrite Rmult_assoc.
           rewrite Rinv_l ; auto.
           rewrite Rmult_plus_distr_l.
           rewrite !Rmult_1_r. 
           rewrite Rplus_lt_l. auto.
-        + apply (Rmult_lt_compat_r _ _ 2) ; auto.
+        + apply (Rmult_lt_r _ _ 2) ; auto.
           unfold Rdiv.
           rewrite Rmult_assoc.
           rewrite Rinv_l ; auto.
@@ -582,7 +608,6 @@ Qed.
       specialize (H3 _ H4).
       apply (Rlt_not_refl b).
       apply Rlt_le_trans with x0 ; auto.
-      rewrite <- Rle_equiv. auto.
   Qed.
-  
-End DedekindR.
+
+End Dedekind_complete.
