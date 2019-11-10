@@ -21,6 +21,8 @@ From CReal Require Import Dedekind.ROrder.
 From CReal Require Import Dedekind.RArith.
 From CReal Require Import Uncomputable.Countable.
 From CReal Require Import Uncomputable.ComRealBase.
+From CReal Require Import Uncomputable.ComRealField.
+From CReal Require Import Uncomputable.ComRealBaseLemma1.
 From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
 
@@ -271,7 +273,12 @@ Module DedekindR : VIR_R.
     apply (Qlt_irrefl 0).
     apply H. reflexivity.
   Qed.
-  
+  Theorem R1_gt_R0 : 0 < 1.
+Proof.
+  hnf. split. 
+  - intros. lra.
+  - exists (1#2). split;lra.
+Qed.
   Definition Rmult_plus_distr_l := Rmult_distr_l.
 
   Definition total_order_T := R_three_dis.
