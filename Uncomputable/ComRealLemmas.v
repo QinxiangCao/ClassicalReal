@@ -30,10 +30,9 @@ From CReal Require Import ComRealBase.
 From CReal Require Import ComRealField.
 From CReal Require Import ComRealBaseLemma1.
 
-Module VirRLemmas (VirR_ex : VIR_R_EXTRA).
-  Module VirR_comp := VirR_ex.VirR_Comp.
-  Module VirR := VirR_comp.VirR.
-  Import VirR VirR_comp VirR_ex.
+Module VirRSingletonLemmas2 (VirR: VIR_R) (VirRSingleton: VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
+  Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
+  Import VirR VirRSingleton VirRComp VirRSL.
   Module Lemma1 := VirRLemma1 (VirR).
   Export Lemma1.
   
@@ -152,7 +151,7 @@ Module VirRLemmas (VirR_ex : VIR_R_EXTRA).
   Defined.
   
   Theorem archimedean_exists : forall r : R , r >=0 -> exists x : nat , archimedean x r.
-  Proof.  
+  Proof.
     intros.
     elim archimed with r ; intros.
     exists (Z.to_nat (x - 1)).
@@ -765,4 +764,4 @@ Module VirRLemmas (VirR_ex : VIR_R_EXTRA).
     apply Rdichotomy in H. destruct H ; apply lt_IZR in H ; omega.
   Qed.
 
-End VirRLemmas.
+End VirRSingletonLemmas2.

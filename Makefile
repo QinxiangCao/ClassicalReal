@@ -29,7 +29,8 @@ MetricSpace_FILES = \
   M_pack.v M_pre.v M_def.v M_prop.v M_new.v M_base.v M_complete.v
 
 Uncomputable_FILES = \
-  Countable.v TMSet.v ComRealBase.v ComRealField.v ComRealBaseLemma1.v ComRealLemmas.v ComRealBase_Dec.v ComRealBase_TMR.v ComRealBaseuu.v ComRealBaseN_Q.v  SingleLemmas.v
+  Countable.v TMSet.v ComRealBase.v ComRealField.v ComRealBaseLemma1.v ComRealLemmas.v ComRealBase_Dec.v ComRealBase_TMR.v ComRealBaseuu.v ComRealBaseN_Q.v SingleLemmas.v
+
 Correctness_FILES =  \
   Cauchy_correct.v Dedekind_correct.v
   

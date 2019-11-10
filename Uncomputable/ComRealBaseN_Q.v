@@ -35,12 +35,13 @@ Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_N_Q.
 
-Module CR_NQ (TR : VIR_R_EXTRA).
-  Module VirR_comp := TR.VirR_Comp.
-  Module VirR := VirR_comp.VirR.
-  Import VirR VirR_comp TR.
-  Module Dec := DEC_R (TR).
-  Export Dec.
+Module CR_NQ (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
+  Import VirR VirRSingleton.
+  
+  Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton VirRComp.
+  Module Dec := DEC_R VirR VirRSingleton VirRComp.
+  Export VirRSL VirRSL2 Dec.
   Local Open Scope R_scope.
 
   Definition limit (f : nat -> Q) (r : R) : Prop :=

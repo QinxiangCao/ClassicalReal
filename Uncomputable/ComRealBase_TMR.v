@@ -14,12 +14,14 @@ From Coq Require Import QArith.Qround.
 From Coq Require Import Logic.Classical.
 From Coq Require Import Logic.FunctionalExtensionality.
 From Coq Require Import Logic.PropExtensionality.
+From Coq Require Import Logic.ProofIrrelevance.
 From Coq Require Import Classes.Equivalence.
-Require Import Coq.setoid_ring.Ring_theory.
-Require Import Coq.Classes.RelationClasses.
-Require Import Ring.
-From Coq Require Import Field.
-From Coq Require Import Omega.
+From Coq Require Import setoid_ring.Ring_theory.
+From Coq Require Import Classes.RelationClasses.
+From Coq Require Import setoid_ring.Ring.
+From Coq Require Import setoid_ring.Field.
+From Coq Require Import omega.Omega.
+From Coq Require Import micromega.Psatz.
 From CReal Require Import Uncomputable.TMSet.
 From CReal Require Import INQ_libs.
 From CReal Require Import QArith_base_ext.
@@ -28,17 +30,16 @@ From CReal Require Import ComRealField.
 From CReal Require Import ComRealLemmas.
 From CReal Require Import ComRealBaseLemma1.
 From CReal Require Import ComRealBase_Dec.
-From Coq Require Import Psatz.
-Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_u_u.
 
-Module TMR_Set (TR : VIR_R_EXTRA).
-  Module VirR_comp := TR.VirR_Comp.
-  Module VirR := VirR_comp.VirR.
-  Import VirR VirR_comp TR.
-  Module Dec := DEC_R (TR).
-  Export Dec.
+Module TMR_Set (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
+  Import VirR VirRSingleton.
+  
+  Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton VirRComp.
+  Module Dec := DEC_R VirR VirRSingleton VirRComp.
+  Export VirRSL VirRSL2 Dec.
   Local Open Scope R_scope.
 
   Definition limit : (nat -> Q) -> R -> Prop.
