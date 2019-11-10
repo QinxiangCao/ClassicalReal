@@ -543,7 +543,7 @@ Module CauchyR_complete : VIR_R_COMPLETE.
     apply H in H5.
     destruct H4 , H5.
     assert (x1 == x2).
-    { admit. }
+    { hnf. admit. }
     exists x1.
     split.
     + admit.
