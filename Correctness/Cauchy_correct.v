@@ -649,12 +649,44 @@ Qed.
             apply Rmult_integral in H0.
             destruct H0 ; auto.
             exfalso. apply (Rlt_irrefl 0).
-            rewrite <- H0 at 2. 
-            admit.
-          + admit.
+            rewrite <- H0 at 2.
+            unfold pow. rewrite Rmult_1_r. apply Rlt_0_2.
+          + unfold pow. rewrite Rmult_1_r. apply Rlt_0_2.
       }
       rewrite Rinv_mult_distr ; auto.
-      
+      rewrite <- Rmult_assoc.
+      apply Rle_trans with ((snd (Nested_interval E x y n) - fst (Nested_interval E x y n)) * (/ 2 ^ 1)%R).
+      + rewrite Nat.add_1_r.  unfold pow. rewrite Rmult_1_r.
+        simpl.
+        remember (snd (Nested_interval E x y n)) as r0. 
+        remember (fst (Nested_interval E x y n)) as r.
+        destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
+          { apply Rif_left. auto. }
+          assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
+          { apply Rif_left. auto. }
+          simpl. rewrite H2.
+          rewrite H3. apply (Rmult_le_r _ _ 2).
+          ++ apply Rlt_0_2.
+          ++ unfold Rdiv , Rminus.
+             rewrite Rmult_plus_distr_r. rewrite <- Ropp_mult_distr_l.
+             rewrite !Rmult_assoc.
+             assert (~ 2 == 0).
+             { specialize (H0 1%nat). unfold pow in H0. rewrite Rmult_1_r in H0. auto. }
+             rewrite !Rinv_l ; auto. rewrite Rmult_plus_distr_l.
+             rewrite !Rmult_1_r.
+             rewrite Ropp_plus_distr.
+             right.
+             
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == r).
+          { apply Rif_right. auto. }
+          assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == (r + r0) / 2).
+          { apply Rif_right. auto. }
+          simpl. rewrite H2.
+          rewrite H3. apply Rle_div2. auto.
+      + apply Rmult_le_compat_r ; auto.
+        left. apply Rinv_0_lt_compat.
+        unfold pow. rewrite Rmult_1_r. apply Rlt_0_2.
   Admitted.
   
   Lemma Left_upper_Nested_interval : forall E x y n1 n2 , x <= y -> 
