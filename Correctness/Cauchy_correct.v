@@ -27,9 +27,11 @@ From CReal Require Import Cauchy.RFunc.
 From CReal Require Import Cauchy.RComplete.
 From CReal Require Import Uncomputable.Countable.
 From CReal Require Import Uncomputable.ComRealBase.
+From CReal Require Import Uncomputable.ComRealField.
+From CReal Require Import Uncomputable.ComRealBaseLemma1.
 From CReal Require Import Uncomputable.SingleLemmas.
 From Coq Require Import PArith.BinPosDef.
-  
+
 Module CauchyR <: VIR_R.
   Definition R := Real.
   Delimit Scope R_scope with R.
@@ -180,6 +182,7 @@ Module CauchyR <: VIR_R.
       | S n => Rmult r (pow r n)
     end.
     
+  Notation "x ^ y" := (pow x y) : R_scope.
   
   Instance Rpow_comp : Proper (Req ==> eq ==> Req) pow.
   Proof. 
@@ -252,20 +255,18 @@ Module CauchyR <: VIR_R.
   
   Definition Rmult_1_l := Rmult_1_l.
   
-  Lemma R1_neq_R0 : ~ 1 == 0.
+  Theorem R1_gt_R0 : 0 < 1.
   Proof.
-    intro. hnf in H.
-    specialize (H (1 # 2)).
-    assert (0 < 1 # 2)%Q. { lra. }
-    specialize (H H0).
-    destruct H. 
-    assert (S x > x)%nat. { omega. }
-    specialize (H (S x) H1 1%Q 0%Q).
-    simpl in H.
-    assert (~ (1 < 1 # 2))%Q. {lra. }
-    apply H2. apply H ; lra.
+    rewrite <- Rpositive_gt_0.
+      hnf.
+      exists 1%Q.
+      split ; try (lra).
+      exists O.
+      intros.
+      simpl in H0.
+      lra.
   Qed.
-  
+
   Theorem Rmult_plus_distr_l : 
     forall r1 r2 r3 : R, r1 * (r2 + r3) == (r1 * r2) + (r1 * r3).
   Proof.
@@ -310,6 +311,32 @@ Module CauchyR <: VIR_R.
     apply Rpositive_gt_0. auto.
   Qed.
   
+End CauchyR.
+
+Module CauchyR_complete : VIR_R_COMPLETE CauchyR.
+  Module RF := VirR_Field(CauchyR).
+  Module RLemma1 := VirRLemma1 CauchyR.
+  Export CauchyR RF RLemma1.
+  Local Open Scope R_scope. (*
+  Module Vex <: VIR_R_SINGLETON VirR.
+    Definition R := VirR.R.
+    Delimit Scope R_scope with R.
+    Bind Scope R_scope with R.
+    Local Open Scope R_scope.
+    Definition Req := Req.
+    Definition R_Setoid := R_Setoid.
+    Infix "==" := Req : R_scope.
+    Definition P_singlefun (X : R -> Prop) := (forall x1 x2, X x1 -> X x2 -> x1 == x2)
+         /\ (exists x, X x) /\ Proper (Req ==> iff) X.
+    Definition Rsinglefun := Rsinglefun.
+    
+    Definition Rsinglefun_correct := Rsinglefun_correct.
+  End Vex.
+  *)
+  Module Vex_Lemmas := RSignleLemmas CauchyR.Vex.
+  
+  Export CauchyR.Vex Vex_Lemmas.
+  
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
   (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
 
@@ -326,7 +353,7 @@ Module CauchyR <: VIR_R.
     - set (Nested_interval E x y n0).
       set (fst p).
       set (snd p).
-      apply ((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )).
+      apply ((Rif (is_upper_bound E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound  E ((r + r0)/2)) r0 ((r + r0) / 2) )).
   Defined.
   
   Definition Left_Nested_interval (E : R -> Prop) (x y : R) (n : nat) : R :=
@@ -334,16 +361,42 @@ Module CauchyR <: VIR_R.
   
   Definition Right_Nested_interval (E : R -> Prop) (x y : R)(n : nat) : R :=
      snd (Nested_interval E x y n).
-  
-  Lemma Rlt_div2 : forall x y : R , x < y -> x < (x + y) / 2.
+     
+  Lemma Rle_div2 : forall x y : R , x <= y -> x <= (x + y) / 2.
   Proof.
-  Admitted.
+    intros.
+    unfold Rdiv.
+    apply Rle_mult_compat_r with 2.
+    - rewrite Rpositive_gt_0. apply Rlt_0_2.
+    - rewrite Rmult_assoc. rewrite Rinv_l.
+      + rewrite Rmult_plus_distr_l.
+        rewrite !Rmult_1_r.
+        apply Rle_plus_l.
+        auto.
+      + intro.
+        apply (Rlt_irrefl 0).
+        rewrite <- H0 at 2.
+        apply Rlt_0_2.
+  Qed.
   
-  Lemma Rgt_div2 : forall x y : R , x < y -> (x + y) / 2 < y.
+  Lemma Rge_div2 : forall x y : R , x <= y -> (x + y) / 2 <= y.
   Proof.
-  Admitted.
+    intros.
+    unfold Rdiv.
+    apply Rle_mult_compat_r with 2.
+    - rewrite Rpositive_gt_0. apply Rlt_0_2.
+    - rewrite Rmult_assoc. rewrite Rinv_l.
+      + rewrite Rmult_plus_distr_l.
+        rewrite !Rmult_1_r.
+        apply Rle_plus_r.
+        auto.
+      + intro.
+        apply (Rlt_irrefl 0).
+        rewrite <- H0 at 2.
+        apply Rlt_0_2.
+  Qed.
   
-  Lemma up_Nested_interval : forall E x y n , x < y -> fst (Nested_interval E x y n) < snd (Nested_interval E x y n).
+  Lemma up_Nested_interval : forall E x y n , x <= y -> fst (Nested_interval E x y n) <= snd (Nested_interval E x y n).
   Proof.
     intros.
     induction n.
@@ -351,25 +404,58 @@ Module CauchyR <: VIR_R.
     - remember (Nested_interval E x y n) as p.
       remember (fst p) as r.
       remember (snd p) as r0.
-      assert (((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S n)).
+      assert (((Rif (is_upper_bound  E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound  E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S n)).
       { simpl. subst. reflexivity. }
       rewrite <- H0.
-      destruct (classic (E ((r + r0) / 2))). 
-      * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
+      destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+      * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
         { apply Rif_left. auto. }
-        assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
+        assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
         { apply Rif_left. auto. }
         simpl. rewrite H2.
-        rewrite H3. apply Rgt_div2. auto.
-      * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == r).
+        rewrite H3. apply Rge_div2. auto.
+      * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == r).
         { apply Rif_right. auto. }
-        assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == (r + r0) / 2).
+        assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == (r + r0) / 2).
         { apply Rif_right. auto. }
         simpl. rewrite H2.
-        rewrite H3. apply Rlt_div2. auto. 
+        rewrite H3. apply Rle_div2. auto. 
   Qed.
+
+  Lemma sub_Nested_interval : forall E x y n , x <= y -> snd (Nested_interval E x y n) - fst(Nested_interval E x y n) <= (y - x) / (2 ^ n).
+  Proof.
+    intros.
+    induction n.
+    - simpl. right. unfold Rdiv. rewrite <- Rmult_1_r at 2.
+      rewrite Rmult_assoc. rewrite (Rmult_comm 1). rewrite Rinv_l.
+      + rewrite Rmult_1_r. reflexivity.
+      + apply R1_neq_R0.
+    - rewrite <- Nat.add_1_r.
+      rewrite Rdef_pow_add.
+      unfold Rdiv.
+      assert (forall n : nat , ~ 2 ^ n == 0).
+      { intros.
+        intro.
+        apply (Rlt_irrefl 0).
+        rewrite <- H0 at 2.
+        induction n0.
+        - simpl. auto with real.
+        - rewrite <- Nat.add_1_r in *.
+          rewrite Rdef_pow_add in *.
+          apply Rmult_lt_0_compat.
+          + apply IHn0.
+            apply Rmult_integral in H0.
+            destruct H0 ; auto.
+            exfalso. apply (Rlt_irrefl 0).
+            rewrite <- H0 at 2. 
+            admit.
+          + admit.
+      }
+      rewrite Rinv_mult_distr ; auto.
+      
+  Admitted.
   
-  Lemma Left_upper_Nested_interval : forall E x y n1 n2 , x < y -> 
+  Lemma Left_upper_Nested_interval : forall E x y n1 n2 , x <= y -> 
       (n1 <= n2)%nat -> (Left_Nested_interval E x y n1) <= (Left_Nested_interval E x y n2).
   Proof.
     intros.
@@ -381,21 +467,21 @@ Module CauchyR <: VIR_R.
       remember (Nested_interval E x y m) as p.
       remember (fst p) as r.
       remember (snd p) as r0.
-      assert (((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
+      assert (((Rif (is_upper_bound E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
       { simpl. subst. reflexivity. }
       rewrite <- H1.
-      destruct (classic (E ((r + r0) / 2))). 
-        * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
+      destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == (r + r0) / 2).
           { apply Rif_left. auto. }
           simpl.
-          rewrite H3. left. apply Rlt_div2. subst. apply up_Nested_interval. auto.
-        * assert (Rif (E ((r + r0) / 2)) ((r + r0) / 2) r == r).
+          rewrite H3. apply Rle_div2. subst. apply up_Nested_interval. auto.
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) ((r + r0) / 2) r == r).
           { apply Rif_right. auto. }
           simpl.
           rewrite H3. apply Rle_refl.
   Qed.
   
-  Lemma Right_lower_Nested_interval : forall E x y n1 n2, x < y -> 
+  Lemma Right_lower_Nested_interval : forall E x y n1 n2, x <= y -> 
       (n1 <= n2)%nat -> Right_Nested_interval E x y n2 <= Right_Nested_interval E x y n1.
   Proof.
     intros.
@@ -407,18 +493,18 @@ Module CauchyR <: VIR_R.
       remember (Nested_interval E x y m) as p.
       remember (fst p) as r.
       remember (snd p) as r0.
-      assert (((Rif (E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
+      assert (((Rif (is_upper_bound E ((r + r0)/2)) ((r + r0) / 2) r),(Rif (is_upper_bound E ((r + r0)/2)) r0 ((r + r0) / 2) )) = Nested_interval E x y (S m)).
       { simpl. subst. reflexivity. }
       rewrite <- H1.
-      destruct (classic (E ((r + r0) / 2))). 
-        * assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
+      destruct (classic (is_upper_bound E ((r + r0) / 2))). 
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == r0).
           { apply Rif_left. auto. }
           simpl.
           rewrite H3. apply Rle_refl. 
-        * assert (Rif (E ((r + r0) / 2)) r0 ((r + r0) / 2) == ((r + r0) / 2)).
+        * assert (Rif (is_upper_bound E ((r + r0) / 2)) r0 ((r + r0) / 2) == ((r + r0) / 2)).
           { apply Rif_right. auto. }
           simpl.
-          rewrite H3. left. apply Rgt_div2. subst. apply up_Nested_interval. auto.
+          rewrite H3. apply Rge_div2. subst. apply up_Nested_interval. auto.
   Qed.
 
   Theorem completeness :
@@ -426,11 +512,43 @@ Module CauchyR <: VIR_R.
       bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
   Proof.
     pose proof CC_sufficiency.
-    
-    
+    intros.
+    destruct H0 , H1.
+    set (Left_Nested_interval E x0 x).
+    set (Right_Nested_interval E x0 x).
+    assert (R_seq (fun n r1 => r n == r1)).
+    { split.
+      - intros. exists (r n). reflexivity.
+      - intros. rewrite <- H2 , <- H3. reflexivity.
+      - intros. hnf. intros.
+        rewrite H2. reflexivity.
+    }
+    set (Rseq_intro _ H2).
+    assert (R_seq (fun n r1 => r0 n == r1)).
+    { split.
+      - intros. exists (r0 n). reflexivity.
+      - intros. rewrite <- H4 , <- H3. reflexivity.
+      - intros. hnf. intros.
+        rewrite H3. reflexivity.
+    }
+    set (Rseq_intro _ H3).
+    assert (Cauchy_of_R r1).
+    { hnf. intros.
+       admit. }
+    assert (Cauchy_of_R r2).
+    { admit. }
+    apply H in H4.
+    apply H in H5.
+    destruct H4 , H5.
+    assert (x1 == x2).
+    { admit. }
+    exists x1.
+    split.
+    + admit.
+    + intros. admit.
   Admitted.
   (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
-End CauchyR.
+End CauchyR_complete.
 
 Module CauchyAll: VIR_R_ALL.
 

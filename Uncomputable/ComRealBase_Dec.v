@@ -31,11 +31,11 @@ From Coq Require Import Psatz.
 Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 
-Module DEC_R (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR).
+Module DEC_R (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
   Import VirR VirRSingleton.
   
   Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
-  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton VirRComp.
   Export VirRSL VirRSL2.
   Local Open Scope R_scope. 
 

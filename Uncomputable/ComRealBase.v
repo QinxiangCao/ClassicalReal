@@ -200,9 +200,6 @@ Module Type VIR_R.
   Hint Resolve Rinv_l: real.
   Axiom Rmult_1_l : forall r:R, 1 * r == r.
   Hint Resolve Rmult_1_l: real.
-  Axiom R1_neq_R0 : ~ 1 == 0.
-  Hint Resolve R1_neq_R0: real.
-
   Axiom
     Rmult_plus_distr_l : forall r1 r2 r3:R, r1 * (r2 + r3) == r1 * r2 + r1 * r3.
   Hint Resolve Rmult_plus_distr_l: real.
@@ -210,11 +207,23 @@ Module Type VIR_R.
   Axiom total_order_T : forall r1 r2:R, r1 < r2 \/ r1 == r2 \/ r1 > r2.
   Axiom Rlt_asym : forall r1 r2:R, r1 < r2 -> ~ r2 < r1.
   Axiom Rlt_trans : forall r1 r2 r3:R, r1 < r2 -> r2 < r3 -> r1 < r3.
+  Axiom R1_gt_R0 : 0 < 1.
+  Hint Resolve R1_gt_R0: real.
+  
   Axiom Rplus_lt_compat_l : forall r r1 r2:R, r1 < r2 -> r + r1 < r + r2.
   Axiom
     Rmult_lt_compat_l : forall r r1 r2:R, 0 < r -> r1 < r2 -> r * r1 < r * r2.
   Hint Resolve Rlt_asym Rplus_lt_compat_l Rmult_lt_compat_l: real.
+  (* Axioms copied from Raxioms.v *)
+  (* Change { | } -> exists , sumbool to or *)
+  (* Change eq -> Req *)
   
+  (* Axioms of Vir_R *)
+End VIR_R.
+
+Module Type VIR_R_COMPLETE (VirR : VIR_R).
+  Import VirR.
+  Local Open Scope R_scope.
   Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
 
   Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
@@ -229,7 +238,9 @@ Module Type VIR_R.
     forall E:R -> Prop,
       bound E -> (exists x : R, E x) -> exists m:R , is_lub E m .
  
-End VIR_R.
+  (* Completeness axioms copied from Raxioms.v *)
+  (* Change { | } -> exists , sumbool to or *)
+End VIR_R_COMPLETE.
 
 Module Type VIR_R_SINGLETON (VirR : VIR_R).
   Import VirR.

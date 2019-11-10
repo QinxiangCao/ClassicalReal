@@ -33,14 +33,13 @@ From CReal Require Import ComRealBase_Dec.
 Import ListNotations.
 Import TM_u_u.
 
-Module TMR_Set (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR).
+Module TMR_Set (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
   Import VirR VirRSingleton.
   
   Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
-  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton.
-  Export VirRSL VirRSL2.
-  Module Dec := DEC_R VirR VirRSingleton.
-  Export Dec.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton VirRComp.
+  Module Dec := DEC_R VirR VirRSingleton VirRComp.
+  Export VirRSL VirRSL2 Dec.
   Local Open Scope R_scope.
 
   Definition limit : (nat -> Q) -> R -> Prop.

@@ -9,7 +9,16 @@ Module VirR_Field (R : VIR_R).
 
 Import R.
 Local Open Scope R_scope.
-
+  
+Theorem R1_neq_R0 : ~ 1 == 0.
+Proof.
+  intro.
+  pose proof R1_gt_R0.
+  rewrite H in *.
+  apply (Rlt_asym 0 0) ; auto.
+Qed.
+Hint Resolve R1_neq_R0 : real.
+  
 Lemma RTheory : ring_theory 0 1 Rplus Rmult Rminus Ropp Req.
 Proof.
 constructor.
@@ -39,23 +48,11 @@ Qed.
 
 Lemma Rlt_n_Sn : forall x, x < x + 1.
 Proof.
-intro.
-elim archimed with x; intros.
-destruct H. destruct H0.
- apply Rlt_trans with (IZR x0); trivial.
-    assert (IZR x0 == x + (IZR x0 - x))%R.
-    { unfold Rminus. rewrite Rplus_comm. rewrite Rplus_assoc.
-      rewrite (Rplus_comm (-x) x).
-      rewrite Rplus_opp_r. rewrite Rplus_comm. rewrite Rplus_0_l. reflexivity.
-    }
-    rewrite H1.
-  apply Rplus_lt_compat_l; trivial.
- rewrite <- H0.
-   unfold Rminus.
-   rewrite (Rplus_comm (IZR x0) (- x)).
-   rewrite <- Rplus_assoc.
-   rewrite Rplus_opp_r.
-   rewrite Rplus_0_l; trivial.
+  intros.
+  rewrite <- Rplus_0_l at 1.
+  rewrite Rplus_comm.
+  apply Rplus_lt_compat_l.
+  apply R1_gt_R0.
 Qed.
 
 Lemma Rlt_0_2 : 0 < 2.

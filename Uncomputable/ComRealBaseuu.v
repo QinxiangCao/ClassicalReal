@@ -36,14 +36,14 @@ Require Import Coq.Logic.ProofIrrelevance.
 Import ListNotations.
 Import TM_u_u.
 
-Module Wrong_Up (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR).
+Module Wrong_Up (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
   Import VirR VirRSingleton.
   
   Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
-  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton VirRComp.
   Export VirRSL VirRSL2.
-  Module Dec := DEC_R VirR VirRSingleton.
-  Module TMR := TMR_Set VirR VirRSingleton.
+  Module Dec := DEC_R VirR VirRSingleton VirRComp.
+  Module TMR := TMR_Set VirR VirRSingleton VirRComp.
   Export TMR.
   Local Open Scope R_scope.
   
@@ -100,13 +100,13 @@ Module Wrong_Up (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR).
 
 End Wrong_Up.
 
-Module CR_uu (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR).
+Module CR_uu (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR_R_COMPLETE VirR).
   Import VirR VirRSingleton.
   
   Module VirRSL := VirRSingletonLemmas VirR VirRSingleton.
-  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton.
+  Module VirRSL2 := VirRSingletonLemmas2 VirR VirRSingleton VirRComp.
   Export VirRSL VirRSL2.
-  Module TMR := TMR_Set VirR VirRSingleton.
+  Module TMR := TMR_Set VirR VirRSingleton VirRComp.
   Export TMR.
   Local Open Scope R_scope.
 
