@@ -311,11 +311,10 @@ Qed.
  
 End DedekindR.
 
-Module Dedekind_complete : VIR_R_COMPLETE DedekindR.
-  Module VirR := DedekindR.
-  Module RF := VirR_Field(VirR).
-  Module RLemma := VirRLemma1 (VirR).
-  Export VirR RF RLemma.
+Module DedekindR_complete : VIR_R_COMPLETE DedekindR.
+  Module RF := VirR_Field DedekindR.
+  Module RLemma := VirRLemma1 DedekindR.
+  Export DedekindR RF RLemma.
   Local Open Scope R_scope.
   
   Module Vex_Lemmas := RSignleLemmas DedekindR.Vex.
@@ -583,12 +582,13 @@ Qed.
       apply Rlt_le_trans with x0 ; auto.
   Qed.
 
-End Dedekind_complete.
+End DedekindR_complete.
 
 Module DedekindAll: VIR_R_ALL.
 
 Include DedekindR.
 Module DedekindRSingle : VIR_R_SINGLETON DedekindR := DedekindR.Vex.
 Include DedekindRSingle.
+Include DedekindR_complete.
 
 End DedekindAll.

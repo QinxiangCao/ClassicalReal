@@ -294,5 +294,6 @@ Module Type VIR_R_ALL.
 
 Include VIR_R.
 Include VIR_R_SINGLETON.
+Include VIR_R_COMPLETE.
 
 End VIR_R_ALL.

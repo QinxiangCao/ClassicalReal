@@ -756,5 +756,6 @@ Module CauchyAll: VIR_R_ALL.
 Include CauchyR.
 Module CauchyRSingle : VIR_R_SINGLETON CauchyR := CauchyR.Vex.
 Include CauchyRSingle.
+Include CauchyR_complete.
 
 End CauchyAll.
