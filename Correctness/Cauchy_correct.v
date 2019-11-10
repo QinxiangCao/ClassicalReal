@@ -23,6 +23,7 @@ From CReal Require Import Cauchy.RBase.
 From CReal Require Import Cauchy.RArith.
 From CReal Require Import Cauchy.RSign.
 From CReal Require Import Cauchy.ROrder.
+From CReal Require Import Cauchy.RAbs.
 From CReal Require Import Cauchy.RFunc.
 From CReal Require Import Cauchy.RComplete.
 From CReal Require Import Uncomputable.Countable.
@@ -337,9 +338,209 @@ Module CauchyR_complete : VIR_R_COMPLETE CauchyR.
   
   Export CauchyR.Vex Vex_Lemmas.
   
-  Axiom archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
-  (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
+  Lemma not_conj_disj:forall P Q, ~(P /\ Q) -> ~P \/ ~Q.
+Proof.
+  intros. pose proof classic P. destruct H0. 
+  - right. intros Hq. destruct H. split;auto.
+  - left. auto.
+Qed.
+  Lemma imply_iff:forall P Q:Prop, (P->Q) <-> (~P \/ Q).
+Proof. intros P Q. split.
+  - intros. pose proof classic P. destruct H0.
+    + right.  auto.
+    + left. intros Hp. auto. 
+  - intros. destruct H;auto. destruct H;auto.
+Qed.
+  Lemma exists_dist :
+  forall (X:Type) (P : X -> Prop),
+    (exists x, P x) <-> ~ (forall x, ~ P x).
+Proof. intros. split. 
+  - intros. destruct H. intros Hcontra. apply (Hcontra x);auto.
+  - intros. pose proof classic (exists x : X, P x). destruct H0.
+    + apply H0. 
+    + destruct H. intros x Hx. destruct H0. exists x. apply Hx.
+Qed.
+  Lemma not_forall_exists{X:Type}:forall (P Q:X->Prop),
+    (~(forall x,P x -> Q x)) -> exists x, P x /\ ~Q x.
+Proof. intros. pose proof classic (exists x : X, P x /\ ~Q x).
+  destruct H0;auto. destruct H. intros. pose proof classic (Q x).
+  destruct H1;auto. destruct H0;auto. exists x;split;auto.
+Qed. 
+  Theorem IZR_Q:forall z:Z, IZR z == inject_Q (inject_Z z).
+Proof. apply Zind.
+  - reflexivity.
+  - intros. unfold Z.succ. rewrite plus_IZR.  rewrite inject_Z_plus. 
+    rewrite inject_Q_plus. assert(IZR 1 == inject_Q (inject_Z 1)).
+    { hnf. intros. exists O. intros. rewrite H2,H3. unfold Qminus.
+    rewrite Qplus_opp_r. apply H0. } rewrite H,H0. reflexivity.
+  - intros. unfold Z.pred. rewrite plus_IZR, inject_Z_plus, inject_Q_plus.
+    assert(IZR (-1) == inject_Q (inject_Z (-1))). {
+    hnf. unfold Cauchy_opp. intros. exists O. intros. assert(-1 = -(1))%Z. reflexivity.
+    rewrite H4,(inject_Z_opp 1) in H3. clear H4. assert(-q2==1)%Q.
+    { rewrite H3. rewrite Qopp_opp. reflexivity. }
+    apply (H2 (-q2)%Q)in H4. rewrite Qopp_opp in H4. rewrite H4. unfold Qminus.
+    rewrite Qplus_opp_r. apply H0. } rewrite H, H0. reflexivity.
+Qed.
+  Theorem R_Archimedian':forall A B:R, 
+    Rpositive A -> Rpositive B -> exists z:Z, inject_Q (inject_Z z) * A > B.
+Proof. pose proof R_Archimedian. intros. pose proof classic (A<B).
+  destruct H2. 
+  - (** lt*) apply (H A B) in H0.  destruct H0. exists (Z.of_nat x). apply H0. auto.
+  - apply Rnot_lt in H2. destruct H2.
+    + (** eq*) exists 2%Z. rewrite H2. unfold Rgt. rewrite<-Rmult_1_l at 1.
+      rewrite Rmult_comm. rewrite (Rmult_comm _ B). apply Rlt_mult_l. apply H1.
+      hnf. exists 1%Q. split. lra. unfold RArith.Rminus.  unfold RArith.Ropp. 
+      unfold RArith.Rplus.  unfold inject_Q. unfold Rone. unfold Cauchy_opp. 
+      exists O. unfold CauchySeqPlus. intros.  rewrite (H4 2 (-1))%Q;try lra.
+      reflexivity. intros. lra.
+    + (** gt*) exists 1%Z. assert(inject_Q (inject_Z 1) == 1). reflexivity.
+      rewrite H3. rewrite Rmult_1_l. apply H2.
+Qed.
+  Theorem R_Archimedian'':forall A:R, Rpositive A -> 
+    exists z:Z, inject_Q (inject_Z z) > A.
+Proof. pose proof (R_Archimedian' 1). intros. assert(Rpositive 1).
+  { unfold Rpositive. unfold Rone. exists 1%Q. split. lra. exists O.
+    intros. rewrite H2. lra. } 
+  apply (H A) in H1;auto. destruct H1. exists x. rewrite<-Rmult_1_l.
+  rewrite Rmult_comm. apply H1. 
+Qed.
+  Lemma czlemma1:forall a b:R,Rpositive a -> Rpositive b  
+    -> (forall n, inject_Q (inject_Z n)*a>b -> inject_Q (inject_Z (n-1))*a>b)
+    -> exists x1,forall m, inject_Q (inject_Z(x1 + m))* a>b.
+Proof. intros a b Ha Hb H. assert(Rpositive a) by auto.
+  apply (R_Archimedian' a b) in H0;auto. destruct H0. 
+  exists x. apply Zind. - (** m=0*) rewrite Zplus_0_r. apply H0.
+  - (** m+1*)intros. unfold Z.succ. rewrite Zplus_assoc. rewrite inject_Z_plus.
+  rewrite inject_Q_plus. remember (inject_Q (inject_Z (x + x0))).
+  assert(r*a + a>r*a). { unfold Rgt. rewrite<-Rplus_0_r at 1. 
+  apply Rplus_lt_compat_l. apply Rpositive_gt_0 in Ha. apply Ha. }
+  rewrite Rmult_comm.  rewrite Rmult_plus_distr_l. rewrite Rmult_comm. 
+  rewrite Rmult_1_r. apply Rlt_trans with (r*a);auto.  
+  - (** m-1*)intros. apply H in H1. unfold Z.pred. rewrite Zplus_assoc. apply H1.
+Qed.
+  Lemma czlemma2:forall a b:R,Rpositive a -> Rpositive b  
+    -> (forall n, inject_Q (inject_Z n)*a>b -> inject_Q (inject_Z (n-1))*a>b)
+    -> forall m, inject_Q (inject_Z m)* a>b.
+Proof. intros. 
+  assert(exists x1, forall m, inject_Q (inject_Z (x1 + m)) * a > b).
+  { apply czlemma1;auto. } 
+  destruct H2. assert(inject_Q (inject_Z (x + (-x +m))) * a > b).
+  apply H2. rewrite Zplus_assoc in H3. rewrite Zplus_opp_r in H3. 
+  rewrite Zplus_0_l in H3. apply H3.
+Qed.
+  Lemma czlemma3:forall a b:R,Rpositive a -> Rpositive b  
+    -> ~(forall n, inject_Q (inject_Z n)*a>b -> inject_Q (inject_Z (n-1))*a>b).
+Proof. intros. intros H1. assert(forall m, inject_Q (inject_Z m)* a>b).
+  { apply czlemma2;auto. } assert(0*a>b). { 
+    replace Rzero with (inject_Q (inject_Z 0)) by reflexivity. apply H2. }
+  rewrite Rmult_0_l in H3. apply Rpositive_gt_0 in H0. apply Rlt_asym in H0.
+  destruct H0. auto.
+Qed.
+  (** czlemma_le just like czlemma except changing lt to le*)
+  Lemma czlemma1_le:forall a b:R,Rpositive a -> Rpositive b  
+    -> (forall n, inject_Q (inject_Z n)*a>=b -> inject_Q (inject_Z (n-1))*a>=b)
+    -> exists x1,forall m, inject_Q (inject_Z(x1 + m))* a>=b.
+Proof. intros a b Ha Hb H. assert(Rpositive a) by auto.
+  apply (R_Archimedian' a b) in H0;auto. destruct H0. 
+  exists x. apply Zind. - (** m=0*) rewrite Zplus_0_r. 
+  unfold Rge. left. apply H0.
+  - (** m+1*)intros. unfold Z.succ. rewrite Zplus_assoc. rewrite inject_Z_plus.
+  rewrite inject_Q_plus. remember (inject_Q (inject_Z (x + x0))).
+  assert(r*a + a>r*a). { unfold Rgt. rewrite<-Rplus_0_r at 1. 
+  apply Rplus_lt_compat_l. apply Rpositive_gt_0 in Ha. apply Ha. }
+  rewrite Rmult_comm.  rewrite Rmult_plus_distr_l. rewrite Rmult_comm. 
+  rewrite Rmult_1_r. destruct H1. 
+    + unfold Rge. left. apply Rlt_trans with (r*a);auto.
+    + rewrite H1. unfold Rge. left. unfold Rgt. rewrite<-Rplus_0_r at 1. 
+      apply Rplus_lt_compat_l. apply Rpositive_gt_0 in Ha. apply Ha.
+  - (** m-1*)intros. apply H in H1. unfold Z.pred. rewrite Zplus_assoc. apply H1.
+Qed.
+  Lemma czlemma2_le:forall a b:R,Rpositive a -> Rpositive b  
+    -> (forall n, inject_Q (inject_Z n)*a>=b -> inject_Q (inject_Z (n-1))*a>=b)
+    -> forall m, inject_Q (inject_Z m)* a>=b.
+Proof. intros. 
+  assert(exists x1, forall m, inject_Q (inject_Z (x1 + m)) * a >= b).
+  { apply czlemma1_le;auto. } 
+  destruct H2. assert(inject_Q (inject_Z (x + (-x +m))) * a >= b).
+  apply H2. rewrite Zplus_assoc in H3. rewrite Zplus_opp_r in H3. 
+  rewrite Zplus_0_l in H3. apply H3.
+Qed.
+  Lemma czlemma3_le:forall a b:R,Rpositive a -> Rpositive b  
+    -> ~(forall n, inject_Q (inject_Z n)*a>=b -> inject_Q (inject_Z (n-1))*a>=b).
+Proof. intros. intros H1. assert(forall m, inject_Q (inject_Z m)* a>=b).
+  { apply czlemma2_le;auto. } assert(0*a>=b). { 
+    replace Rzero with (inject_Q (inject_Z 0)) by reflexivity. apply H2. }
+  rewrite Rmult_0_l in H3. apply Rpositive_gt_0 in H0.
+  apply Rge_not_lt in H3. auto.
+Qed.
+  Lemma IZR_change:forall x r, IZR x - r > 1 -> IZR (x-1) > r.
+Proof. intros. apply (Rplus_lt_compat_l (r-1)) in H. unfold Rminus in H.
+   (** left H*)rewrite Rplus_assoc in H. rewrite (Rplus_comm _ 1) in H.
+   rewrite Rplus_opp_r in H. rewrite Rplus_0_r in H. 
+  (** right H*) rewrite Rplus_assoc in H. rewrite<-(Rplus_assoc (-1%R)) in H.
+   rewrite (Rplus_comm (-1%R)) in H. rewrite<-(opp_IZR 1) in H.
+   rewrite<-plus_IZR in H. rewrite Rplus_comm in H. assert(-r + r==0).
+   { rewrite Rplus_comm. rewrite Rplus_opp_r. reflexivity. }
+    rewrite Rplus_assoc in H. rewrite H0 in H. rewrite Rplus_0_r in H.
+    apply H.
+Qed.
+  Example pos1:Rpositive 1.
+Proof. unfold Rpositive. unfold Rone. exists 1%Q. split. lra.
+  exists O. intros. rewrite H0. lra.
+Qed. 
+  Lemma Rnot_ge_lt:forall a b, ~(a>=b) -> a<b.
+Proof. intros. pose proof classic (a<b). destruct H0;auto.
+  destruct H. apply Rnot_lt_le in H0. hnf. destruct H0.
+  - left;auto. -  right. symmetry; auto.
+Qed.
+  (** lemmas for proving archimed: end*)
+  Theorem archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
+Proof. pose proof czlemma3. intros r. pose proof (Real_sgn_case r).
+  destruct H0 as [H0|[H0|H0]].
+  - (** positive*) apply exists_dist. intros Hcontra.
+    assert(forall x, (~(IZR x > r) \/ ~(IZR x - r <= 1))).
+    { intros. apply not_conj_disj. apply Hcontra. } 
+    assert(forall x, IZR x>r -> IZR (x-1) > r).
+    { intros x. apply imply_iff. destruct (H1 x). 
+      + left;auto. 
+      + right. apply IZR_change. apply Rnot_le_lt. apply H2. }
+    apply (H 1 r);auto using pos1. intros n. repeat rewrite<-IZR_Q.
+    repeat rewrite Rmult_1_r. apply H2.
+  - (** zero*)exists (1)%Z. unfold IZR. unfold IPR. rewrite H0. split.
+    + unfold Rgt. hnf. exists (1)%Q. split. lra. exists O. intros. 
+      hnf in H2. unfold Cauchy_opp in H2. rewrite (H2 1 0)%Q;try lra.
+      intros. rewrite H3. lra.
+    + assert(1%R-0==1)%R. { unfold RArith.Rminus.
+      rewrite<-Rzero_opp_zero.  rewrite Rplus_0_r. reflexivity. } rewrite H1.
+      hnf. right;reflexivity.
+  - (** negative*) clear H. pose proof czlemma3_le. apply Rnegative_Ropp in H0.
+    apply (H 1 (-r)) in H0;auto using pos1. clear H. apply not_forall_exists in H0.
+    destruct H0. exists (1+ -x)%Z. destruct H. split.
+    + apply Rnot_ge_lt in H0. rewrite<-IZR_Q in H0. rewrite Rmult_1_r in H0.
+      assert(x-1 = x + -1)%Z by reflexivity. rewrite H1 in H0. clear H1.
+      rewrite plus_IZR in H0. apply (Rplus_lt_compat_l (r + IZR 1 + -IZR x)) in H0.
+      (** left*)rewrite<-Rplus_assoc in H0. rewrite (Rplus_assoc (r + IZR 1)) in H0.
+      rewrite (Rplus_comm (-IZR x)) in H0. rewrite Rplus_opp_r in H0. 
+      rewrite Rplus_0_r in H0. assert(-1 = - 1%Z)%Z by reflexivity.
+      rewrite H1 in H0. rewrite opp_IZR in H0. rewrite Rplus_assoc in H0.
+      rewrite Rplus_opp_r in H0. rewrite Rplus_0_r in H0. 
+      (** right*) rewrite (Rplus_comm _ (-r)) in H0. 
+      repeat rewrite<-(Rplus_assoc (-r) _ _) in H0. rewrite (Rplus_comm (-r)) in H0.
+      rewrite Rplus_opp_r in H0. rewrite Rplus_0_l in H0. rewrite<-opp_IZR in H0.
+      rewrite plus_IZR. apply H0.
+    + destruct H. 
+      * hnf. left. apply (Rplus_lt_compat_l (IZR (1 + - x))) in H. 
+        rewrite Rmult_1_r in H. rewrite<-IZR_Q in H. rewrite plus_IZR in H at 2.
+        rewrite (Rplus_assoc _ _ (IZR x)) in H. rewrite (Rplus_comm _ (IZR x)) in H.
+        rewrite opp_IZR in H. rewrite Rplus_opp_r in H. rewrite Rplus_0_r in H.
+        apply H.
+      * unfold Rminus. rewrite<-H. rewrite<-IZR_Q. rewrite Rmult_1_r.
+        rewrite plus_IZR. rewrite Rplus_assoc. rewrite (Rplus_comm _ (IZR x)).
+        rewrite opp_IZR. rewrite Rplus_opp_r. rewrite Rplus_0_r. 
+        hnf. right. reflexivity. 
+Qed.
 
+  (** We have proved another version in Cauchy.RAbs named R_Archimedian *)
   Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
   Definition bound (E:R -> Prop) := exists m : R, is_upper_bound E m.
@@ -541,7 +742,7 @@ Module CauchyR_complete : VIR_R_COMPLETE CauchyR.
     apply H in H5.
     destruct H4 , H5.
     assert (x1 == x2).
-    { admit. }
+    { hnf. admit. }
     exists x1.
     split.
     + admit.
