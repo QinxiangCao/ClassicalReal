@@ -359,5 +359,4 @@ Module CR_NQ (VirR: VIR_R) (VirRSingleton : VIR_R_SINGLETON VirR) (VirRComp: VIR
     pose proof (H0 P r H2 H3).
     auto.
   Qed.
-
 End CR_NQ.
