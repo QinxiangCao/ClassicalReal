@@ -102,37 +102,39 @@ Module RSignleLemmas (RSS : R_SINGLE_SIMPLE).
     - exfalso. auto.
     - rewrite <- H7. rewrite <- H6. auto.
   Qed.
-  
+
   Theorem Rif_left : forall (P:Prop) (x y:R), P -> Rif P x y == x.
   Proof.
-    intros. unfold Rif. 
+    intros. unfold Rif.
+    assert (If_fun P x y x). {
+      hnf; left.
+      split; auto.
+      reflexivity.
+    }
     pose proof If_fun_single P x y.
-    pose proof Rsinglefun_correct (If_fun P x y) H0.
-    assert (H0 = If_fun_single P x y).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1 , H0.
-    - symmetry. auto.
-    - exfalso. auto.
+    pose proof Rsinglefun_correct (If_fun P x y) (If_fun_single P x y).
+    pose proof proj1 H1.
+    apply H3; auto.
   Qed.
   
   Theorem Rif_right : forall (P:Prop) (x y:R), ~ P -> Rif P x y == y.
   Proof.
-    intros. unfold Rif. 
+    intros. unfold Rif.
+    assert (If_fun P x y y). {
+      hnf; right.
+      split; auto.
+      reflexivity.
+    }
     pose proof If_fun_single P x y.
-    pose proof Rsinglefun_correct (If_fun P x y) H0.
-    assert (H0 = If_fun_single P x y).
-    { apply proof_irrelevance. }
-    subst.
-    destruct H1 , H0.
-    - exfalso. auto.
-    - symmetry. auto.
-  Qed. 
+    pose proof Rsinglefun_correct (If_fun P x y) (If_fun_single P x y).
+    pose proof proj1 H1.
+    apply H3; auto.
+  Qed.
   
   Definition If_fun_rich (P : Prop) (x : P -> R) (y : ~ P -> R) := 
     (fun z => (exists H : P , x H == z) \/ (exists H : ~ P , y H == z)).
   
-  Theorem If_fun_single_rich : forall (P : Prop) x y , 
+  Theorem If_fun_single_rich : forall (P : Prop) x y ,
     P_singlefun (If_fun_rich P x y).
   Proof.
     intros. 
@@ -172,7 +174,7 @@ Module RSignleLemmas (RSS : R_SINGLE_SIMPLE).
     { apply proof_irrelevance. }
     subst. exists H.
     destruct H1 , H0.
-    - symmetry. 
+    - symmetry.
       assert (x0 = H). { apply proof_irrelevance. }
       subst. auto.
     - exfalso. auto.
