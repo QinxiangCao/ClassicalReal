@@ -324,34 +324,6 @@ Module CauchyR_complete : VIR_R_COMPLETE CauchyR.
   
   Export CauchyR.Vex Vex_Lemmas.
   
-  Lemma not_conj_disj:forall P Q, ~(P /\ Q) -> ~P \/ ~Q.
-Proof.
-  intros. pose proof classic P. destruct H0. 
-  - right. intros Hq. destruct H. split;auto.
-  - left. auto.
-Qed.
-  Lemma imply_iff:forall P Q:Prop, (P->Q) <-> (~P \/ Q).
-Proof. intros P Q. split.
-  - intros. pose proof classic P. destruct H0.
-    + right.  auto.
-    + left. intros Hp. auto. 
-  - intros. destruct H;auto. destruct H;auto.
-Qed.
-  Lemma exists_dist :
-  forall (X:Type) (P : X -> Prop),
-    (exists x, P x) <-> ~ (forall x, ~ P x).
-Proof. intros. split. 
-  - intros. destruct H. intros Hcontra. apply (Hcontra x);auto.
-  - intros. pose proof classic (exists x : X, P x). destruct H0.
-    + apply H0. 
-    + destruct H. intros x Hx. destruct H0. exists x. apply Hx.
-Qed.
-  Lemma not_forall_exists{X:Type}:forall (P Q:X->Prop),
-    (~(forall x,P x -> Q x)) -> exists x, P x /\ ~Q x.
-Proof. intros. pose proof classic (exists x : X, P x /\ ~Q x).
-  destruct H0;auto. destruct H. intros. pose proof classic (Q x).
-  destruct H1;auto. destruct H0;auto. exists x;split;auto.
-Qed. 
   Theorem IZR_Q:forall z:Z, IZR z == inject_Q (inject_Z z).
 Proof. apply Zind.
   - reflexivity.
@@ -483,13 +455,13 @@ Qed.
   Theorem archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
 Proof. pose proof czlemma3. intros r. pose proof (Real_sgn_case r).
   destruct H0 as [H0|[H0|H0]].
-  - (** positive*) apply exists_dist. intros Hcontra.
+  - (** positive*) apply not_all_not_ex. intros Hcontra.
     assert(forall x, (~(IZR x > r) \/ ~(IZR x - r <= 1))).
-    { intros. apply not_conj_disj. apply Hcontra. } 
+    { intros. specialize (Hcontra x). tauto. } 
     assert(forall x, IZR x>r -> IZR (x-1) > r).
-    { intros x. apply imply_iff. destruct (H1 x). 
-      + left;auto. 
-      + right. apply IZR_change. apply Rnot_le_lt. apply H2. }
+    { intros x. destruct (H1 x). 
+      + tauto.
+      + intros _. apply IZR_change. apply Rnot_le_lt. apply H2. }
     apply (H 1 r);auto using pos1. intros n. repeat rewrite<-IZR_Q.
     repeat rewrite Rmult_1_r. apply H2.
   - (** zero*)exists (1)%Z. unfold IZR. unfold IPR. rewrite H0. split.
@@ -500,8 +472,8 @@ Proof. pose proof czlemma3. intros r. pose proof (Real_sgn_case r).
       rewrite<-Rzero_opp_zero.  rewrite Rplus_0_r. reflexivity. } rewrite H1.
       hnf. right;reflexivity.
   - (** negative*) clear H. pose proof czlemma3_le. apply Rnegative_Ropp in H0.
-    apply (H 1 (-r)) in H0;auto using pos1. clear H. apply not_forall_exists in H0.
-    destruct H0. exists (1+ -x)%Z. destruct H. split.
+    apply (H 1 (-r)) in H0;auto using pos1. clear H. apply not_all_ex_not in H0.
+    destruct H0. exists (1+ -x)%Z. apply imply_to_and in H. destruct H. split.
     + apply Rnot_ge_lt in H0. rewrite<-IZR_Q in H0. rewrite Rmult_1_r in H0.
       assert(x-1 = x + -1)%Z by reflexivity. rewrite H1 in H0. clear H1.
       rewrite plus_IZR in H0. apply (Rplus_lt_compat_l (r + IZR 1 + -IZR x)) in H0.
@@ -1421,7 +1393,7 @@ Qed.
       rewrite <- Rplus_0_r.
       apply Rplus_lt_compat_l. auto.
   Qed.
-  (** We have proved another version in Cauchy.RComplete named CC_sufficiency*)
+
 End CauchyR_complete.
 
 Module CauchyAll: VIR_R_ALL.

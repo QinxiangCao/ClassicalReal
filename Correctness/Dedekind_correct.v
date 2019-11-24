@@ -323,21 +323,21 @@ Module DedekindR_complete : VIR_R_COMPLETE DedekindR.
    (** related lemmas for reasoning archimed:begin*)
 (** Proved at Uncomputable.ComRealBaseLemma1*)
   Lemma opp_opp_r:forall r:R, - - r == r.
-Proof. intros. destruct r. hnf.  split. hnf.  
-  intros x0. apply Cut_opp_opp;auto. hnf. intros x0. apply Cut_opp_opp;auto.
-Qed.
+  Proof. intros. destruct r. hnf.  split. hnf.  
+    intros x0. apply Cut_opp_opp;auto. hnf. intros x0. apply Cut_opp_opp;auto.
+  Qed.
   Lemma opp_IZR : forall n:Z, IZR (- n) == - IZR n.
-Proof.
+  Proof.
   intros [|z|z]; unfold IZR; simpl; auto.
   - hnf. split;hnf;intros. 
     + unfold Cut_opp. exists (-x)%Q. split;lra.
     + destruct H,H. lra. 
   - reflexivity.
   - remember (IPR z). symmetry. apply opp_opp_r.
-Qed.
+  Qed.
   (** above copied from ComRealBaseLemma1*)
   Lemma Q_to_R_plus:forall a b, Q_to_R(a + b) == Q_to_R a + Q_to_R b.
-Proof. intros. hnf. split.
+  Proof. intros. hnf. split.
   - hnf.  unfold Cut_plus_Cut. intros. exists ((x+a-b)%Q * (1 # 2))%Q.
     exists ((x-a+b)%Q * (1 # 2))%Q. split. lra. split. lra. 
     rewrite Qmult_comm. rewrite (Qmult_comm (x - a + b) (1 # 2)).
@@ -351,9 +351,9 @@ Proof. intros. hnf. split.
     rewrite (Qplus_comm a x). rewrite<-(Qplus_assoc x a). rewrite Qplus_assoc.
     rewrite (Qplus_comm (-a)). rewrite (Qplus_assoc (-b)). rewrite (Qplus_comm (-b)). lra.
   - hnf. unfold Cut_plus_Cut. intros. destruct H,H,H,H0. lra.
-Qed.
+  Qed.
   Example IZR_QR1:IZR (-1) == Q_to_R (inject_Z (-1)).
-Proof.  assert((-1)=-(1))%Z. { reflexivity. }
+  Proof.  assert((-1)=-(1))%Z. { reflexivity. }
   rewrite H.  rewrite (inject_Z_opp 1). unfold IZR. simpl. unfold Q_to_R.
   hnf.  split. 
   - unfold Cut_opp. hnf. intros. destruct H0, H0. 
@@ -362,9 +362,9 @@ Proof.  assert((-1)=-(1))%Z. { reflexivity. }
   - unfold Cut_opp. hnf. intros. exists (-(x+1))%Q. split.
     + assert(inject_Z 1==1)%Q. { reflexivity. } rewrite H1 in H0. lra.
     + lra. 
-Qed.
+  Qed.
   Lemma IZR_Q:forall z:Z, IZR z == Q_to_R (inject_Z z).
-Proof. split;generalize dependent z.
+  Proof. split;generalize dependent z.
   - apply Zind.
     + (** Zero*)simpl. intros. unfold inject_Z;auto.
     + (** positive*)intros. unfold Z.succ. 
@@ -381,9 +381,9 @@ Proof. split;generalize dependent z.
       rewrite H0. apply Rplus_le_l. auto.
     + intros. unfold Z.pred. rewrite inject_Z_plus. rewrite plus_IZR.
       rewrite IZR_QR1. rewrite Q_to_R_plus. apply Rplus_le_l. auto.
-Qed.
+  Qed.
   Lemma opp_simpl_lt:forall x r, IZR x < r -> IZR (x + 1) - r < 1.
-Proof. intros.  rewrite plus_IZR. assert(IZR 1 == 1). { reflexivity. }
+  Proof. intros.  rewrite plus_IZR. assert(IZR 1 == 1). { reflexivity. }
     rewrite H0. apply (Rplus_lt_compat_l (1-r)) in H. 
     rewrite (Rplus_comm (1-r)) in H. rewrite (Rplus_comm (1-r) r) in H.
     assert(1 - r == 1 + (-r)). { reflexivity. } rewrite H1 in H.
@@ -391,9 +391,9 @@ Proof. intros.  rewrite plus_IZR. assert(IZR 1 == 1). { reflexivity. }
     rewrite (Rplus_comm r 1) in H. rewrite (Rplus_assoc 1 r) in H.
     rewrite Rplus_opp_r in H. rewrite (Rplus_comm 1 Rzero) in H.
     rewrite Rplus_0_l in H. apply H.
-Qed.
+  Qed.
   Lemma opp_simpl_le:forall x r, IZR x <= r -> IZR (x + 1) - r <= 1.
-Proof. intros. destruct H.
+  Proof. intros. destruct H.
   - hnf. left. rewrite plus_IZR. assert(IZR 1 == 1). { reflexivity. }
     rewrite H0. apply (Rplus_lt_compat_l (1-r)) in H. 
     rewrite (Rplus_comm (1-r)) in H. rewrite (Rplus_comm (1-r) r) in H.
@@ -406,46 +406,34 @@ Proof. intros. destruct H.
     rewrite H,H0. assert(r + 1 - r == r + 1 + (-r)). { reflexivity. }
     rewrite H1. rewrite Rplus_assoc. rewrite (Rplus_comm 1 (-r)).
     rewrite<-Rplus_assoc. rewrite Rplus_opp_r. rewrite Rplus_0_l. reflexivity.
-Qed.
-  Lemma excluded_middle:forall P, P\/~P.
-Proof. intros. pose proof classic P. apply H.
-Qed.
-  Lemma not_conj_imply:forall P Q:Prop,~(P/\~Q) -> (P ->Q).
-Proof. intros. pose proof classic Q. destruct H1;auto.
-  destruct H. split;auto.
-Qed.
-  Lemma not_conj_disj:forall P Q, ~(P /\ ~Q) -> ~P \/Q.
-Proof.
-  intros. apply imply_to_or. intros. pose proof classic Q.
-  destruct H1;auto. destruct H. split;auto. 
-Qed. 
+  Qed.
   Lemma archimed' : forall r:R, exists z : Z , IZR z >= r /\ IZR z - r < 1.
-Proof. (** pose proof : add lemmas to the context*)
+  Proof. (** pose proof : add lemmas to the context*)
   intros. pose proof mylemma1. remember r. destruct r.
   assert(exists m, A (inject_Z m)/\ ~(A (inject_Z (m+1)))).
   { apply exists_dist. intros H1. 
     assert(~ (forall m : Z, A (inject_Z m) -> A (inject_Z (m + 1)))).
-    apply H;auto. destruct H2. intros m. apply not_conj_imply. apply H1. } clear H.
+    apply H;auto. destruct H2. intros m. specialize (H1 m); tauto. } clear H.
   (** above we found a Z*)
   destruct H1. exists (x+1)%Z. split.
-  - pose proof (excluded_middle (forall x1:Q, x1<(inject_Z (x+1)) -> A x1)%Q).
+  - pose proof (classic (forall x1:Q, x1<(inject_Z (x+1)) -> A x1)%Q).
     destruct H1. hnf. right. rewrite IZR_Q. rewrite Heqr0. hnf. split.
     + hnf. intros. apply H1;auto.
     + hnf. intros. destruct H. eapply Dedekind_le;eauto.
     + hnf. left. rewrite IZR_Q,Heqr0. hnf. split.
       * intros. destruct H. eapply Dedekind_le;eauto.
       * apply exists_dist. intros H2. destruct H1. intros x1.
-        apply not_conj_imply. apply H2.
+        specialize (H2 x1). tauto.
   - apply opp_simpl_lt. rewrite IZR_Q. hnf. (* left(** lt R0*). *)
     rewrite Heqr0. hnf. split.
     + (** A->B*)intros. apply (Dedekind_properties2 _ H0 (inject_Z x)).
       destruct H. split;auto. apply Qlt_le_weak. apply H1.
     + (** B x->~A x*)exists (inject_Z x). destruct H. split;auto.
       apply Qle_not_lt. apply Qle_refl.
-Qed.
+  Qed.
   (** related lemmas for reasoning archimed:end*)
   Theorem archimed : forall r:R, exists z : Z , IZR z > r /\ IZR z - r <= 1.
-Proof. intros r. pose proof (archimed' (-r)). destruct H,H.
+  Proof. intros r. pose proof (archimed' (-r)). destruct H,H.
   exists (1 + -x)%Z. split. 
   - rewrite plus_IZR. unfold Rgt. rewrite opp_IZR. 
     apply (Rplus_lt_compat_l (-IZR x)) in H0. rewrite Rplus_comm.
@@ -460,8 +448,8 @@ Proof. intros r. pose proof (archimed' (-r)). destruct H,H.
       rewrite opp_IZR. apply H.
     + right. rewrite opp_IZR,H,opp_opp_r. assert(IZR 1+r-r==IZR 1+r+-r). { reflexivity. }
       rewrite H1, Rplus_assoc, Rplus_opp_r. rewrite Rplus_comm. rewrite Rplus_0_l. reflexivity.
-Qed.
-  (** We have proved a similar version in Dedekind.RArith named Zarchimedean*)
+  Qed.
+  
 
   Definition is_upper_bound (E:R -> Prop) (m:R) := forall x:R, E x -> x <= m.
 
