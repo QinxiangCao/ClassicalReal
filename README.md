@@ -1,19 +1,11 @@
 # This is our README
 
-before 2019.3.10
+This is a formalization of real numbers in Coq. Coq's standard library uses an axiomatic formalization. We instantiate one variant of it using two different approaches---Dedekind cut and Cauchy sequences.
 
-We have finished the definition of the order and plus operation of Real Number.
+Here is a list of modification that we made in the interface:
+1. Req is the equivalence between real numbers. It does not have to be Coq's equality. Arithmetic operators are required to preserve this equality.
+2. Trichotomous of real number ordering should not be computable.
+3. The floor function from R to Z should not be computable.
 
-We have found some mistakes about our mult definition.
+# Developpers: Qinxiang Cao, Xiwei Wu, Litao Zhou, Zhixuan Hu, Likai Zou, Ke Wu, Zhang Cheng
 
-We will finish some theorems of it and start to definite the mult operation.
-
---------------------------------------------------
-2019.3.11 17:14 By Wu Xiwei
-We have proved most of the theorems of Real Number order relations.
-
-We have proved some of the theorems of Real Number plus operation.
-
---------------------------------------------------
-2019.3.12 22:15 By Hu Zhixuan
-We have proved all the theorems of Real Number order relations.
