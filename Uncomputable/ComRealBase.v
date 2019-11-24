@@ -278,15 +278,21 @@ Module VirRSingletonLemmas (VirR: VIR_R) (VirRSingleton: VIR_R_SINGLETON VirR).
   Definition Rif_right : forall (P:Prop) (x y:R), ~ P -> Rif P x y == y :=
     RL.Rif_right.
   
-  Definition Rif_rich: forall (P : Prop), (P -> R) -> (~ P -> R) -> R :=
+  Definition Rif_rich: forall (P : Prop) (x: P -> R) (y: ~ P -> R)
+                              {_: Proper ((fun _ _ : P => True) ==> Req) x}
+                              {_: Proper ((fun _ _ : ~ P => True) ==> Req) y}, R :=
     RL.Rif_rich.
 
-  Definition Rif_rich_left:
-    forall (P:Prop) x y, P -> exists H : P,Rif_rich P x y == x H
+  Definition Rif_rich_left: forall (P : Prop) (x: P -> R) (y: ~ P -> R)
+                              {Px: Proper ((fun _ _ : P => True) ==> Req) x}
+                              {Py: Proper ((fun _ _ : ~ P => True) ==> Req) y},
+    P -> exists H : P, @Rif_rich P x y Px Py == x H
   := RL.Rif_rich_left.
   
-  Definition Rif_rich_right:
-    forall (P:Prop) x y, ~ P -> exists H : ~ P,Rif_rich P x y == y H
+  Definition Rif_rich_right: forall (P : Prop) (x: P -> R) (y: ~ P -> R)
+                              {Px: Proper ((fun _ _ : P => True) ==> Req) x}
+                              {Py: Proper ((fun _ _ : ~ P => True) ==> Req) y},
+    ~ P -> exists H : ~ P,Rif_rich P x y == y H
   := RL.Rif_rich_right.
 End VirRSingletonLemmas.
 

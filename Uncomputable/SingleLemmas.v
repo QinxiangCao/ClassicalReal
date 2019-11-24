@@ -135,17 +135,17 @@ Module RSignleLemmas (RSS : R_SINGLE_SIMPLE).
     (fun z => (exists H : P , x H == z) \/ (exists H : ~ P , y H == z)).
   
   Theorem If_fun_single_rich : forall (P : Prop) x y ,
+    Proper ((fun _ _ => True) ==> Req) x ->
+    Proper ((fun _ _ => True) ==> Req) y ->
     P_singlefun (If_fun_rich P x y).
   Proof.
-    intros. 
+    intros P x y Px Py.
     repeat split ; intros.
     - destruct H , H0 , H , H0.
-      + assert (x0 = x3). { apply proof_irrelevance. }
-        subst. rewrite <- H , <- H0. reflexivity.
+      + pose proof Px x0 x3 I. rewrite <- H, H1, H0. reflexivity.
       + exfalso. auto.
       + exfalso. auto.
-      + assert (x0 = x3). { apply proof_irrelevance. }
-        subst. rewrite <- H , <- H0. reflexivity.
+      + pose proof Py x0 x3 I. rewrite <- H, H1, H0. reflexivity.
     - destruct (classic P).
       + exists (x H). hnf. left.
         exists H. reflexivity.
@@ -159,41 +159,47 @@ Module RSignleLemmas (RSS : R_SINGLE_SIMPLE).
       + right. exists x1. auto.
   Qed. 
  
-  Definition Rif_rich (P : Prop)(x : P -> R)(y : ~ P -> R) : R.
+  Definition Rif_rich (P : Prop)(x : P -> R)(y : ~ P -> R)
+                      {_: Proper ((fun _ _ => True) ==> Req) x}
+                      {_: Proper ((fun _ _ => True) ==> Req) y}: R.
     apply Rsinglefun. 
     exists (If_fun_rich P x y).
-    apply If_fun_single_rich.
+    apply If_fun_single_rich; auto.
   Defined.
 
-  Theorem Rif_rich_left : forall (P:Prop) x y, P -> exists H : P,Rif_rich P x y == x H.
+  Theorem Rif_rich_left : forall (P:Prop) x y
+    {Px: Proper ((fun _ _ => True) ==> Req) x}
+    {Py: Proper ((fun _ _ => True) ==> Req) y},
+    P -> exists H : P,Rif_rich P x y == x H.
   Proof.
     intros. unfold Rif_rich. 
-    pose proof If_fun_single_rich P x y.
-    pose proof Rsinglefun_correct (If_fun_rich P x y) H0.
-    assert (H0 = If_fun_single_rich P x y).
-    { apply proof_irrelevance. }
-    subst. exists H.
-    destruct H1 , H0.
-    - symmetry.
-      assert (x0 = H). { apply proof_irrelevance. }
-      subst. auto.
-    - exfalso. auto.
+    assert (If_fun_rich P x y (x H)). {
+      hnf; left.
+      eexists; reflexivity.
+    }
+    pose proof If_fun_single_rich P x y _ _.
+    pose proof Rsinglefun_correct (If_fun_rich P x y) (If_fun_single_rich P x y _ _).
+    pose proof proj1 H1.
+    exists H.
+    apply H3; auto.
   Qed.
   
-  Theorem Rif_rich_right : forall (P:Prop) x y, ~ P -> exists H : ~ P,Rif_rich P x y == y H.
+  Theorem Rif_rich_right : forall (P:Prop) x y
+    {Px: Proper ((fun _ _ => True) ==> Req) x}
+    {Py: Proper ((fun _ _ => True) ==> Req) y},
+    ~ P -> exists H : ~ P,Rif_rich P x y == y H.
   Proof.
     intros. unfold Rif_rich. 
-    pose proof If_fun_single_rich P x y.
-    pose proof Rsinglefun_correct (If_fun_rich P x y) H0.
-    assert (H0 = If_fun_single_rich P x y).
-    { apply proof_irrelevance. }
-    subst. exists H.
-    destruct H1 , H0.
-    - exfalso. auto.
-    - symmetry. 
-      assert (x0 = H). { apply proof_irrelevance. }
-      subst. auto.
-  Qed. 
+    assert (If_fun_rich P x y (y H)). {
+      hnf; right.
+      eexists; reflexivity.
+    }
+    pose proof If_fun_single_rich P x y _ _.
+    pose proof Rsinglefun_correct (If_fun_rich P x y) (If_fun_single_rich P x y _ _).
+    pose proof proj1 H1.
+    exists H.
+    apply H3; auto.
+  Qed.
   
 End RSignleLemmas.
 
@@ -217,17 +223,22 @@ Module Rinv_Partial_To_Total (RSS : R_SINGLE_SIMPLE) (RP : RINV_PARTIAL RSS).
   Module RSL := RSignleLemmas (RSS).
   Import RP RSS RSL.
   Local Open Scope R_scope.
-  Definition Rinv (a : R): R.
-    apply (Rif_rich (a == R0)).
-    - intros. apply R0.
-    - intros. apply (Rinv' a H).
-  Defined.
+  Local Instance RinvL' (a: R):
+    Proper ((fun _ _ : a == R0 => True) ==> Req) (fun _ : a == R0 => R0).
+  Proof. hnf; intros. reflexivity. Qed.
+
+  Local Instance RinvR' (a: R):
+    Proper ((fun _ _ : ~ a == R0 => True) ==> Req) (fun H : ~ a == R0 => Rinv' a H).
+  Proof. hnf; intros. apply Rinv'_comp. reflexivity. Qed.
+
+  Program Definition Rinv (a : R): R :=
+    Rif_rich (a == R0) (fun _ => R0) (fun H => Rinv' a H).
 
   Theorem Rinv_1 : forall r : R , r == R0 -> Rinv r == R0.
   Proof.
     intros.
     unfold Rinv.
-    pose proof (Rif_rich_left (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => Rinv' r H0)) H.
+    pose proof (Rif_rich_left (r==R0) (fun _ : r == R0 => R0) (fun H0 : ~ r == R0 => Rinv' r H0) H).
     destruct H0.
     auto.
   Qed.
